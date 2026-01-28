@@ -1,0 +1,10 @@
+flask
+flask-cors
+requests
+tzdata
+user-agents
+pandas
+openpyxl
+tika
+python-dotenv
+xmltodict

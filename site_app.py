@@ -1,24 +1,39 @@
+# Flask framework for web client simulation
 from flask import Flask, request, render_template_string
+
+# Environment variable handling
 import os
+
+# HTTP client (optional use)
 import requests
 
+
+# Identity Server base URL
 IDENTITY_SERVER = os.getenv(
     "IDENTITY_SERVER",
     "http://127.0.0.1:4000"
 )
 
+# Create Flask app
 app = Flask(__name__)
 
+
+# -----------------------------
+# Frontend UI and Tracking Script
+# -----------------------------
+# Embedded HTML and JavaScript
 HTML = """
 <!doctype html>
 <html>
 <head>
 <title>{{site}}</title>
+
 <style>
 body{font-family:Arial;background:#eef1f5}
 .card{background:white;padding:25px;width:900px;margin:auto;margin-top:50px}
 input,button{padding:6px;margin:4px;width:100%}
 </style>
+
 </head>
 
 <body>
@@ -27,6 +42,7 @@ input,button{padding:6px;margin:4px;width:100%}
 
 <h2>{{site}}</h2>
 
+<!-- Displays unified user ID -->
 <p>ID: <b id="uid">{{uid}}</b></p>
 
 <h3>Profile</h3>
@@ -62,11 +78,14 @@ input,button{padding:6px;margin:4px;width:100%}
 
 </div>
 
+
 <script>
 
 const ID="{{identity}}";
 const domain="{{domain}}";
 
+
+/* Sends web activity and metadata */
 function record(uid){
 
 fetch(ID+"/record",{
@@ -86,6 +105,7 @@ page_url:location.href
 }
 
 
+/* Saves user profile information */
 function saveProfile(){
 
 fetch(ID+"/profile",{
@@ -107,6 +127,7 @@ alert("Saved");
 }
 
 
+/* Handles file uploads */
 uploadForm.onsubmit = async(e)=>{
 
 e.preventDefault();
@@ -124,6 +145,7 @@ alert("Uploaded");
 }
 
 
+/* Sends form data */
 function sendForm(){
 
 fetch(ID+"/form/submit",{
@@ -141,6 +163,7 @@ alert("Sent");
 }
 
 
+/* Receives UID from iframe */
 window.addEventListener("message",(e)=>{
 
 if(e.data.type==="IDENTITY_SYNC"){
@@ -151,6 +174,7 @@ record(e.data.uid);
 });
 
 
+/* Injects iframe for identity sync */
 function inject(){
 
 let f=document.createElement("iframe");
@@ -160,12 +184,16 @@ document.body.appendChild(f);
 
 }
 
+
+/* Opens monitoring dashboard */
 function openLogs(){
 
 window.open(ID+"/logs","_blank");
 
 }
 
+
+/* Initialize identity sync */
 inject();
 
 </script>
@@ -175,6 +203,10 @@ inject();
 """
 
 
+# -----------------------------
+# Main Route
+# -----------------------------
+# Renders client application
 @app.route("/")
 def index():
 
@@ -187,8 +219,12 @@ def index():
     )
 
 
+# -----------------------------
+# Application Entry Point
+# -----------------------------
 if __name__ == "__main__":
 
+    # Start client app
     app.run(
         port=int(os.getenv("PORT","5000")),
         debug=True,

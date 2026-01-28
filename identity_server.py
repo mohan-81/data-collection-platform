@@ -1,33 +1,66 @@
+# Core web framework for building APIs
 from flask import Flask, request, redirect, make_response, jsonify, render_template_string
-import sqlite3, uuid, datetime, os, json
+
+# Standard libraries
+import sqlite3
+import uuid
+import datetime
+import os
+import json
+
+# Enable cross-domain communication
 from flask_cors import CORS
+
+# Timezone handling
 import zoneinfo
+
+# Used to detect browser, OS, device type
 from user_agents import parse
+
+# Used for CSV/Excel processing
 import pandas as pd
+
+# Used for PDF/DOC parsing
 from tika import parser
+
+# Used for XML parsing
 import xmltodict
+
+# Used for external API calls (if needed)
 import requests
 
-# Timezone
+
+# -----------------------------
+# Configuration
+# -----------------------------
+
+# Set timezone to IST
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 
+# Create Flask application
 app = Flask(__name__)
+
+# Enable CORS for cross-domain tracking
 CORS(app, supports_credentials=True)
 
+# Folder for uploaded files
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Central database file
 DB = "identity.db"
 
 
 # -----------------------------
 # Database Initialization
 # -----------------------------
+# Creates required tables for unified storage
 def init_db():
+
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
-    # Visits Table
+    # Table for web visits and identity metadata
     cur.execute("""
         CREATE TABLE IF NOT EXISTS visits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +86,7 @@ def init_db():
         )
     """)
 
-    # File Data Table
+    # Table for uploaded file data
     cur.execute("""
         CREATE TABLE IF NOT EXISTS file_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +98,7 @@ def init_db():
         )
     """)
 
-    # API Data Table
+    # Table for external API data
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +109,7 @@ def init_db():
         )
     """)
 
-    # Form Data Table
+    # Table for form submissions
     cur.execute("""
         CREATE TABLE IF NOT EXISTS form_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,25 +125,35 @@ def init_db():
 
 
 # -----------------------------
-# Identity Sync
+# Identity Synchronization
 # -----------------------------
+# Generates and syncs user ID across domains
 @app.route("/sync")
 def sync():
+
     return_url = request.args.get("return_url")
 
+    # Check if UID already exists
     uid = request.cookies.get("uid")
+
+    # Generate new UID if not present
     if not uid:
         uid = str(uuid.uuid4())
 
+    # Redirect back with UID
     resp = make_response(redirect(f"{return_url}?uid={uid}"))
+
+    # Store UID in cookie
     resp.set_cookie("uid", uid, max_age=60 * 60 * 24 * 30)
 
     return resp
 
 
 # -----------------------------
-# Iframe Sync
+# Iframe Sync (Cross-Domain)
 # -----------------------------
+
+# Script injected into iframe
 IFRAME = """
 <script>
 window.parent.postMessage({type:"IDENTITY_SYNC", uid:"{{uid}}"}, "*");
@@ -120,20 +163,23 @@ window.parent.postMessage({type:"IDENTITY_SYNC", uid:"{{uid}}"}, "*");
 
 @app.route("/iframe_sync")
 def iframe_sync():
+
     uid = request.cookies.get("uid")
 
     if not uid:
         uid = str(uuid.uuid4())
 
     resp = make_response(render_template_string(IFRAME, uid=uid))
+
     resp.set_cookie("uid", uid, max_age=60 * 60 * 24 * 30)
 
     return resp
 
 
 # -----------------------------
-# Web Visit Collection
+# Web Event Collection
 # -----------------------------
+# Collects client-side activity data
 @app.route("/record", methods=["POST"])
 def record():
 
@@ -143,9 +189,11 @@ def record():
     domain = data.get("domain")
     meta = data.get("meta", {})
 
+    # Validate required fields
     if not uid or not domain:
         return jsonify({"error": "missing"}), 400
 
+    # Capture user agent and IP
     ua_string = request.headers.get("User-Agent")
     ip = request.remote_addr
 
@@ -154,6 +202,7 @@ def record():
     browser = ua.browser.family
     os_name = ua.os.family
 
+    # Detect device type
     if ua.is_mobile:
         device = "Mobile"
     elif ua.is_tablet:
@@ -163,6 +212,7 @@ def record():
 
     ts = datetime.datetime.now(IST).isoformat()
 
+    # Store visit record
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
@@ -191,8 +241,9 @@ def record():
 
 
 # -----------------------------
-# Save Profile
+# Profile Storage
 # -----------------------------
+# Saves user profile information
 @app.route("/profile", methods=["POST"])
 def save_profile():
 
@@ -226,13 +277,13 @@ def save_profile():
 
 
 # -----------------------------
-# File Upload Collector
+# File Ingestion
 # -----------------------------
+# Handles file upload and parsing
 @app.route("/upload", methods=["POST"])
 def upload_file():
 
     uid = request.form.get("uid")
-
     file = request.files.get("file")
 
     if not file:
@@ -245,25 +296,25 @@ def upload_file():
 
     content = ""
 
-    # CSV / Excel
+    # CSV / Excel processing
     if filename.endswith(".csv") or filename.endswith(".xlsx"):
 
         df = pd.read_csv(path) if filename.endswith(".csv") else pd.read_excel(path)
         content = df.to_json()
 
-    # JSON
+    # JSON file
     elif filename.endswith(".json"):
 
         with open(path) as f:
             content = json.dumps(json.load(f))
 
-    # XML
+    # XML file
     elif filename.endswith(".xml"):
 
         with open(path) as f:
             content = json.dumps(xmltodict.parse(f.read()))
 
-    # PDF / DOC
+    # PDF / DOC parsing
     else:
 
         parsed = parser.from_file(path)
@@ -271,6 +322,7 @@ def upload_file():
 
     ts = datetime.datetime.now(IST).isoformat()
 
+    # Store file data
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
@@ -293,8 +345,9 @@ def upload_file():
 
 
 # -----------------------------
-# API Collector
+# API Ingestion
 # -----------------------------
+# Central endpoint for external connectors
 @app.route("/api/collect", methods=["POST"])
 def api_collect():
 
@@ -327,8 +380,9 @@ def api_collect():
 
 
 # -----------------------------
-# Form Collector
+# Form Ingestion
 # -----------------------------
+# Collects structured form submissions
 @app.route("/form/submit", methods=["POST"])
 def submit_form():
 
@@ -360,8 +414,9 @@ def submit_form():
 
 
 # -----------------------------
-# Logs UI
+# Monitoring UI
 # -----------------------------
+# Displays recent collected data
 @app.route("/logs")
 def logs():
 
@@ -395,11 +450,14 @@ def logs():
 
 
 # -----------------------------
-# Main
+# Application Entry Point
 # -----------------------------
 if __name__ == "__main__":
+
+    # Initialize database
     init_db()
 
+    # Start ingestion server
     app.run(
         port=4000,
         debug=True,

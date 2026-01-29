@@ -1,465 +1,301 @@
-# Core web framework for building APIs
-from flask import Flask, request, redirect, make_response, jsonify, render_template_string
-
-# Standard libraries
-import sqlite3
-import uuid
-import datetime
-import os
-import json
-
-# Enable cross-domain communication
+from flask import Flask,request,redirect,make_response,jsonify,render_template_string
+import sqlite3,uuid,datetime,os,json
 from flask_cors import CORS
-
-# Timezone handling
 import zoneinfo
-
-# Used to detect browser, OS, device type
 from user_agents import parse
-
-# Used for CSV/Excel processing
 import pandas as pd
-
-# Used for PDF/DOC parsing
 from tika import parser
-
-# Used for XML parsing
 import xmltodict
-
-# Used for external API calls (if needed)
 import requests
 
+# ---------- Config ----------
+IST=zoneinfo.ZoneInfo("Asia/Kolkata")
+app=Flask(__name__)
+CORS(app,supports_credentials=True)
+UPLOAD_FOLDER="uploads"
+os.makedirs(UPLOAD_FOLDER,exist_ok=True)
+DB="identity.db"
 
-# -----------------------------
-# Configuration
-# -----------------------------
-
-# Set timezone to IST
-IST = zoneinfo.ZoneInfo("Asia/Kolkata")
-
-# Create Flask application
-app = Flask(__name__)
-
-# Enable CORS for cross-domain tracking
-CORS(app, supports_credentials=True)
-
-# Folder for uploaded files
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Central database file
-DB = "identity.db"
-
-
-# -----------------------------
-# Database Initialization
-# -----------------------------
-# Creates required tables for unified storage
+# ---------- DB Init ----------
 def init_db():
 
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB)
+    cur=con.cursor()
 
-    # Table for web visits and identity metadata
+    # Visits (device + user info)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS visits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT,
-            domain TEXT,
-            browser TEXT,
-            os TEXT,
-            device TEXT,
-            ip TEXT,
-            screen TEXT,
-            language TEXT,
-            timezone TEXT,
-            referrer TEXT,
-            page_url TEXT,
-            user_agent TEXT,
-            name TEXT,
-            age INTEGER,
-            gender TEXT,
-            city TEXT,
-            country TEXT,
-            profession TEXT,
-            ts TEXT
-        )
+    CREATE TABLE IF NOT EXISTS visits(
+    id INTEGER PRIMARY KEY,
+    uid TEXT,domain TEXT,browser TEXT,os TEXT,device TEXT,ip TEXT,
+    screen TEXT,language TEXT,timezone TEXT,
+    referrer TEXT,page_url TEXT,user_agent TEXT,
+    name TEXT,age INTEGER,gender TEXT,city TEXT,country TEXT,profession TEXT,
+    ts TEXT)
     """)
 
-    # Table for uploaded file data
+    # Identity stitching
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS file_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT,
-            filename TEXT,
-            filetype TEXT,
-            content TEXT,
-            ts TEXT
-        )
+    CREATE TABLE IF NOT EXISTS identity_map(
+    id INTEGER PRIMARY KEY,
+    uid TEXT,email TEXT,device_id TEXT,
+    session_id TEXT,external_id TEXT,created_at TEXT)
     """)
 
-    # Table for external API data
+    # Raw web events
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS api_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source TEXT,
-            endpoint TEXT,
-            payload TEXT,
-            ts TEXT
-        )
+    CREATE TABLE IF NOT EXISTS web_events(
+    id INTEGER PRIMARY KEY,
+    uid TEXT,domain TEXT,event TEXT,
+    device_id TEXT,session_id TEXT,
+    meta TEXT,ts TEXT)
     """)
 
-    # Table for form submissions
+    # Files
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS form_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT,
-            form_name TEXT,
-            data TEXT,
-            ts TEXT
-        )
+    CREATE TABLE IF NOT EXISTS file_data(
+    id INTEGER PRIMARY KEY,
+    uid TEXT,filename TEXT,filetype TEXT,content TEXT,ts TEXT)
     """)
 
-    conn.commit()
-    conn.close()
+    # APIs
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS api_data(
+    id INTEGER PRIMARY KEY,
+    source TEXT,endpoint TEXT,payload TEXT,ts TEXT)
+    """)
 
+    # Forms
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS form_data(
+    id INTEGER PRIMARY KEY,
+    uid TEXT,form_name TEXT,data TEXT,ts TEXT)
+    """)
 
-# -----------------------------
-# Identity Synchronization
-# -----------------------------
-# Generates and syncs user ID across domains
+    con.commit();con.close()
+
+init_db()
+
+# ---------- Identity Sync ----------
 @app.route("/sync")
 def sync():
 
-    return_url = request.args.get("return_url")
+    r=request.args.get("return_url")
+    uid=request.cookies.get("uid") or str(uuid.uuid4())
 
-    # Check if UID already exists
-    uid = request.cookies.get("uid")
-
-    # Generate new UID if not present
-    if not uid:
-        uid = str(uuid.uuid4())
-
-    # Redirect back with UID
-    resp = make_response(redirect(f"{return_url}?uid={uid}"))
-
-    # Store UID in cookie
-    resp.set_cookie("uid", uid, max_age=60 * 60 * 24 * 30)
+    resp=make_response(redirect(f"{r}?uid={uid}"))
+    resp.set_cookie("uid",uid,max_age=30*24*3600)
 
     return resp
 
-
-# -----------------------------
-# Iframe Sync (Cross-Domain)
-# -----------------------------
-
-# Script injected into iframe
-IFRAME = """
-<script>
-window.parent.postMessage({type:"IDENTITY_SYNC", uid:"{{uid}}"}, "*");
-</script>
-"""
-
+IFRAME="""<script>
+window.parent.postMessage({type:"IDENTITY_SYNC",uid:"{{uid}}"},"*");
+</script>"""
 
 @app.route("/iframe_sync")
 def iframe_sync():
 
-    uid = request.cookies.get("uid")
+    uid=request.cookies.get("uid") or str(uuid.uuid4())
 
-    if not uid:
-        uid = str(uuid.uuid4())
-
-    resp = make_response(render_template_string(IFRAME, uid=uid))
-
-    resp.set_cookie("uid", uid, max_age=60 * 60 * 24 * 30)
+    resp=make_response(render_template_string(IFRAME,uid=uid))
+    resp.set_cookie("uid",uid,max_age=30*24*3600)
 
     return resp
 
-
-# -----------------------------
-# Web Event Collection
-# -----------------------------
-# Collects client-side activity data
-@app.route("/record", methods=["POST"])
+# ---------- Web Collector ----------
+@app.route("/record",methods=["POST"])
 def record():
 
-    data = request.get_json() or {}
+    d=request.get_json() or {}
 
-    uid = data.get("uid")
-    domain = data.get("domain")
-    meta = data.get("meta", {})
+    uid=d.get("uid");domain=d.get("domain")
+    email=d.get("email")
+    did=d.get("device_id");sid=d.get("session_id")
+    event=d.get("event_type","page")
+    meta=d.get("meta",{})
 
-    # Validate required fields
     if not uid or not domain:
-        return jsonify({"error": "missing"}), 400
+        return jsonify({"error":"missing"}),400
 
-    # Capture user agent and IP
-    ua_string = request.headers.get("User-Agent")
-    ip = request.remote_addr
+    ua=request.headers.get("User-Agent")
+    ip=request.remote_addr
+    p=parse(ua)
 
-    ua = parse(ua_string)
+    browser=p.browser.family
+    os_name=p.os.family
+    device="Mobile" if p.is_mobile else "Tablet" if p.is_tablet else "Desktop"
 
-    browser = ua.browser.family
-    os_name = ua.os.family
+    ts=datetime.datetime.now(IST).isoformat()
 
-    # Detect device type
-    if ua.is_mobile:
-        device = "Mobile"
-    elif ua.is_tablet:
-        device = "Tablet"
-    else:
-        device = "Desktop"
+    con=sqlite3.connect(DB);cur=con.cursor()
 
-    ts = datetime.datetime.now(IST).isoformat()
-
-    # Store visit record
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
+    # Visit info
     cur.execute("""
-        INSERT INTO visits (
-            uid, domain, browser, os, device, ip,
-            screen, language, timezone,
-            referrer, page_url, user_agent, ts
-        )
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (
-        uid, domain, browser, os_name, device, ip,
-        meta.get("screen"),
-        meta.get("language"),
-        meta.get("timezone"),
-        meta.get("referrer"),
-        meta.get("page_url"),
-        ua_string,
-        ts
-    ))
+    INSERT INTO visits
+    (uid,domain,browser,os,device,ip,
+    screen,language,timezone,
+    referrer,page_url,user_agent,ts)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """,(uid,domain,browser,os_name,device,ip,
+    meta.get("screen"),meta.get("language"),meta.get("timezone"),
+    meta.get("referrer"),meta.get("page_url"),ua,ts))
 
-    conn.commit()
-    conn.close()
+    # Identity map
+    cur.execute("""
+    INSERT INTO identity_map
+    (uid,email,device_id,session_id,external_id,created_at)
+    VALUES(?,?,?,?,?,?)
+    """,(uid,email,did,sid,None,ts))
 
-    return jsonify({"status": "ok"})
+    # Raw events
+    cur.execute("""
+    INSERT INTO web_events
+    (uid,domain,event,device_id,session_id,meta,ts)
+    VALUES(?,?,?,?,?,?,?)
+    """,(uid,domain,event,did,sid,json.dumps(meta),ts))
 
+    con.commit();con.close()
 
-# -----------------------------
-# Profile Storage
-# -----------------------------
-# Saves user profile information
-@app.route("/profile", methods=["POST"])
-def save_profile():
+    return jsonify({"status":"stored"})
 
-    data = request.get_json() or {}
-    uid = data.get("uid")
+# ---------- Profile ----------
+@app.route("/profile",methods=["POST"])
+def profile():
+
+    d=request.get_json() or {}
+
+    uid=d.get("uid");email=d.get("email")
 
     if not uid:
-        return jsonify({"error": "uid missing"}), 400
+        return jsonify({"error":"uid"}),400
 
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB);cur=con.cursor()
 
     cur.execute("""
-        UPDATE visits
-        SET name=?, age=?, gender=?, city=?, country=?, profession=?
-        WHERE uid=?
-    """, (
-        data.get("name"),
-        data.get("age"),
-        data.get("gender"),
-        data.get("city"),
-        data.get("country"),
-        data.get("profession"),
-        uid
-    ))
+    UPDATE visits SET
+    name=?,age=?,gender=?,city=?,country=?,profession=?
+    WHERE uid=?
+    """,(d.get("name"),d.get("age"),d.get("gender"),
+         d.get("city"),d.get("country"),d.get("profession"),uid))
 
-    conn.commit()
-    conn.close()
+    if email:
+        cur.execute("UPDATE identity_map SET email=? WHERE uid=?",(email,uid))
 
-    return jsonify({"status": "saved"})
+    con.commit();con.close()
 
+    return jsonify({"status":"saved"})
 
-# -----------------------------
-# File Ingestion
-# -----------------------------
-# Handles file upload and parsing
-@app.route("/upload", methods=["POST"])
-def upload_file():
+# ---------- File Upload ----------
+@app.route("/upload",methods=["POST"])
+def upload():
 
-    uid = request.form.get("uid")
-    file = request.files.get("file")
+    uid=request.form.get("uid")
+    f=request.files.get("file")
 
-    if not file:
-        return "No file", 400
+    if not f:return "No file",400
 
-    filename = file.filename
-    path = os.path.join(UPLOAD_FOLDER, filename)
+    path=os.path.join(UPLOAD_FOLDER,f.filename)
+    f.save(path)
 
-    file.save(path)
+    c=""
 
-    content = ""
+    if f.filename.endswith((".csv",".xlsx")):
+        df=pd.read_csv(path) if f.filename.endswith(".csv") else pd.read_excel(path)
+        c=df.to_json()
 
-    # CSV / Excel processing
-    if filename.endswith(".csv") or filename.endswith(".xlsx"):
+    elif f.filename.endswith(".json"):
+        c=json.dumps(json.load(open(path)))
 
-        df = pd.read_csv(path) if filename.endswith(".csv") else pd.read_excel(path)
-        content = df.to_json()
+    elif f.filename.endswith(".xml"):
+        c=json.dumps(xmltodict.parse(open(path).read()))
 
-    # JSON file
-    elif filename.endswith(".json"):
-
-        with open(path) as f:
-            content = json.dumps(json.load(f))
-
-    # XML file
-    elif filename.endswith(".xml"):
-
-        with open(path) as f:
-            content = json.dumps(xmltodict.parse(f.read()))
-
-    # PDF / DOC parsing
     else:
+        c=parser.from_file(path).get("content","")
 
-        parsed = parser.from_file(path)
-        content = parsed.get("content", "")
+    ts=datetime.datetime.now(IST).isoformat()
 
-    ts = datetime.datetime.now(IST).isoformat()
-
-    # Store file data
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB);cur=con.cursor()
 
     cur.execute("""
-        INSERT INTO file_data
-        (uid, filename, filetype, content, ts)
-        VALUES (?,?,?,?,?)
-    """, (
-        uid,
-        filename,
-        filename.split(".")[-1],
-        content,
-        ts
-    ))
+    INSERT INTO file_data
+    VALUES(NULL,?,?,?,?,?)
+    """,(uid,f.filename,f.filename.split(".")[-1],c,ts))
 
-    conn.commit()
-    conn.close()
+    con.commit();con.close()
 
-    return jsonify({"status": "uploaded"})
+    return jsonify({"status":"uploaded"})
 
+# ---------- API ----------
+@app.route("/api/collect",methods=["POST"])
+def api():
 
-# -----------------------------
-# API Ingestion
-# -----------------------------
-# Central endpoint for external connectors
-@app.route("/api/collect", methods=["POST"])
-def api_collect():
+    d=request.get_json()
+    ts=datetime.datetime.now(IST).isoformat()
 
-    data = request.get_json()
-
-    source = data.get("source")
-    endpoint = data.get("endpoint")
-    payload = json.dumps(data.get("data"))
-
-    ts = datetime.datetime.now(IST).isoformat()
-
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB);cur=con.cursor()
 
     cur.execute("""
-        INSERT INTO api_data
-        (source, endpoint, payload, ts)
-        VALUES (?,?,?,?)
-    """, (
-        source,
-        endpoint,
-        payload,
-        ts
-    ))
+    INSERT INTO api_data VALUES(NULL,?,?,?,?)
+    """,(d.get("source"),d.get("endpoint"),
+         json.dumps(d.get("data")),ts))
 
-    conn.commit()
-    conn.close()
+    con.commit();con.close()
 
-    return jsonify({"status": "api stored"})
+    return jsonify({"status":"ok"})
 
+# ---------- Form ----------
+@app.route("/form/submit",methods=["POST"])
+def form():
 
-# -----------------------------
-# Form Ingestion
-# -----------------------------
-# Collects structured form submissions
-@app.route("/form/submit", methods=["POST"])
-def submit_form():
+    d=request.get_json()
+    ts=datetime.datetime.now(IST).isoformat()
 
-    data = request.get_json()
-
-    uid = data.get("uid")
-    form_name = data.get("form")
-
-    ts = datetime.datetime.now(IST).isoformat()
-
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB);cur=con.cursor()
 
     cur.execute("""
-        INSERT INTO form_data
-        (uid, form_name, data, ts)
-        VALUES (?,?,?,?)
-    """, (
-        uid,
-        form_name,
-        json.dumps(data),
-        ts
-    ))
+    INSERT INTO form_data VALUES(NULL,?,?,?,?)
+    """,(d.get("uid"),d.get("form"),json.dumps(d),ts))
 
-    conn.commit()
-    conn.close()
+    con.commit();con.close()
 
-    return jsonify({"status": "form saved"})
+    return jsonify({"status":"saved"})
 
-
-# -----------------------------
-# Monitoring UI
-# -----------------------------
-# Displays recent collected data
+# ---------- Logs ----------
 @app.route("/logs")
 def logs():
 
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    con=sqlite3.connect(DB);cur=con.cursor()
 
-    cur.execute("SELECT * FROM visits ORDER BY id DESC LIMIT 50")
-    visits = cur.fetchall()
+    cur.execute("SELECT * FROM visits ORDER BY id DESC LIMIT 20")
+    v=cur.fetchall()
 
-    cur.execute("SELECT * FROM file_data ORDER BY id DESC LIMIT 20")
-    files = cur.fetchall()
+    cur.execute("SELECT * FROM identity_map ORDER BY id DESC LIMIT 20")
+    i=cur.fetchall()
 
-    cur.execute("SELECT * FROM api_data ORDER BY id DESC LIMIT 20")
-    apis = cur.fetchall()
+    cur.execute("SELECT * FROM web_events ORDER BY id DESC LIMIT 20")
+    e=cur.fetchall()
 
-    cur.execute("SELECT * FROM form_data ORDER BY id DESC LIMIT 20")
-    forms = cur.fetchall()
+    cur.execute("SELECT * FROM api_data ORDER BY id DESC LIMIT 10")
+    a=cur.fetchall()
 
-    conn.close()
+    cur.execute("SELECT * FROM file_data ORDER BY id DESC LIMIT 10")
+    f=cur.fetchall()
 
-    return render_template_string("""
-    <h2>Visits</h2>{{v}}
-    <h2>Files</h2>{{f}}
-    <h2>APIs</h2>{{a}}
-    <h2>Forms</h2>{{fo}}
-    """,
-    v=visits,
-    f=files,
-    a=apis,
-    fo=forms)
+    cur.execute("SELECT * FROM form_data ORDER BY id DESC LIMIT 10")
+    fm=cur.fetchall()
 
+    con.close()
 
-# -----------------------------
-# Application Entry Point
-# -----------------------------
-if __name__ == "__main__":
+    html="""
+    <h3>Visits</h3><pre>{{v}}</pre>
+    <h3>Identity</h3><pre>{{i}}</pre>
+    <h3>Web Events</h3><pre>{{e}}</pre>
+    <h3>API</h3><pre>{{a}}</pre>
+    <h3>Files</h3><pre>{{f}}</pre>
+    <h3>Forms</h3><pre>{{fm}}</pre>
+    """
 
-    # Initialize database
-    init_db()
+    return render_template_string(html,v=v,i=i,e=e,a=a,f=f,fm=fm)
 
-    # Start ingestion server
-    app.run(
-        port=4000,
-        debug=True,
-        host="0.0.0.0"
-    )
+# ---------- Run ----------
+if __name__=="__main__":
+    app.run(port=4000,debug=True,host="0.0.0.0")

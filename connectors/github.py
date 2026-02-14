@@ -1,50 +1,336 @@
-# Import library to make HTTP requests (call APIs)
 import requests
+import sqlite3
+import datetime
+import json
+import os
 
-# Import time library to run code at fixed intervals
-import time
+from urllib.parse import urlencode
+from dotenv import load_dotenv
+from destinations.destination_router import push_to_destination
+
+load_dotenv()
+
+DB = "identity.db"
+SOURCE = "github"
+
+CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+API = "https://api.github.com"
 
 
-# Central collector endpoint (our Identity Server API)
-# All external data is pushed to this URL
-COLLECTOR = "http://127.0.0.1:4000/api/collect"
+# ---------------- DB ---------------- #
+
+def get_db():
+    con = sqlite3.connect(DB, timeout=60, check_same_thread=False)
+    con.execute("PRAGMA journal_mode=WAL;")
+    con.execute("PRAGMA busy_timeout=60000;")
+    return con
 
 
-def fetch_repo():
-    """
-    This function fetches repository data from GitHub
-    and sends it to our data collection platform.
-    """
+# ---------------- CONNECTION ---------------- #
 
-    # GitHub public API endpoint for CPython repository
-    url = "https://api.github.com/repos/python/cpython"
+def enable_connection(uid):
+    con = get_db()
+    cur = con.cursor()
 
-    # Call GitHub API and convert response to JSON
-    data = requests.get(url).json()
+    cur.execute("""
+        INSERT OR REPLACE INTO google_connections
+        (uid, source, enabled)
+        VALUES (?, ?, 1)
+    """, (uid, SOURCE))
 
-    # Create standardized payload for ingestion
-    payload = {
-        "source": "github",
-        "endpoint": "/repos/python/cpython",
-        "data": data
+    con.commit()
+    con.close()
+
+
+def disable_connection(uid):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source=?
+    """, (uid, SOURCE))
+
+    con.commit()
+    con.close()
+
+
+def is_connected(uid):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled FROM google_connections
+        WHERE uid=? AND source=?
+    """, (uid, SOURCE))
+
+    row = cur.fetchone()
+    con.close()
+
+    return bool(row and row[0] == 1)
+
+def get_repo_state(uid, repo_full):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT last_commit_sha
+        FROM github_state
+        WHERE uid=? AND repo_full=?
+    """, (uid, repo_full))
+
+    row = cur.fetchone()
+    con.close()
+
+    return row[0] if row else None
+
+
+def save_repo_state(uid, repo_full, last_sha):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO github_state
+        (uid, repo_full, last_commit_sha)
+        VALUES (?, ?, ?)
+    """, (uid, repo_full, last_sha))
+
+    con.commit()
+    con.close()
+
+
+# ---------------- DESTINATION ---------------- #
+
+def get_active_destination(uid):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT dest_type, host, port, username, password, database_name
+        FROM destination_configs
+        WHERE uid=? AND source=? AND is_active=1
+        LIMIT 1
+    """, (uid, SOURCE))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return None
+
+    return {
+        "type": row[0],
+        "host": row[1],
+        "port": row[2],
+        "username": row[3],
+        "password": row[4],
+        "database_name": row[5]
     }
 
-    # Send payload to central collector
-    requests.post(COLLECTOR, json=payload)
 
-    # Log message for monitoring
-    print("GitHub Data Stored")
+# ---------------- AUTH ---------------- #
+
+def get_auth_url():
+    params = {
+        "client_id": CLIENT_ID,
+        "scope": "repo read:user",
+        "allow_signup": "true"
+    }
+    return "https://github.com/login/oauth/authorize?" + urlencode(params)
 
 
-# Entry point of the program
-if __name__ == "__main__":
+def exchange_code(code):
+    r = requests.post(
+        "https://github.com/login/oauth/access_token",
+        headers={"Accept": "application/json"},
+        data={
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "code": code
+        },
+        timeout=20
+    )
+    return r.json()
 
-    # Run continuously (like a scheduled job)
-    while True:
 
-        # Fetch and store GitHub data
-        fetch_repo()
+def save_token(uid, data):
+    con = get_db()
+    cur = con.cursor()
 
-        # Wait for 60 seconds before next fetch
-        # This avoids hitting API rate limits
-        time.sleep(60)   # every 1 minute
+    cur.execute("""
+        INSERT OR REPLACE INTO github_tokens
+        (uid, access_token, scope, token_type, fetched_at)
+        VALUES (?,?,?,?,?)
+    """, (
+        uid,
+        data["access_token"],
+        data.get("scope"),
+        data.get("token_type"),
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+    enable_connection(uid)
+
+
+def get_token(uid):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT access_token FROM github_tokens
+        WHERE uid=?
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        raise Exception("GitHub not connected")
+
+    return row[0]
+
+
+# ---------------- API ---------------- #
+
+def gh_get(uid, path, params=None):
+    token = get_token(uid)
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    r = requests.get(API + path, headers=headers, params=params, timeout=30)
+
+    # Handle empty repository (409)
+    if r.status_code == 409:
+        return []
+
+    # Handle 404 gracefully
+    if r.status_code == 404:
+        return []
+
+    if r.status_code != 200:
+        raise Exception(f"GitHub API Error {r.status_code}: {r.text}")
+
+    return r.json()
+
+# ---------------- MAIN SYNC ---------------- #
+
+def sync_github(uid):
+
+    if not is_connected(uid):
+        return {"status": "error", "message": "GitHub not connected"}
+
+    # Get sync type
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        LIMIT 1
+    """, (uid, SOURCE))
+
+    row = cur.fetchone()
+    con.close()
+
+    sync_type = row[0] if row else "historical"
+
+    print(f"[GITHUB] Sync type: {sync_type}")
+
+    repos = gh_get(uid, "/user/repos", {"per_page": 100})
+
+    all_rows = []
+    total_new = 0
+
+    for r in repos:
+
+        repo_full = r["full_name"]
+
+        # Get last synced SHA for this repo
+        con = get_db()
+        cur = con.cursor()
+
+        cur.execute("""
+            SELECT last_commit_sha
+            FROM github_state
+            WHERE uid=? AND repo_full=?
+        """, (uid, repo_full))
+
+        row = cur.fetchone()
+        con.close()
+
+        last_sha = row[0] if row else None
+
+        try:
+            commits = gh_get(
+                uid,
+                f"/repos/{repo_full}/commits",
+                {"per_page": 100}
+            )
+        except Exception as e:
+            print(f"[GITHUB] Skipping repo {repo_full}: {e}")
+            continue
+
+        repo_new_commits = []
+
+        for c in commits:
+
+            sha = c["sha"]
+
+            # Incremental stop condition
+            if sync_type == "incremental" and last_sha:
+                if sha == last_sha:
+                    break
+
+            repo_new_commits.append({
+                "repo": repo_full,
+                "sha": sha,
+                "author": c["commit"]["author"]["name"],
+                "message": c["commit"]["message"],
+                "date": c["commit"]["author"]["date"]
+            })
+
+        if repo_new_commits:
+            total_new += len(repo_new_commits)
+
+            # Save newest SHA (first item returned is newest)
+            newest_sha = repo_new_commits[0]["sha"]
+
+            con = get_db()
+            cur = con.cursor()
+
+            cur.execute("""
+                INSERT OR REPLACE INTO github_state
+                (uid, repo_full, last_commit_sha)
+                VALUES (?, ?, ?)
+            """, (uid, repo_full, newest_sha))
+
+            con.commit()
+            con.close()
+
+            all_rows.extend(repo_new_commits)
+
+    # Push to destination
+    dest_cfg = get_active_destination(uid)
+
+    if not dest_cfg:
+        return {"status": "error", "message": "No active destination"}
+
+    inserted = push_to_destination(dest_cfg, SOURCE, all_rows)
+
+    print(f"[GITHUB] New rows found: {total_new}")
+    print(f"[GITHUB] Rows pushed: {inserted}")
+
+    return {
+        "status": "success",
+        "rows_pushed": inserted,
+        "rows_found": total_new,
+        "sync_type": sync_type
+    }

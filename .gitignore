@@ -1,8 +1,33 @@
-venv/
+# ------------------------------
+# Python
+# ------------------------------
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-identity.db
+# Virtual Environment
+venv/
+.env/
+
+# Environment variables
+.env
+.env.*
+
+# SQLite Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Tokens / Credentials
+google_tokens.json
+
+# Uploads
 uploads/
 
-.env
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

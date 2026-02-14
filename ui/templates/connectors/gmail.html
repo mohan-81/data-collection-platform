@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="bg-slate-900 min-h-screen px-6 py-24 relative overflow-hidden">
+  
+  <div class="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-red-600/10 blur-[120px] rounded-full"></div>
+  <div class="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-rose-600/5 blur-[120px] rounded-full"></div>
+
+  <div class="max-w-7xl mx-auto relative z-10 space-y-24">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div data-aos="fade-right">
+        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/5 text-red-400 text-[10px] font-mono mb-8 tracking-widest uppercase">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+          </span>
+          GMAIL_API_READY
+        </div>
+
+        <h1 class="text-7xl font-black text-white tracking-tighter mb-6">
+            Google <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">Gmail</span>
+        </h1>
+        <p class="text-slate-300 text-xl mb-10 leading-relaxed font-medium max-w-xl">
+          Sync your communication history, thread structures, and attachment metadata into your central warehouse for advanced analytics.
+        </p>
+
+        <div class="flex flex-wrap gap-4 items-center" id="connectSection">
+            <a href="http://localhost:4000/google/connect?source=gmail" id="connectBtn" class="px-10 py-4 bg-red-600 text-white rounded-2xl font-black hover:bg-white hover:text-red-600 transition-all shadow-xl shadow-red-600/20">Connect Now</a>
+            <button onclick="disconnectGmail()" id="disconnectBtn" class="hidden px-10 py-4 bg-slate-700 text-white rounded-2xl font-black hover:bg-slate-600 transition-all">Disconnect</button>
+            <a href="/dashboard/gmail" id="dashboardBtn" class="px-10 py-4 border border-slate-700 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all">Dashboard</a>
+        </div>
+      </div>
+
+      <div class="flex justify-center items-center" data-aos="zoom-in">
+        <div class="relative w-full max-w-[500px] h-[350px] bg-white/5 backdrop-blur-xl rounded-[3rem] border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#EA4335 1px, transparent 1px); background-size: 30px 30px;"></div>
+            <div class="flex items-center justify-between w-full px-12 relative z-10">
+                <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl">
+                    <img src="/static/images/logos/gmail.png" class="w-10 h-10">
+                </div>
+                <div class="flex-1 h-[2px] mx-4 relative bg-slate-700">
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-rose-500 animate-[flow_2s_infinite_linear]"></div>
+                </div>
+                <div class="w-20 h-20 bg-slate-800 border-2 border-rose-500 rounded-full flex items-center justify-center shadow-2xl">
+                    <svg class="w-10 h-10 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8-4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <div class="lg:col-span-1">
+            <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <h3 class="text-white font-black text-xl">Sync Engine</h3>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Strategy</label>
+                        <select id="syncType" class="w-full p-4 rounded-xl bg-slate-900/80 text-white border border-white/10 focus:border-red-500 outline-none text-sm cursor-pointer hover:bg-slate-900 transition-all">
+                            <option value="historical" class="bg-slate-800">Historical (Full Load)</option>
+                            <option value="incremental" class="bg-slate-800">Incremental (Delta)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Daily Schedule</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <select id="hourSelect" class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 appearance-none text-center font-bold focus:border-red-500 outline-none">
+                                    {% for h in range(0, 24) %}<option value="{{ '%02d' % h }}" class="bg-slate-800">{{ '%02d' % h }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="relative">
+                                <select id="minSelect" class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 appearance-none text-center font-bold focus:border-red-500 outline-none">
+                                    {% for m in range(0, 60, 5) %}<option value="{{ '%02d' % m }}" class="bg-slate-800">{{ '%02d' % m }}</option>{% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 space-y-3">
+                        <button onclick="saveJob()" class="w-full py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl font-bold transition-all text-xs uppercase tracking-widest">Update</button>
+                        <button onclick="runSync()" id="syncBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-emerald-600/30 text-xs uppercase tracking-widest">Run Manual Sync</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl h-full">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center border border-rose-500/20">
+                            <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        </div>
+                        <h3 class="text-white font-black text-xl tracking-tight">Destination Setup</h3>
+                    </div>
+                    <div id="destStatus" class="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20 uppercase font-bold tracking-tighter">System Ready</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Target Platform</label>
+                        <select id="destType" onchange="toggleDest()" class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 focus:border-rose-500 transition-all outline-none">
+                            <option value="" class="bg-slate-800">Select Connector...</option>
+                            <option value="mysql" class="bg-slate-800">MySQL</option>
+                            <option value="postgres" class="bg-slate-800">PostgreSQL</option>
+                            <option value="bigquery" class="bg-slate-800">BigQuery</option>
+                            <option value="snowflake" class="bg-slate-800">SnowFlake</option>
+                        </select>
+                    </div>
+
+                    <div id="dbFields" class="hidden md:contents animate-in fade-in duration-500">
+                        
+                        <div id="sqlFields" class="contents">
+                            <input id="dbHost" placeholder="Host (e.g. 127.0.0.1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <input id="dbPort" placeholder="Port" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <input id="dbUser" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <input id="dbPass" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <input id="dbName" placeholder="Database Name" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                        </div>
+
+                        <div id="bigqueryFields" class="hidden contents">
+                            <input id="bqProject" placeholder="Project ID (e.g. segmento-yt)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <input id="bqDataset" placeholder="Dataset Name (e.g. segmento_data)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none text-sm transition-all">
+                            <textarea id="bqKey" placeholder="Paste Service Account JSON here" rows="6" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-rose-500 outline-none font-mono text-xs"></textarea>
+                        </div>
+                        
+                        <div class="md:col-span-2 pt-2">
+                            <button onclick="saveDestination()" id="saveDestBtn" class="w-full py-5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-rose-600/30 text-xs uppercase tracking-[0.2em]">
+                                Authenticate & Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-white/5">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Active Connection Switcher</label>
+                    <div class="relative">
+                        <select id="destDropdown" onchange="activateDest(this.value)" class="w-full p-4 rounded-xl bg-black/40 text-rose-300 border border-rose-500/20 outline-none text-sm font-bold cursor-pointer hover:bg-black/60 transition-all">
+                            <option value="" class="bg-slate-900 text-white">Loading connections...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-12">
+      <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">Gmail <span class="text-red-500">Schema</span></h2>
+      
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+        <div class="grid grid-cols-1 gap-4">
+          {% for table, columns in [
+            ('gmail_messages', ['id', 'thread_id', 'subject', 'snippet', 'from_email', 'to_email', 'date_sent', 'internal_date']),
+            ('gmail_labels', ['id', 'message_id', 'name', 'type']),
+            ('gmail_attachments', ['id', 'message_id', 'filename', 'mime_type', 'size', 'attachment_id'])
+          ] %}
+          <div class="p-6 bg-slate-800/40 border border-white/5 rounded-3xl hover:border-red-500/30 transition-all group">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-3 h-3 rounded-full bg-red-600 group-hover:animate-pulse"></div>
+                <h4 class="text-white font-mono font-bold text-sm tracking-widest uppercase">{{table}}</h4>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% for col in columns %}
+                <span class="px-3 py-1.5 bg-slate-900/80 border border-white/10 rounded-xl text-[10px] font-mono text-slate-400">{{col}}</span>
+                {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <div class="relative bg-slate-800 border border-white/10 rounded-[3rem] p-10 shadow-3xl sticky top-10">
+          <div class="absolute inset-0 bg-red-600/5 rounded-[3rem] blur-xl"></div>
+          <img src="/static/images/erd/gmail_erd.png" class="relative z-10 mx-auto max-w-full rounded-2xl opacity-90 grayscale hover:grayscale-0 transition-all duration-700"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-32">
+      <h2 class="text-4xl font-black mb-12 text-center text-white">Data Extracted</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        {% for table in ['gmail_messages', 'gmail_labels', 'gmail_attachments'] %}
+        <div class="p-8 bg-slate-800/40 border border-white/5 rounded-[2rem] hover:bg-red-600/5 hover:border-red-500/20 transition-all flex flex-col items-center text-center group cursor-pointer">
+          <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-red-600 transition-all duration-500 shadow-xl">
+            <svg class="w-6 h-6 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <span class="font-mono text-slate-400 font-bold text-sm tracking-widest group-hover:text-white transition-colors">{{table}}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  @keyframes flow { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    checkGmailStatus();
+    loadJob();
+    loadDestinations();
+});
+
+async function checkGmailStatus(){
+  try {
+    const res = await fetch("/api/status/gmail").then(r => r.json());
+    if(res.connected){
+      document.getElementById("connectBtn").classList.add("hidden");
+      document.getElementById("disconnectBtn").classList.remove("hidden");
+      const badge = document.getElementById("statusBadge");
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> CONNECTED`;
+      badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[10px] font-mono mb-8 uppercase";
+    }
+  } catch(e){}
+}
+
+async function loadDestinations(){
+    try {
+        const res = await fetch(`http://localhost:4000/destination/list/gmail`);
+        const data = await res.json();
+        const dropdown = document.getElementById("destDropdown");
+        const statusEl = document.getElementById("destStatus");
+        
+        dropdown.innerHTML = '<option value="" class="text-slate-500 italic">Select an existing configuration...</option>';
+        
+        if(data.destinations?.length){
+            data.destinations.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.id;
+                opt.className = "bg-slate-800 py-2";
+                opt.textContent = `${d.active ? '● ' : ''}${d.type.toUpperCase()} | ${d.database} (@${d.host})`;
+                if(d.active) {
+                    opt.selected = true;
+                    statusEl.innerText = "Connection Active";
+                    statusEl.classList.replace("text-rose-400", "text-emerald-400");
+                }
+                dropdown.appendChild(opt);
+            });
+        } 
+        else {
+            statusEl.innerText = "No destination configured (Save one above)";
+            statusEl.classList.replace("text-rose-400", "text-amber-400");
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function activateDest(id){
+    if(!id) return;
+    const res = await fetch("http://localhost:4000/destination/activate", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ source: "gmail", dest_id: id })
+    });
+    if(res.ok) {
+        alert("Active destination updated.");
+        loadDestinations();
+    }
+}
+
+async function saveDestination(){
+    const btn = document.getElementById("saveDestBtn");
+    btn.innerText = "AUTHENTICATING..."; btn.disabled = true;
+
+    const type = document.getElementById("destType").value;
+    let payload = {
+        source: "gmail",
+        type: type
+    };
+
+    if(type === "bigquery"){
+        payload.host = document.getElementById("bqProject").value;
+        payload.database = document.getElementById("bqDataset").value;
+        payload.password = document.getElementById("bqKey").value;
+        payload.port = "";
+        payload.username = "";
+    } else {
+        payload.host = document.getElementById("dbHost").value;
+        payload.port = document.getElementById("dbPort").value;
+        payload.username = document.getElementById("dbUser").value;
+        payload.password = document.getElementById("dbPass").value;
+        payload.database = document.getElementById("dbName").value;
+    }
+
+    try {
+        const res = await fetch("http://localhost:4000/destination/save", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+            btn.innerText = "SAVED ✓";
+            btn.classList.replace("bg-rose-600", "bg-emerald-600");
+            loadDestinations();
+            setTimeout(() => {
+                btn.innerText = "AUTHENTICATE & SAVE";
+                btn.classList.replace("bg-emerald-600", "bg-rose-600");
+                btn.disabled = false;
+            }, 2000);
+        }
+    } catch(e) { 
+        alert("Connection failed");
+        btn.disabled = false; 
+    }
+}
+
+function toggleDest() {
+    const type = document.getElementById("destType").value;
+    const wrapper = document.getElementById("dbFields");
+    const sql = document.getElementById("sqlFields");
+    const bq = document.getElementById("bigqueryFields");
+
+    if(!type){
+        wrapper.classList.add("hidden");
+        return;
+    }
+
+    wrapper.classList.remove("hidden");
+
+    if(type === "bigquery"){
+        sql.classList.add("hidden");
+        bq.classList.remove("hidden");
+    } else {
+        sql.classList.remove("hidden");
+        bq.classList.add("hidden");
+    }
+}
+
+async function loadJob(){
+    try {
+        const data = await fetch("/connectors/gmail/job/get").then(r => r.json());
+        if(data.exists && data.schedule_time){
+            const [h, m] = data.schedule_time.split(':');
+            document.getElementById("hourSelect").value = h;
+            document.getElementById("minSelect").value = m;
+            document.getElementById("syncType").value = data.sync_type;
+        }
+    } catch(e) {}
+}
+
+async function saveJob(){
+    const time = `${document.getElementById("hourSelect").value}:${document.getElementById("minSelect").value}`;
+    const res = await fetch("/connectors/gmail/job/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sync_type: document.getElementById("syncType").value, schedule_time: time })
+    });
+    if(res.ok) alert("Job Schedule Updated");
+}
+
+function runSync(){
+    const btn = document.getElementById("syncBtn");
+    btn.innerText = "SYNCING..."; btn.disabled = true;
+    fetch("/connectors/gmail/sync").then(r => r.json()).then(d => {
+        btn.innerText = `SYNCED (${d.messages || 0} MSGS)`;
+        btn.disabled = false;
+        setTimeout(() => btn.innerText = "RUN MANUAL SYNC", 3000);
+    });
+}
+
+async function disconnectGmail(){
+    if(!confirm("Terminate Connection?")) return;
+    const res = await fetch("/connectors/gmail/disconnect").then(r => r.json());
+    if(res.status === "ok") location.reload();
+}
+</script>
+
+{% endblock %}

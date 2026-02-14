@@ -1,419 +1,363 @@
-# Flask framework for web client simulation
-from flask import Flask, request, render_template_string
-
-# Environment variable handling
+from flask import Flask, render_template_string, request, redirect, make_response
 import os
 
 
-# Identity Server base URL
 IDENTITY_SERVER = os.getenv(
     "IDENTITY_SERVER",
     "http://127.0.0.1:4000"
 )
 
-# Create Flask app
 app = Flask(__name__)
 
-# -----------------------------
-# Frontend UI and Tracking SDK
-# -----------------------------
+
 HTML = """
 <!doctype html>
 <html>
 <head>
+
 <title>{{site}}</title>
+
 <style>
-body{font-family:Arial;background:#eef1f5}
-.card{background:white;padding:25px;width:900px;margin:auto;margin-top:50px}
-input,button{padding:6px;margin:4px;width:100%}
+
+body{
+font-family:Inter,Arial;
+background:linear-gradient(to right,#0f172a,#020617);
+color:white;
+margin:0;
+}
+
+.nav{
+background:#020617;
+padding:15px 40px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #1e293b;
+}
+
+.nav h2{
+color:#22d3ee;
+margin:0;
+}
+
+.nav a{
+color:#cbd5f5;
+text-decoration:none;
+margin-left:20px;
+font-size:14px;
+}
+
+.nav a:hover{
+color:#22d3ee;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+padding:40px 20px;
+}
+
+.card{
+background:#020617;
+padding:30px;
+border-radius:12px;
+border:1px solid #1e293b;
+box-shadow:0 0 25px rgba(34,211,238,0.05);
+}
+
+input,button{
+padding:10px;
+margin:8px 0;
+width:100%;
+border-radius:6px;
+border:1px solid #1e293b;
+background:#020617;
+color:white;
+}
+
+input:focus{
+outline:none;
+border-color:#22d3ee;
+}
+
+button{
+background:#22d3ee;
+color:black;
+font-weight:bold;
+cursor:pointer;
+border:none;
+}
+
+button:hover{
+background:#67e8f9;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+margin-top:20px;
+}
+
+.box{
+padding:20px;
+background:#020617;
+border:1px solid #1e293b;
+border-radius:10px;
+}
+
+.box h3{
+color:#22d3ee;
+margin-top:0;
+}
+
+.footer{
+text-align:center;
+padding:20px;
+color:#94a3b8;
+font-size:13px;
+border-top:1px solid #1e293b;
+margin-top:60px;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
+<div class="nav">
+<h2>Segmento Demo</h2>
+
+<div>
+<a href="http://127.0.0.1:3000">Platform</a>
+<a href="http://127.0.0.1:3000/tracking">Tracking</a>
+<a href="http://127.0.0.1:3000/dashboard">Dashboard</a>
+{% if email %}
+<a href="/logout">Logout</a>
+{% endif %}
+</div>
+</div>
+
+
+<div class="container">
+
+
+{% if not email %}
+
+<!-- LOGIN -->
+
 <div class="card">
 
-<h2>{{site}}</h2>
+<h1>Welcome to Segmento Demo Site</h1>
 
-<p>User ID: <b id="uid">{{uid}}</b></p>
+<p style="color:#94a3b8">
+This website simulates a real customer using Segmento Collector.
+</p>
 
+<hr style="border-color:#1e293b">
 
-<!-- Profile -->
-<h3>Profile</h3>
+<h3>Login / Signup</h3>
 
-<input id="email" placeholder="Email">
+<form method="POST" action="/login">
 
-<input id="name" placeholder="Name">
-<input id="age" placeholder="Age">
-<input id="gender" placeholder="Gender">
-<input id="city" placeholder="City">
-<input id="country" placeholder="Country">
-<input id="profession" placeholder="Profession">
+<input name="email" placeholder="Enter your email" required>
 
-<button onclick="saveProfile()">Save Profile</button>
-
-<hr>
-
-
-<!-- File Upload -->
-<h3>Upload File</h3>
-
-<form id="uploadForm" enctype="multipart/form-data">
-
-<input type="file" name="file">
-
-<button type="submit">Upload</button>
+<button type="submit">Continue</button>
 
 </form>
-
-<hr>
-
-
-<!-- Form -->
-<h3>Submit Feedback</h3>
-
-<input id="f1" placeholder="Feedback">
-
-<button onclick="sendForm()">Send</button>
-
-<hr>
-
-
-<button onclick="openLogs()">View Logs</button>
 
 </div>
 
 
+{% else %}
+
+<!-- DASHBOARD -->
+
+<div class="card">
+
+<h1>Dashboard</h1>
+
+<p style="color:#94a3b8">
+Logged in as <b>{{email}}</b>
+</p>
+
+<p>
+This website is actively tracked using Segmento JS SDK.
+</p>
+
+</div>
+
+
+<div class="grid">
+
+
+<!-- PROFILE -->
+
+<div class="box">
+
+<h3>User Profile</h3>
+
+<p>Email: {{email}}</p>
+<p>Status: Active</p>
+<p>Plan: Demo</p>
+
+</div>
+
+
+<!-- ACTIONS -->
+
+<div class="box">
+
+<h3>Test Actions</h3>
+
+<button>Buy Now</button>
+
+<button>Add to Cart</button>
+
+<button>Subscribe</button>
+
+</div>
+
+
+<!-- ACTIVITY -->
+
+<div class="box">
+
+<h3>Activity Simulator</h3>
+
+<p>Scroll, click, and navigate this page.</p>
+
+<p>All actions are tracked automatically.</p>
+
+<button onclick="fakeAction()">Simulate Event</button>
+
+</div>
+
+
+</div>
+
+
+<div class="box" style="margin-top:30px;text-align:center">
+
+<h3>Collector Status</h3>
+
+<p style="color:#22d3ee;font-weight:bold">
+Live Tracking Enabled
+</p>
+
+<p style="color:#94a3b8">
+Events are being sent to Identity Server
+</p>
+
+</div>
+
+
+{% endif %}
+
+</div>
+
+
+<div class="footer">
+© 2026 Segmento Data Technologies — Demo Client
+</div>
+
+
+
+{% if email %}
+
+<!-- Segmento SDK -->
+<script src="http://127.0.0.1:4000/static/sdk/segmento.js"></script>
+
 <script>
 
-const ID="{{identity}}";
-const domain="{{domain}}";
+// Save email for dashboard access
+localStorage.setItem("segmento_email","{{email}}");
 
 
-/* -----------------------------
-   Identity Utilities
------------------------------ */
+// Init SDK
+Segmento.init("http://127.0.0.1:4000");
 
-function getDeviceId(){
 
-  let d = localStorage.getItem("device_id");
-
-  if(!d){
-    d = crypto.randomUUID();
-    localStorage.setItem("device_id", d);
-  }
-
-  return d;
-}
-
-
-function getSessionId(){
-
-  let s = sessionStorage.getItem("session_id");
-
-  if(!s){
-    s = crypto.randomUUID();
-    sessionStorage.setItem("session_id", s);
-  }
-
-  return s;
-}
-
-
-
-/* -----------------------------
-   Core Event Sender
------------------------------ */
-
-function sendEvent(type, meta={}){
-
-fetch(ID+"/record",{
-
-method:"POST",
-
-headers:{
-  "Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-uid: uid.innerText,
-domain: domain,
-
-email: email.value || null,
-
-device_id: getDeviceId(),
-session_id: getSessionId(),
-
-event_type: type,
-
-meta: {
-
-screen: screen.width+"x"+screen.height,
-language: navigator.language,
-timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-
-page_url: location.href,
-referrer: document.referrer,
-title: document.title,
-
-...meta
-}
-
-})
-
-});
-
-}
-
-
-
-/* -----------------------------
-   Profile Save
------------------------------ */
-
-function saveProfile(){
-
-fetch(ID+"/profile",{
-
-method:"POST",
-
-headers:{
-  "Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-uid: uid.innerText,
-
-email: email.value,
-
-name: name.value,
-age: age.value,
-gender: gender.value,
-city: city.value,
-country: country.value,
-profession: profession.value
-
-})
-
-});
-
-alert("Profile Saved");
-
-}
-
-
-
-/* -----------------------------
-   File Upload
------------------------------ */
-
-uploadForm.onsubmit = async(e)=>{
-
-e.preventDefault();
-
-let form = new FormData(uploadForm);
-
-form.append("uid", uid.innerText);
-
-await fetch(ID+"/upload",{
-method:"POST",
-body:form
-});
-
-alert("Uploaded");
-
-}
-
-
-
-/* -----------------------------
-   Form Submit
------------------------------ */
-
-function sendForm(){
-
-fetch(ID+"/form/submit",{
-
-method:"POST",
-
-headers:{
-  "Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-uid: uid.innerText,
-form:"feedback",
-feedback:f1.value
-
-})
-
-});
-
-alert("Sent");
-
-}
-
-
-
-/* -----------------------------
-   Identity Sync
------------------------------ */
-
+// Sync email after identity created
 window.addEventListener("message",(e)=>{
 
 if(e.data.type==="IDENTITY_SYNC"){
 
-uid.innerText = e.data.uid;
-
-/* Initial Page View */
-sendEvent("page_view");
-
-}
-
-});
-
-
-function inject(){
-
-let f = document.createElement("iframe");
-
-f.src = ID+"/iframe_sync";
-
-f.style.display="none";
-
-document.body.appendChild(f);
-
-}
-
-
-
-/* -----------------------------
-   Advanced Tracking
------------------------------ */
-
-/* Click Tracking */
-document.addEventListener("click", e=>{
-
-sendEvent("click", {
-  tag: e.target.tagName,
-  text: e.target.innerText?.slice(0,50)
-});
-
-});
-
-
-/* Scroll Tracking */
-let maxScroll = 0;
-
-window.addEventListener("scroll", ()=>{
-
-let sc = Math.round(
- (window.scrollY /
- (document.body.scrollHeight-window.innerHeight))*100
-);
-
-if(sc > maxScroll){
-
-  maxScroll = sc;
-
-  sendEvent("scroll", {percent: sc});
-
-}
-
-});
-
-
-/* Time On Page */
-let startTime = Date.now();
-
-window.addEventListener("beforeunload", ()=>{
-
-let t = Math.round((Date.now()-startTime)/1000);
-
-navigator.sendBeacon(
-
-ID+"/record",
-
-JSON.stringify({
-
-uid: uid.innerText,
-domain: domain,
-
-device_id: getDeviceId(),
-session_id: getSessionId(),
-
-event_type:"time_spent",
-
-meta:{seconds:t}
-
+fetch("http://127.0.0.1:4000/profile",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+uid:e.data.uid,
+email:"{{email}}"
 })
+});
 
-);
+}
 
 });
 
 
-
-/* -----------------------------
-   Logs
------------------------------ */
-
-function openLogs(){
-
-window.open(ID+"/logs","_blank");
-
+function fakeAction(){
+alert("Test event triggered");
 }
-
-
-
-/* -----------------------------
-   Init
------------------------------ */
-
-inject();
 
 </script>
+
+{% endif %}
+
 
 </body>
 </html>
 """
 
 
-# -----------------------------
-# Main Route
-# -----------------------------
-@app.route("/")
+# ---------------- ROUTES ----------------
+
+
+@app.route("/", methods=["GET"])
 def index():
 
+    email = request.cookies.get("email")
+
     return render_template_string(
-
         HTML,
-
-        site=os.getenv("SITE_NAME", "Site"),
-
-        domain=os.getenv("DOMAIN_NAME", "local"),
-
-        identity=IDENTITY_SERVER,
-
-        uid=request.cookies.get("uid","")
-
+        site="Segmento Demo Site",
+        email=email
     )
 
 
-# -----------------------------
-# Application Entry Point
-# -----------------------------
+@app.route("/login", methods=["POST"])
+def login():
+
+    email = request.form.get("email")
+
+    resp = make_response(redirect("/"))
+
+    resp.set_cookie("email", email, max_age=30*24*3600)
+
+    return resp
+
+
+@app.route("/logout")
+def logout():
+
+    resp = make_response(redirect("/"))
+
+    resp.delete_cookie("email")
+
+    return resp
+
+
+
+# ---------------- RUN ----------------
+
 if __name__ == "__main__":
 
     app.run(
-
-        port=int(os.getenv("PORT","5000")),
-
+        port=5000,
         debug=True,
-
         host="0.0.0.0"
-
     )

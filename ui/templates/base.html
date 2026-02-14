@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Segmento Collector</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+AOS.init({duration:900,once:true});
+});
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{font-family:'Inter',sans-serif}
+</style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 text-white">
+
+<!-- Navbar -->
+<nav class="flex justify-between items-center px-10 py-5 border-b border-slate-700/50 backdrop-blur">
+<h1 class="text-2xl font-bold text-cyan-400">Segmento Collector</h1>
+<div class="space-x-8 text-sm font-medium">
+<a href="/" class="hover:text-cyan-400">Home</a>
+<a href="/tracking" class="hover:text-cyan-400">Web Tracking</a>
+<a href="/connectors" class="hover:text-cyan-400">Connectors</a>
+<a href="/dashboard" class="hover:text-cyan-400">Dashboard</a>
+</div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer class="border-t border-slate-700/50 mt-20 py-8 text-center text-sm text-gray-300">
+© 2026 Segmento Data Technologies — Collector Platform
+</footer>
+
+</body>
+</html>

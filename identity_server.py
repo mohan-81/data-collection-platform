@@ -5423,10 +5423,125 @@ def lemmy_sync_universal():
 
 # ---------------- OPENSTREETMAP ----------------
 
-@app.route("/openstreetmap/sync")
+@app.route("/connectors/openstreetmap/connect", methods=["POST"])
+def osm_connect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    now = datetime.datetime.utcnow().isoformat()
+
+    # Mark connector enabled
+    cur.execute("""
+        INSERT OR REPLACE INTO google_connections
+        (uid, source, enabled)
+        VALUES (?, 'openstreetmap', 1)
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "connected"})
+
+@app.route("/connectors/openstreetmap/disconnect")
+def osm_disconnect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='openstreetmap'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "disconnected"})
+
+@app.route("/connectors/openstreetmap/sync")
 def osm_sync():
-    uid=request.cookies.get("uid") or "demo_user"
-    return jsonify(sync_openstreetmap(uid))
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    # Check enabled
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='openstreetmap'
+    """, (uid,))
+
+    row = cur.fetchone()
+
+    if not row or row[0] != 1:
+        con.close()
+        return jsonify({"error": "OpenStreetMap not connected"}), 400
+
+    # Get job config
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='openstreetmap'
+    """, (uid,))
+
+    job = cur.fetchone()
+    sync_type = job[0] if job else "incremental"
+
+    con.close()
+
+    # Run connector
+    result = sync_openstreetmap(
+        uid=uid,
+        sync_type=sync_type
+    )
+
+    rows = result.get("rows", [])
+
+    # Destination lookup
+    con = get_db()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM destination_configs
+        WHERE uid=? AND source='openstreetmap'
+        ORDER BY id DESC
+        LIMIT 1
+    """, (uid,))
+
+    dest = cur.fetchone()
+    con.close()
+
+    if dest and rows:
+
+        dest_cfg = dict(dest)
+        dest_cfg["type"] = dest_cfg["dest_type"]
+
+        inserted = push_to_destination(
+            dest_cfg,
+            "openstreetmap_data",
+            rows
+        )
+
+        return jsonify({
+            "status": "pushed_to_destination",
+            "rows": inserted
+        })
+
+    return jsonify({
+        "status": "stored_locally",
+        "new_changesets": result.get("new_changesets", 0),
+        "new_notes": result.get("new_notes", 0)
+    })
 
 # ---------------- NVD ----------------
 

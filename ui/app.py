@@ -1495,16 +1495,37 @@ def osm_page():
     return render_template("connectors/openstreetmap.html")
 
 
+@app.route("/connectors/openstreetmap/connect", methods=["POST"])
+def ui_osm_connect():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/openstreetmap/connect",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/openstreetmap/disconnect")
+def ui_osm_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/openstreetmap/disconnect",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+
 @app.route("/connectors/openstreetmap/sync")
-def osm_sync():
+def ui_osm_sync():
 
-    r = requests.get("http://localhost:4000/openstreetmap/sync")
+    r = requests.get(
+        "http://localhost:4000/connectors/openstreetmap/sync",
+        cookies=request.cookies
+    )
 
-    try:
-        return jsonify(r.json())
-    except:
-        return jsonify([])
-
+    return jsonify(r.json())
 
 @app.route("/dashboard/openstreetmap")
 def osm_dashboard():

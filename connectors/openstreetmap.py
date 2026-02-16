@@ -12,7 +12,6 @@ HEADERS={
     "User-Agent":"SegmentoCollector/1.0 (contact@example.com)"
 }
 
-
 # ---------------- DB ----------------
 
 def db():
@@ -180,58 +179,83 @@ def insert_notes(uid,rows):
 
 # ---------------- Main Sync ----------------
 
-def sync_openstreetmap(uid,limit=50):
+def sync_openstreetmap(uid, sync_type="incremental", limit=50):
 
-    last_cs,last_note=get_state(uid)
+    last_cs, last_note = get_state(uid)
 
+    rows_for_destination = []
 
     # -------- Changesets --------
 
-    xml=safe_get(f"{BASE}/changesets",{
-        "closed":"true",
-        "limit":limit
+    xml = safe_get(f"{BASE}/changesets", {
+        "closed": "true",
+        "limit": limit
     })
 
-    new_cs=[]
+    new_cs = []
 
     if xml:
-        rows=parse_changesets(xml)
+        parsed = parse_changesets(xml)
 
-        for r in rows:
-            if r["id"]>last_cs:
-                new_cs.append(r)
+        for r in parsed:
+
+            if sync_type == "incremental" and r["id"] <= last_cs:
+                continue
+
+            new_cs.append(r)
+
+            rows_for_destination.append({
+                "uid": uid,
+                "type": "changeset",
+                "changeset_id": r["id"],
+                "user": r["user"],
+                "created_at": r["created"],
+                "closed_at": r["closed"]
+            })
 
         if new_cs:
-            insert_changesets(uid,new_cs)
-            last_cs=max(r["id"] for r in new_cs)
-
+            insert_changesets(uid, new_cs)
+            last_cs = max(r["id"] for r in new_cs)
 
     # -------- Notes --------
 
-    notes=safe_get(f"{BASE}/notes.json",{
-        "limit":100,
-        "closed":-1
+    notes = safe_get(f"{BASE}/notes.json", {
+        "limit": 100,
+        "closed": -1
     })
 
-    new_notes=[]
+    new_notes = []
 
     if notes:
-        rows=parse_notes(notes)
+        parsed = parse_notes(notes)
 
-        for r in rows:
-            if r["id"]>last_note:
-                new_notes.append(r)
+        for r in parsed:
+
+            if sync_type == "incremental" and r["id"] <= last_note:
+                continue
+
+            new_notes.append(r)
+
+            rows_for_destination.append({
+                "uid": uid,
+                "type": "note",
+                "note_id": r["id"],
+                "status": r["status"],
+                "lat": r["lat"],
+                "lon": r["lon"],
+                "created_at": r["created"],
+                "closed_at": r["closed"]
+            })
 
         if new_notes:
-            insert_notes(uid,new_notes)
-            last_note=max(r["id"] for r in new_notes)
+            insert_notes(uid, new_notes)
+            last_note = max(r["id"] for r in new_notes)
 
-
-    save_state(uid,last_cs,last_note)
-
+    save_state(uid, last_cs, last_note)
 
     return {
-        "status":"ok",
-        "new_changesets":len(new_cs),
-        "new_notes":len(new_notes)
+        "status": "ok",
+        "rows": rows_for_destination,
+        "new_changesets": len(new_cs),
+        "new_notes": len(new_notes)
     }

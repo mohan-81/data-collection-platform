@@ -257,54 +257,53 @@ def insert_views(uid, rows):
 
 
 # ---------------- Main Sync ----------------
-
-def sync_wikipedia(uid, rc_limit=50):
+def sync_wikipedia(uid, sync_type="incremental", rc_limit=50):
 
     last_ts = get_last_ts(uid)
 
+    rows_for_destination = []
+    new_changes = []
+    new_pages_count = 0
+    most_viewed_count = 0
 
-    # -------- Recent Changes --------
-
+    # -------- RECENT CHANGES --------
     rc = safe_get({
         "action": "query",
         "list": "recentchanges",
         "rcprop": "title|user|timestamp|comment|ids",
         "rclimit": rc_limit,
-        "rcend": last_ts,
         "format": "json"
     })
 
+    if rc:
+        query = rc.get("query", {})
+        changes = safe_list(query, "recentchanges")
 
-    if not rc:
-        return {
-            "status": "error",
-            "msg": "Failed to fetch recent changes"
-        }
+        for c in changes:
 
-    query = rc.get("query", {})
-    changes = safe_list(query, "recentchanges")
+            ts = c.get("timestamp")
 
+            if sync_type == "incremental" and ts <= last_ts:
+                continue
 
-    new_changes = []
-
-
-    for c in changes:
-
-        if c.get("timestamp") > last_ts:
             new_changes.append(c)
 
+            rows_for_destination.append({
+                "uid": uid,
+                "type": "recent_change",
+                "rcid": c.get("rcid"),
+                "title": c.get("title"),
+                "user": c.get("user"),
+                "comment": c.get("comment"),
+                "timestamp": ts
+            })
 
-    if new_changes:
+        if new_changes:
+            insert_recent(uid, new_changes)
+            latest = max(c["timestamp"] for c in new_changes)
+            save_last_ts(uid, latest)
 
-        insert_recent(uid, new_changes)
-
-        latest = max(c["timestamp"] for c in new_changes)
-
-        save_last_ts(uid, latest)
-
-
-    # -------- New Pages --------
-
+    # -------- NEW PAGES --------
     newp = safe_get({
         "action": "query",
         "list": "newpages",
@@ -312,20 +311,25 @@ def sync_wikipedia(uid, rc_limit=50):
         "format": "json"
     })
 
-
     if newp:
-
         query = newp.get("query", {})
-
         pages = safe_list(query, "newpages")
-
 
         if pages:
             insert_new_pages(uid, pages)
+            new_pages_count = len(pages)
 
+            for p in pages:
+                rows_for_destination.append({
+                    "uid": uid,
+                    "type": "new_page",
+                    "page_id": p.get("pageid"),
+                    "title": p.get("title"),
+                    "creator": p.get("user"),
+                    "created_at": p.get("timestamp")
+                })
 
-    # -------- Most Viewed --------
-
+    # -------- MOST VIEWED --------
     views = safe_get({
         "action": "query",
         "list": "mostviewed",
@@ -333,20 +337,27 @@ def sync_wikipedia(uid, rc_limit=50):
         "format": "json"
     })
 
-
     if views:
-
         query = views.get("query", {})
         most = query.get("mostviewed", {})
         items = safe_list(most, "articles")
 
         if items:
             insert_views(uid, items)
+            most_viewed_count = len(items)
 
+            for i, v in enumerate(items, start=1):
+                rows_for_destination.append({
+                    "uid": uid,
+                    "type": "most_viewed",
+                    "article": v.get("article"),
+                    "views": v.get("views"),
+                    "rank": i
+                })
 
     return {
-        "status": "ok",
+        "rows": rows_for_destination,
         "recent_changes": len(new_changes),
-        "new_pages": len(pages) if newp else 0,
-        "most_viewed": len(items) if views else 0
+        "new_pages": new_pages_count,
+        "most_viewed": most_viewed_count
     }

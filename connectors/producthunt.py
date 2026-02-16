@@ -233,14 +233,15 @@ def insert_topics(uid, topics):
 
 
 # ---------------- Main Sync ----------------
-
-def sync_producthunt(uid, limit=30):
+def sync_producthunt(uid, sync_type="incremental", limit=30):
 
     last_time = get_last_time(uid)
 
+    rows_for_destination = []
+    new_posts = []
+    topics_inserted = 0
 
-    # -------- Posts --------
-
+    # -------- POSTS --------
     posts_q = f"""
     {{
       posts(first: {limit}) {{
@@ -254,9 +255,7 @@ def sync_producthunt(uid, limit=30):
           url
           topics {{
             edges {{
-              node {{
-                name
-              }}
+              node {{ name }}
             }}
           }}
           makers {{
@@ -268,42 +267,49 @@ def sync_producthunt(uid, limit=30):
     }}
     """
 
-
     posts_data = safe_post(posts_q)
 
-
     if not posts_data:
-        return {
-            "status": "error",
-            "msg": "Failed to fetch posts"
-        }
-
+        return {"rows": [], "posts": 0}
 
     posts = posts_data.get("data", {}) \
                       .get("posts", {}) \
                       .get("nodes", [])
 
-
-    # Incremental filter
-    new_posts = []
-
-
     for p in posts:
 
-        if p.get("createdAt") > last_time:
-            new_posts.append(p)
+        created = p.get("createdAt")
 
+        if sync_type == "incremental" and created <= last_time:
+            continue
+
+        new_posts.append(p)
+
+        rows_for_destination.append({
+            "uid": uid,
+            "post_id": p.get("id"),
+            "name": p.get("name"),
+            "tagline": p.get("tagline"),
+            "votes": p.get("votesCount"),
+            "comments": p.get("commentsCount"),
+            "created_at": created,
+            "url": p.get("url"),
+            "topics": ",".join([
+                t["node"]["name"]
+                for t in p.get("topics", {}).get("edges", [])
+            ]),
+            "makers": ",".join([
+                m.get("name")
+                for m in p.get("makers", [])
+            ])
+        })
 
     if new_posts:
         insert_posts(uid, new_posts)
-
         latest = max(p["createdAt"] for p in new_posts)
-
         save_last_time(uid, latest)
 
-
-    # -------- Topics --------
-
+    # -------- TOPICS --------
     topics_q = """
     {
       topics(first: 20) {
@@ -317,9 +323,7 @@ def sync_producthunt(uid, limit=30):
     }
     """
 
-
     topics_data = safe_post(topics_q)
-
 
     if topics_data:
 
@@ -329,10 +333,19 @@ def sync_producthunt(uid, limit=30):
 
         if topics:
             insert_topics(uid, topics)
+            topics_inserted = len(topics)
 
+            for t in topics:
+                rows_for_destination.append({
+                    "uid": uid,
+                    "topic_id": t.get("id"),
+                    "topic_name": t.get("name"),
+                    "slug": t.get("slug"),
+                    "followers": t.get("followersCount")
+                })
 
     return {
-        "status": "ok",
-        "posts_inserted": len(new_posts),
-        "topics_inserted": len(topics) if topics_data else 0
+        "rows": rows_for_destination,
+        "posts": len(new_posts),
+        "topics": topics_inserted
     }

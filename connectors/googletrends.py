@@ -174,13 +174,13 @@ def sync_interest(uid, keyword, sync_type="incremental"):
 def sync_related(uid, keyword):
 
     related = safe_fetch_related(keyword)
-
     data = related.get(keyword)
 
     if not data:
         return {
             "keyword": keyword,
-            "related_queries": 0
+            "related_queries": 0,
+            "rows": []
         }
 
     con = db()
@@ -199,27 +199,37 @@ def sync_related(uid, keyword):
 
         for _, row in df.iterrows():
 
+            row_dict = {
+                "uid": uid,
+                "keyword": keyword,
+                "type": t,
+                "query": row["query"],
+                "value": int(row["value"]),
+                "raw_json": json.dumps(clean_pandas(row.to_dict())),
+                "fetched_at": now
+            }
+
             cur.execute("""
-            INSERT OR IGNORE INTO google_trends_related
-            (uid, keyword, type, query, value,
-             raw_json, fetched_at)
-            VALUES (?,?,?,?,?,?,?)
+                INSERT OR IGNORE INTO google_trends_related
+                (uid, keyword, type, query, value,
+                 raw_json, fetched_at)
+                VALUES (?,?,?,?,?,?,?)
             """, (
-                uid,
-                keyword,
-                t,
-                row["query"],
-                int(row["value"]),
-                json.dumps(clean_pandas(row.to_dict())),
-                now
+                row_dict["uid"],
+                row_dict["keyword"],
+                row_dict["type"],
+                row_dict["query"],
+                row_dict["value"],
+                row_dict["raw_json"],
+                row_dict["fetched_at"]
             ))
 
+            rows_to_push.append(row_dict)
             count += 1
 
     con.commit()
     con.close()
 
-    # Cooldown
     time.sleep(random.randint(10, 20))
 
     return {

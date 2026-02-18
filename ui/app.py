@@ -2190,6 +2190,19 @@ def drive_job_save_proxy():
 def calendar_page():
     return render_template("connectors/calendar.html")
 
+@app.route("/connectors/calendar/connect")
+def calendar_connect():
+    return redirect("http://localhost:4000/google/connect?source=calendar")
+
+@app.route("/connectors/calendar/save_app", methods=["POST"])
+def calendar_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/calendar/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
 @app.route("/connectors/calendar/disconnect")
 def calendar_disconnect():
 
@@ -2224,9 +2237,58 @@ def calendar_dashboard():
 @app.route("/api/status/calendar")
 def calendar_status():
 
+    uid = request.cookies.get("uid") or "demo_user"
+    source = "calendar"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Connection
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source=?
+        LIMIT 1
+    """, (uid, source))
+    row = cur.fetchone()
+
+    conn.close()
+
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": get_google_status("calendar")
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
+
+@app.route("/connectors/calendar/job/get")
+def calendar_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/calendar/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/calendar/job/save", methods=["POST"])
+def calendar_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/calendar/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
 
 @app.route("/api/calendar/data/<table>")
 def calendar_data(table):
@@ -2266,6 +2328,49 @@ def calendar_data(table):
 def sheets_page():
     return render_template("connectors/sheets.html")
 
+@app.route("/connectors/sheets/connect")
+def sheets_connect():
+    return redirect("http://localhost:4000/google/connect?source=sheets")
+
+@app.route("/connectors/sheets/save_app", methods=["POST"])
+def sheets_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/sheets/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/sheets/disconnect")
+def sheets_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/sheets"
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/sheets/job/get")
+def sheets_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/sheets/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/sheets/job/save", methods=["POST"])
+def sheets_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/sheets/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
 
 @app.route("/connectors/sheets/sync")
 def sheets_sync():
@@ -2294,8 +2399,40 @@ def sheets_dashboard():
 
 @app.route("/api/status/sheets")
 def sheets_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
+    source = "sheets"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Check credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Check connection
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source=?
+        LIMIT 1
+    """, (uid, source))
+    row = cur.fetchone()
+
+    conn.close()
+
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": get_google_status("sheets")
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
 
 @app.route("/api/sheets/data")
@@ -2333,32 +2470,91 @@ def forms_sync():
 
     return jsonify(r.json())
 
+@app.route("/connectors/forms/connect")
+def forms_connect():
+    return redirect("http://localhost:4000/google/connect?source=forms")
+
+@app.route("/connectors/forms/save_app", methods=["POST"])
+def forms_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/forms/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/forms/disconnect")
+def forms_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/forms"
+    )
+
+    return jsonify(r.json())
 
 @app.route("/dashboard/forms")
 def forms_dashboard():
     return render_template("dashboards/forms.html")
 
-
 @app.route("/api/status/forms")
 def forms_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
+    source = "forms"
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Connection
     cur.execute("""
         SELECT enabled
         FROM google_connections
-        WHERE source='forms'
+        WHERE uid=? AND source=?
         LIMIT 1
-    """)
-
+    """, (uid, source))
     row = cur.fetchone()
+
     conn.close()
 
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
 
+@app.route("/connectors/forms/job/get")
+def forms_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/forms/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/forms/job/save", methods=["POST"])
+def forms_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/forms/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
 
 @app.route("/api/forms/data/<table>")
 def forms_data(table):
@@ -2392,17 +2588,31 @@ def forms_data(table):
 
     return jsonify([dict(r) for r in rows])
 
+
 # ================= GOOGLE CONTACTS ========================
 
 @app.route("/connectors/contacts")
 def contacts_page():
     return render_template("connectors/contacts.html")
 
+@app.route("/connectors/contacts/connect")
+def contacts_connect():
+    return redirect("http://localhost:4000/google/connect?source=contacts")
+
+@app.route("/connectors/contacts/save_app", methods=["POST"])
+def contacts_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/contacts/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
 @app.route("/connectors/contacts/disconnect")
 def contacts_disconnect():
-
-    r = requests.get("http://localhost:4000/google/disconnect/contacts")
-
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/contacts"
+    )
     return jsonify(r.json())
 
 @app.route("/connectors/contacts/sync")
@@ -2419,7 +2629,6 @@ def contacts_sync():
 def contacts_dashboard():
     return render_template("dashboards/contacts.html")
 
-
 @app.route("/api/status/contacts")
 def contacts_status():
 
@@ -2429,18 +2638,33 @@ def contacts_status():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Connection
     cur.execute("""
         SELECT enabled
         FROM google_connections
         WHERE uid=? AND source=?
         LIMIT 1
     """, (uid, source))
-
     row = cur.fetchone()
+
     conn.close()
 
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
 
 @app.route("/api/contacts/data")
@@ -2462,16 +2686,53 @@ def contacts_data():
 
     return jsonify([dict(r) for r in rows])
 
+@app.route("/connectors/contacts/job/get")
+def contacts_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/contacts/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/contacts/job/save", methods=["POST"])
+def contacts_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/contacts/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
+
 # ================= GOOGLE TASKS ========================
 
 @app.route("/connectors/tasks")
 def tasks_page():
     return render_template("connectors/tasks.html")
 
+@app.route("/connectors/tasks/connect")
+def tasks_connect():
+    return redirect("http://localhost:4000/google/connect?source=tasks")
+
+@app.route("/connectors/tasks/save_app", methods=["POST"])
+def tasks_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/tasks/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
 @app.route("/connectors/tasks/disconnect")
 def tasks_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/tasks")
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/tasks"
+    )
 
     return jsonify(r.json())
 
@@ -2503,25 +2764,61 @@ def tasks_dashboard():
 def tasks_status():
 
     uid = request.cookies.get("uid") or "demo_user"
+    source = "tasks"
 
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Connection
     cur.execute("""
         SELECT enabled
         FROM google_connections
-        WHERE uid=? AND source='tasks'
+        WHERE uid=? AND source=?
         LIMIT 1
-    """, (uid,))
-
+    """, (uid, source))
     row = cur.fetchone()
+
     conn.close()
 
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
 
+@app.route("/connectors/tasks/job/get")
+def tasks_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/tasks/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/tasks/job/save", methods=["POST"])
+def tasks_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/tasks/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
 
 @app.route("/api/tasks/data/<table>")
 def tasks_data(table):
@@ -2561,54 +2858,68 @@ def tasks_data(table):
 def ga4_page():
     return render_template("connectors/ga4.html")
 
+@app.route("/connectors/ga4/connect")
+def ga4_connect():
+    return redirect("http://localhost:4000/google/connect?source=ga4")
+
+@app.route("/connectors/ga4/save_app", methods=["POST"])
+def ga4_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/ga4/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
+
 @app.route("/connectors/ga4/disconnect")
 def ga4_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/ga4")
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/ga4"
+    )
 
-    try:
-        return jsonify(r.json())
-    except:
-        return jsonify({"status": "ok"})
+    return jsonify(r.json())
+
+@app.route("/connectors/ga4/job/get")
+def ga4_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/ga4/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/ga4/job/save", methods=["POST"])
+def ga4_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/ga4/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
 
 @app.route("/connectors/ga4/sync")
 def ga4_sync():
 
-    results = {}
-
-    endpoints = {
-        "overview": "overview",
-        "devices": "devices",
-        "locations": "locations",
-        "traffic": "traffic",
-        "events": "events"
-    }
+    r = requests.get(
+        "http://localhost:4000/google/sync/ga4",
+        timeout=180
+    )
 
     try:
-
-        for k, v in endpoints.items():
-
-            r = requests.get(
-                f"http://localhost:4000/google/sync/ga4/{v}",
-                timeout=180
-            )
-
-            data = r.json()
-
-            results[k] = data.get("count", 0)
-
-        return jsonify({
-            "status": "ok",
-            "results": results
-        })
-
-    except Exception as e:
-
+        return jsonify(r.json())
+    except:
         return jsonify({
             "status": "error",
-            "message": str(e)
+            "http_code": r.status_code,
+            "raw": r.text
         }), 500
-
 
 @app.route("/dashboard/ga4")
 def ga4_dashboard():
@@ -2618,21 +2929,34 @@ def ga4_dashboard():
 @app.route("/api/status/ga4")
 def ga4_status():
 
+    uid = request.cookies.get("uid") or "demo_user"
+
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # Check credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='ga4'
+        LIMIT 1
+    """, (uid,))
+    creds = cur.fetchone()
+
+    # Check connection
     cur.execute("""
         SELECT enabled
         FROM google_connections
-        WHERE source='ga4'
+        WHERE uid=? AND source='ga4'
         LIMIT 1
-    """)
-
+    """, (uid,))
     row = cur.fetchone()
+
     conn.close()
 
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": bool(row and row[0] == 1),
+        "has_credentials": bool(creds)
     })
 
 @app.route("/api/ga4/data/<table>")
@@ -2673,10 +2997,27 @@ def ga4_data(table):
 def gsc_page():
     return render_template("connectors/search_console.html")
 
+@app.route("/connectors/search-console/connect")
+def search_console_connect():
+    return redirect("http://localhost:4000/google/connect?source=search-console")
+
+@app.route("/connectors/search-console/save_app", methods=["POST"])
+def search_console_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/search-console/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
+
 @app.route("/connectors/search-console/disconnect")
 def search_console_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/search-console")
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/search-console"
+    )
 
     return jsonify(r.json())
 
@@ -2703,8 +3044,35 @@ def gsc_dashboard():
 
 @app.route("/api/status/search-console")
 def search_console_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='search-console'
+        LIMIT 1
+    """, (uid,))
+    creds = cur.fetchone()
+
+    # Connection
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='search-console'
+        LIMIT 1
+    """, (uid,))
+    row = cur.fetchone()
+
+    conn.close()
+
     return jsonify({
-        "connected": get_google_status("search-console")
+        "connected": bool(row and row[0] == 1),
+        "has_credentials": bool(creds)
     })
 
 @app.route("/api/search-console/data")
@@ -2732,6 +3100,90 @@ def gsc_data():
 def youtube_page():
     return render_template("connectors/youtube.html")
 
+@app.route("/connectors/youtube/connect")
+def youtube_connect():
+    return redirect("http://localhost:4000/google/connect?source=youtube")
+
+@app.route("/connectors/youtube/save_app", methods=["POST"])
+def youtube_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/youtube/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/youtube/disconnect")
+def youtube_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/youtube"
+    )
+
+    return jsonify(r.json())
+
+@app.route("/api/status/youtube")
+def youtube_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='youtube'
+        LIMIT 1
+    """, (uid,))
+    creds = cur.fetchone()
+
+    # Connection
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='youtube'
+        LIMIT 1
+    """, (uid,))
+    row = cur.fetchone()
+
+    conn.close()
+
+    return jsonify({
+        "connected": bool(row and row[0] == 1),
+        "has_credentials": bool(creds)
+    })
+
+@app.route("/connectors/youtube/job/get")
+def youtube_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/youtube/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    try:
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({
+            "exists": False,
+            "sync_type": "incremental",
+            "schedule_time": None
+        }), 200
+
+@app.route("/connectors/youtube/job/save", methods=["POST"])
+def youtube_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/youtube/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json()), r.status_code
 
 @app.route("/connectors/youtube/sync")
 def ui_youtube_sync():
@@ -2859,6 +3311,27 @@ def trends_data(table):
     conn.close()
 
     return jsonify([dict(r) for r in rows])
+
+@app.route("/connectors/trends/job/get")
+def trends_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/trends/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/trends/job/save", methods=["POST"])
+def trends_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/trends/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    return jsonify(r.json())
 
 # ================= GOOGLE NEWS ========================
 

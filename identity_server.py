@@ -2511,6 +2511,33 @@ def google_connect():
     elif source == "drive":
         scopes = ["https://www.googleapis.com/auth/drive.readonly"]
 
+    elif source == "calendar":
+        scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+    elif source == "sheets":
+        scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+
+    elif source == "forms":
+        scopes = [
+            "https://www.googleapis.com/auth/forms.responses.readonly",
+            "https://www.googleapis.com/auth/forms.body.readonly"
+        ]
+
+    elif source == "contacts":
+        scopes = ["https://www.googleapis.com/auth/contacts.readonly"]
+
+    elif source == "tasks":
+        scopes = ["https://www.googleapis.com/auth/tasks.readonly"]
+
+    elif source == "ga4":
+        scopes = ["https://www.googleapis.com/auth/analytics.readonly"]
+
+    elif source == "search-console":
+        scopes = ["https://www.googleapis.com/auth/webmasters.readonly"]
+
+    elif source == "youtube":
+        scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+
     else:
         return "Unsupported Google connector", 400
 
@@ -2572,7 +2599,34 @@ def google_callback():
 
     elif source == "drive":
         scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+
+    elif source == "calendar":
+        scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+    elif source == "sheets":
+        scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     
+    elif source == "forms":
+        scopes = [
+            "https://www.googleapis.com/auth/forms.responses.readonly",
+            "https://www.googleapis.com/auth/forms.body.readonly"
+        ]
+
+    elif source == "contacts":
+        scopes = ["https://www.googleapis.com/auth/contacts.readonly"]
+
+    elif source == "tasks":
+        scopes = ["https://www.googleapis.com/auth/tasks.readonly"]
+
+    elif source == "ga4":
+        scopes = ["https://www.googleapis.com/auth/analytics.readonly"]
+
+    elif source == "search-console":
+        scopes = ["https://www.googleapis.com/auth/webmasters.readonly"]
+
+    elif source == "youtube":
+        scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+
     else:
         con.close()
         return "Unsupported Google connector", 400
@@ -2683,6 +2737,115 @@ def drive_save_app():
 def sync_sheets():
     return jsonify(sync_sheets_files())
 
+# ---------------- SHEETS SAVE APP ----------------
+
+@app.route("/connectors/sheets/save_app", methods=["POST"])
+def sheets_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'sheets', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- SHEETS DISCONNECT ----------------
+
+@app.route("/google/disconnect/sheets")
+def disconnect_sheets():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='sheets'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+# ---------------- SHEETS JOB GET ----------------
+
+@app.route("/connectors/sheets/job/get")
+def sheets_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='sheets'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- SHEETS JOB SAVE ----------------
+
+@app.route("/connectors/sheets/job/save", methods=["POST"])
+def sheets_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'sheets', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+
 # ---------- GA4 Sync ----------
 from connectors.google_ga4 import sync_ga4 as run_ga4_sync
 
@@ -2705,6 +2868,99 @@ def google_ga4_sync():
             "message": str(e)
         }), 500
 
+# ---------------- GA4 SAVE APP ----------------
+
+@app.route("/connectors/ga4/save_app", methods=["POST"])
+def ga4_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+    property_id = data.get("property_id")
+
+    if not client_id or not client_secret or not property_id:
+        return jsonify({"error": "Client ID, Secret and Property ID required"}), 400
+
+    config = {
+        "property_id": property_id
+    }
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, config_json, created_at)
+        VALUES (?, 'ga4', ?, ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        json.dumps(config),
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- GA4 JOB GET ----------------
+
+@app.route("/connectors/ga4/job/get")
+def ga4_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='ga4'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- GA4 JOB SAVE ----------------
+
+@app.route("/connectors/ga4/job/save", methods=["POST"])
+def ga4_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'ga4', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
 # ---------- SEARCH CONSOLE ----------
 @app.route("/connectors/search-console/sync")
 def gsc_sync():
@@ -2718,6 +2974,93 @@ def gsc_sync():
     result = sync_search_console(site, sync_type)
 
     return jsonify(result)
+
+# ---------------- SEARCH CONSOLE SAVE APP ----------------
+
+@app.route("/connectors/search-console/save_app", methods=["POST"])
+def search_console_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'search-console', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- SEARCH CONSOLE JOB GET ----------------
+
+@app.route("/connectors/search-console/job/get")
+def gsc_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='search-console'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- SEARCH CONSOLE JOB SAVE ----------------
+
+@app.route("/connectors/search-console/job/save", methods=["POST"])
+def gsc_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'search-console', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
 
 @app.route("/api/status/search-console")
 def search_console_status():
@@ -2740,24 +3083,35 @@ def search_console_status():
         "connected": True if row and row[0] == 1 else False
     })
 
-@app.route("/connectors/search-console/disconnect")
+@app.route("/google/disconnect/search-console")
 def disconnect_search_console():
 
     uid = get_uid()
 
-    con = sqlite3.connect(DB)
+    con = get_db()
     cur = con.cursor()
 
     cur.execute("""
         UPDATE google_connections
         SET enabled=0
-        WHERE uid=? AND source=?
-    """, (uid, "search-console"))
+        WHERE uid=? AND source='search-console'
+    """, (uid,))
+
+    cur.execute("""
+        DELETE FROM google_accounts
+        WHERE uid=? AND source='search-console'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='search-console'
+    """, (uid,))
 
     con.commit()
     con.close()
 
-    return jsonify({"status": "disconnected"})
+    return jsonify({"status": "ok"})
 
 @app.route("/connectors/pagespeed/sync")
 def pagespeed_sync():
@@ -2783,6 +3137,114 @@ def sync_forms_api():
             "status": "failed",
             "error": str(e)
         }), 500
+
+# ---------------- FORMS SAVE APP ----------------
+
+@app.route("/connectors/forms/save_app", methods=["POST"])
+def forms_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, config_json, created_at)
+        VALUES (?, 'forms', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- FORMS DISCONNECT ----------------
+
+@app.route("/google/disconnect/forms")
+def disconnect_forms():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='forms'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+# ---------------- FORMS JOB GET ----------------
+
+@app.route("/connectors/forms/job/get")
+def forms_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='forms'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- FORMS JOB SAVE ----------------
+
+@app.route("/connectors/forms/job/save", methods=["POST"])
+def forms_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'forms', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
 
 # ---------------- CALENDAR ----------------
 
@@ -2811,6 +3273,39 @@ def sync_gmail_route():
             "status": "error",
             "message": str(e)
         }), 500
+
+# ---------------- CALENDAR SAVE APP ----------------
+
+@app.route("/connectors/calendar/save_app", methods=["POST"])
+def calendar_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'calendar', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 @app.route("/google/disconnect/gmail")
 def google_disconnect_gmail():
@@ -2920,42 +3415,12 @@ def disconnect_drive():
 
     return jsonify({"status": "ok"})
 
-@app.route("/connectors/ga4/disconnect")
-def ga4_disconnect():
-
-    uid = get_uid()
-
-    con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        UPDATE google_connections
-        SET enabled=0
-        WHERE uid=? AND source='ga4'
-    """, (uid,))
-
-    print("[GA4 DISCONNECT] Rows:", cur.rowcount)
-
-    cur.execute("""
-        DELETE FROM google_accounts
-        WHERE uid=? AND source='ga4'
-    """, (uid,))
-
-    cur.execute("""
-        UPDATE connector_jobs
-        SET enabled=0
-        WHERE uid=? AND source='ga4'
-    """, (uid,))
-
-    con.commit()
-    con.close()
-
-    return jsonify({"status": "ok"})
+# ---------------- GA4 DISCONNECT ----------------
 
 @app.route("/google/disconnect/ga4")
 def google_disconnect_ga4():
 
-    uid = "demo_user"
+    uid = get_uid()
 
     con = get_db()
     cur = con.cursor()
@@ -2973,7 +3438,7 @@ def google_disconnect_ga4():
         WHERE uid=? AND source='ga4'
     """, (uid,))
 
-    # Disable job
+    # Disable scheduled job
     cur.execute("""
         UPDATE connector_jobs
         SET enabled=0
@@ -2982,8 +3447,6 @@ def google_disconnect_ga4():
 
     con.commit()
     con.close()
-
-    print("[GA4] Disconnected via /google")
 
     return jsonify({"status": "ok"})
 
@@ -3008,15 +3471,16 @@ def disconnect_calendar():
 
     return jsonify({"status": "ok"})
 
-@app.route("/connectors/tasks/disconnect")
+# ---------------- TASKS DISCONNECT ----------------
+
+@app.route("/google/disconnect/tasks")
 def disconnect_tasks():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = get_uid()
 
     con = get_db()
     cur = con.cursor()
 
-    # Disable connection
     cur.execute("""
         UPDATE google_connections
         SET enabled=0
@@ -3071,11 +3535,205 @@ def google_sync_tasks():
             "message": str(e)
         }), 500
 
+# ---------------- TASKS SAVE APP ----------------
+
+@app.route("/connectors/tasks/save_app", methods=["POST"])
+def tasks_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'tasks', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- TASKS JOB GET ----------------
+
+@app.route("/connectors/tasks/job/get")
+def tasks_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='tasks'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- TASKS JOB SAVE ----------------
+
+@app.route("/connectors/tasks/job/save", methods=["POST"])
+def tasks_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'tasks', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
 
 @app.route("/google/sync/contacts")
 def sync_contacts_api():
     print("[SERVER] Triggering contacts sync")
     return jsonify(sync_contacts())
+
+# ---------------- CONTACTS SAVE APP ----------------
+
+@app.route("/connectors/contacts/save_app", methods=["POST"])
+def contacts_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'contacts', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+# ---------------- CONTACTS DISCONNECT ----------------
+
+@app.route("/google/disconnect/contacts")
+def disconnect_contacts():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='contacts'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+# ---------------- CONTACTS JOB GET ----------------
+
+@app.route("/connectors/contacts/job/get")
+def contacts_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='contacts'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- CONTACTS JOB SAVE ----------------
+
+@app.route("/connectors/contacts/job/save", methods=["POST"])
+def contacts_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'contacts', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
 
 @app.route("/connectors/gcs/sync")
 def gcs_sync():
@@ -3122,6 +3780,123 @@ def youtube_sync():
     result = sync_youtube(sync_type)
 
     return jsonify(result)
+
+# ---------------- YOUTUBE SAVE APP ----------------
+
+@app.route("/connectors/youtube/save_app", methods=["POST"])
+def youtube_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'youtube', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+@app.route("/google/disconnect/youtube")
+def disconnect_youtube():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='youtube'
+    """, (uid,))
+
+    cur.execute("""
+        DELETE FROM google_accounts
+        WHERE uid=? AND source='youtube'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='youtube'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+# ---------------- YOUTUBE JOB GET ----------------
+
+@app.route("/connectors/youtube/job/get")
+def youtube_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='youtube'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+# ---------------- YOUTUBE JOB SAVE ----------------
+
+@app.route("/connectors/youtube/job/save", methods=["POST"])
+def youtube_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'youtube', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
 
 #----------------Reddit----------------
 
@@ -4385,6 +5160,106 @@ def trends_connect():
     con.close()
 
     return jsonify({"status": "connected"})
+
+# ---------------- TRENDS STATUS ----------------
+
+@app.route("/api/status/trends")
+def trends_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='trends'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    return jsonify({
+        "connected": bool(row and row[0] == 1)
+    })
+
+# ---------------- TRENDS DISCONNECT ----------------
+
+@app.route("/google/disconnect/trends")
+def disconnect_trends():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='trends'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='trends'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+@app.route("/connectors/trends/job/get")
+def trends_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='trends'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/trends/job/save", methods=["POST"])
+def trends_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'trends', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
 
 # ---------------- DEV.TO ----------------
 

@@ -2476,29 +2476,58 @@ def connector_status(source):
     })
 
 # ---------------- GOOGLE OAUTH ----------------
+
 @app.route("/google/connect")
 def google_connect():
 
-    # Which connector is requesting auth
+    uid = get_uid()
     source = request.args.get("source")
 
     if not source:
         return "Missing source parameter", 400
 
+    # Fetch Google App Credentials from DB
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+    """, (uid, source))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return "Google App credentials not saved for this connector", 400
+
+    client_id, client_secret = row
+
+    # Define scopes dynamically (for now only gmail)
+    if source == "gmail":
+        scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+    else:
+        return "Unsupported Google connector", 400
 
     flow = Flow.from_client_config(
-        GOOGLE_CLIENT_CONFIG,
-        scopes=GOOGLE_SCOPES,
-        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
+        {
+            "web": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        },
+        scopes=scopes,
+        redirect_uri=request.host_url.rstrip("/") + "/oauth2callback"
     )
 
-
-    # Generate OAuth URL (ONLY ONCE)
     auth_url, state = flow.authorization_url(
         access_type="offline",
         prompt="consent",
         include_granted_scopes="true",
-        state=source   # pass connector name
+        state=source
     )
 
     return redirect(auth_url)
@@ -2512,18 +2541,45 @@ def google_callback():
     if not code:
         return "No code", 400
 
+    source = request.args.get("state") or "gmail"
+    uid = get_uid()
 
-    # Get connector name
-    source = request.args.get("state")
+    # Fetch Google App Credentials from DB
+    con = get_db()
+    cur = con.cursor()
 
-    if not source:
-        source = "gmail"
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+    """, (uid, source))
 
+    row = cur.fetchone()
+
+    if not row:
+        con.close()
+        return "Google App credentials not found", 400
+
+    client_id, client_secret = row
+
+    # Define scopes
+    if source == "gmail":
+        scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+    else:
+        con.close()
+        return "Unsupported Google connector", 400
 
     flow = Flow.from_client_config(
-        GOOGLE_CLIENT_CONFIG,
-        scopes=GOOGLE_SCOPES,
-        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
+        {
+            "web": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        },
+        scopes=scopes,
+        redirect_uri=request.host_url.rstrip("/") + "/oauth2callback"
     )
 
     flow.fetch_token(
@@ -2533,13 +2589,6 @@ def google_callback():
 
     creds = flow.credentials
 
-
-    uid = request.cookies.get("uid") or "demo_user"
-
-
-    con = get_db()
-    cur = con.cursor()
-
     try:
 
         # Remove old token
@@ -2547,7 +2596,6 @@ def google_callback():
             DELETE FROM google_accounts
             WHERE uid=? AND source=?
         """, (uid, source))
-
 
         # Save new token
         cur.execute("""
@@ -2560,23 +2608,20 @@ def google_callback():
             creds.token,
             creds.refresh_token,
             ",".join(creds.scopes),
-            datetime.datetime.now(IST).isoformat()
+            datetime.datetime.utcnow().isoformat()
         ))
 
-
-        # Mark as ENABLED
+        # Enable connector
         cur.execute("""
             INSERT OR REPLACE INTO google_connections
             (uid, source, enabled)
             VALUES (?, ?, 1)
         """, (uid, source))
 
-
         con.commit()
 
     finally:
         con.close()
-
 
     return redirect(
         f"http://localhost:3000/connectors/{source}"
@@ -2781,6 +2826,39 @@ def google_disconnect_gmail():
         "status": "ok",
         "message": "Gmail disconnected successfully"
     })
+
+# ---------------- GMAIL SAVE APP CREDENTIALS ----------------
+
+@app.route("/connectors/gmail/save_app", methods=["POST"])
+def gmail_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'gmail', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 @app.route("/google/disconnect/drive")
 def disconnect_drive():

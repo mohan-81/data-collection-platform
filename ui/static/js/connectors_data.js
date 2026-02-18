@@ -95,8 +95,8 @@ visibility into document usage, storage patterns, and ownership.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/calendar",
+  connect_url:"/connectors/calendar/connect",
+  sync_url:"/connectors/calendar/sync",
   dashboard:"/dashboard/calendar",
 
   long_description:`
@@ -136,8 +136,8 @@ availability, and scheduling patterns.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/sheets",
+  connect_url:"/connectors/sheets/connect",
+  sync_url:"/connectors/sheets/sync",
   dashboard:"/dashboard/sheets",
 
   long_description:`
@@ -177,8 +177,8 @@ to support reporting, finance tracking, and KPI analysis.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/forms",
+  connect_url:"/connectors/forms/connect",
+  sync_url:"/connectors/forms/sync",
   dashboard:"/dashboard/forms",
 
   long_description:`
@@ -218,8 +218,8 @@ for surveys, feedback systems, and analytics pipelines.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/contacts",
+  connect_url:"/connectors/contacts/connect",
+  sync_url:"/connectors/contacts/sync",
   dashboard:"/dashboard/contacts",
 
   long_description:`
@@ -258,8 +258,8 @@ to enrich CRM and customer databases.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/tasks",
+  connect_url:"/connectors/tasks/connect",
+  sync_url:"/connectors/tasks/sync",
   dashboard:"/dashboard/tasks",
 
   long_description:`
@@ -299,8 +299,8 @@ to analyze productivity and completion trends.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/ga4",
+  connect_url:"/connectors/ga4/connect",
+  sync_url:"/connectors/ga4/sync",
   dashboard:"/dashboard/ga4",
 
   long_description:`
@@ -343,8 +343,8 @@ user behavior, traffic sources, and conversions.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/searchconsole",
+  connect_url:"/connectors/search-console/connect",
+  sync_url:"/connectors/search-console/sync",
   dashboard:"/dashboard/searchconsole",
 
   long_description:`
@@ -383,8 +383,8 @@ using Google Search Console reports.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/youtube",
+  connect_url:"/connectors/youtube/connect",
+  sync_url:"/connectors/youtube/sync",
   dashboard:"/dashboard/youtube",
 
   long_description:`

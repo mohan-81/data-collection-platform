@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import sqlite3
@@ -110,27 +109,14 @@ def get_active_destination(uid):
 
 # ---------------- AUTH ---------------- #
 
+# ---------------- AUTH ---------------- #
+
 def get_creds():
 
     con = get_db()
     cur = con.cursor()
 
-    # Check enabled
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source=?
-        LIMIT 1
-    """, ("demo_user", SOURCE))
-
-    row = cur.fetchone()
-
-    if not row or row[0] == 0:
-        con.close()
-        return None, None
-
-
-    # Token
+    # Get token
     cur.execute("""
         SELECT uid, access_token, refresh_token, scopes
         FROM google_accounts
@@ -139,27 +125,44 @@ def get_creds():
         LIMIT 1
     """, (SOURCE,))
 
-    row = cur.fetchone()
+    token_row = cur.fetchone()
+
+    if not token_row:
+        con.close()
+        return None, None, None
+
+    uid, access, refresh, scopes = token_row
+
+    # Get connector config (credentials + property)
+    cur.execute("""
+        SELECT client_id, client_secret, config_json
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, SOURCE))
+
+    cfg = cur.fetchone()
     con.close()
 
-    if not row:
-        return None, None
+    if not cfg:
+        return None, None, None
 
+    client_id, client_secret, config_json = cfg
 
-    uid, access, refresh, scopes = row
+    config = json.loads(config_json) if config_json else {}
 
+    property_id = config.get("property_id")
 
     creds = Credentials(
         token=access,
         refresh_token=refresh,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=scopes.split(",")
     )
 
-    return uid, creds
-
+    return uid, creds, property_id
 
 # ---------------- GA4 REPORT ---------------- #
 
@@ -297,7 +300,7 @@ def sync_ga4():
 
 
     # -------- AUTH --------
-    uid, creds = get_creds()
+    uid, creds, property_id = get_creds()
 
     if not creds:
         return {"status": "not_connected"}
@@ -313,11 +316,8 @@ def sync_ga4():
 
 
     # -------- PROPERTY --------
-    property_id = os.getenv("GA4_PROPERTY_ID")
-
     if not property_id:
         return {"status": "missing_property_id"}
-
 
     # -------- FETCH --------
     rows, new_cursor = fetch_reports(

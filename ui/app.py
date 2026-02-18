@@ -3606,6 +3606,26 @@ def facebook_ads_save_app_proxy():
     )
     return jsonify(r.json()), r.status_code
 
+# ================= DESTINATION =================
+
+@app.route("/destination/save", methods=["POST"])
+def destination_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/destination/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/destination/list/<source>")
+def destination_list_proxy(source):
+    r = requests.get(
+        f"http://localhost:4000/destination/list/{source}",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
+
 # ================= MAIN ==========================
 
 if __name__ == "__main__":

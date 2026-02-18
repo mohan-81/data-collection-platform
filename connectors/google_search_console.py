@@ -1,5 +1,4 @@
 import sqlite3
-import os
 import datetime
 import time
 import json
@@ -99,10 +98,11 @@ def get_active_destination(uid):
 # ---------------- AUTH ---------------- #
 
 def get_creds():
+
     con = get_db()
     cur = con.cursor()
 
-    # Ensure connector enabled
+    # Get enabled connection
     cur.execute("""
         SELECT uid
         FROM google_connections
@@ -111,40 +111,56 @@ def get_creds():
     """, (SOURCE,))
 
     row = cur.fetchone()
+
     if not row:
         con.close()
         return None, None
 
     uid = row[0]
 
-    # Fetch latest token
+    # Get token
     cur.execute("""
         SELECT access_token, refresh_token, scopes
         FROM google_accounts
-        WHERE source=?
+        WHERE uid=? AND source=?
         ORDER BY id DESC
         LIMIT 1
-    """, (SOURCE,))
+    """, (uid, SOURCE))
 
-    row = cur.fetchone()
-    con.close()
+    token_row = cur.fetchone()
 
-    if not row:
+    if not token_row:
+        con.close()
         return None, None
 
-    access_token, refresh_token, scopes = row
+    access_token, refresh_token, scopes = token_row
+
+    # Get client credentials from connector_configs
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, SOURCE))
+
+    cfg = cur.fetchone()
+    con.close()
+
+    if not cfg:
+        return None, None
+
+    client_id, client_secret = cfg
 
     creds = Credentials(
         token=access_token,
         refresh_token=refresh_token,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=scopes.split(",")
     )
 
     return uid, creds
-
 
 # ---------------- FETCH DATA ---------------- #
 

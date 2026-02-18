@@ -2507,6 +2507,10 @@ def google_connect():
     # Define scopes dynamically (for now only gmail)
     if source == "gmail":
         scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+
+    elif source == "drive":
+        scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+
     else:
         return "Unsupported Google connector", 400
 
@@ -2565,6 +2569,10 @@ def google_callback():
     # Define scopes
     if source == "gmail":
         scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+
+    elif source == "drive":
+        scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+    
     else:
         con.close()
         return "Unsupported Google connector", 400
@@ -2636,6 +2644,38 @@ def sync_drive():
 
     return jsonify(sync_drive_files())
 
+# ---------------- DRIVE SAVE APP CREDENTIALS ----------------
+
+@app.route("/connectors/drive/save_app", methods=["POST"])
+def drive_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'drive', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 # ---------------- SHEETS ----------------
 

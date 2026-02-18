@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import sqlite3
@@ -112,28 +111,14 @@ def get_active_destination(uid):
 
 # ---------------- AUTH ---------------- #
 
+# ---------------- AUTH ---------------- #
+
 def get_creds():
 
     con = get_db()
     cur = con.cursor()
 
-
-    # Check enabled
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE source=?
-        LIMIT 1
-    """, (SOURCE,))
-
-    row = cur.fetchone()
-
-    if not row or row[0] == 0:
-        con.close()
-        return None, None
-
-
-    # Token
+    # Fetch latest token for Drive
     cur.execute("""
         SELECT uid, access_token, refresh_token, scopes
         FROM google_accounts
@@ -143,26 +128,39 @@ def get_creds():
     """, (SOURCE,))
 
     row = cur.fetchone()
-    con.close()
 
     if not row:
+        con.close()
         return None, None
-
 
     uid, access, refresh, scopes = row
 
+    # Fetch Google App credentials from connector_configs
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, SOURCE))
+
+    cfg = cur.fetchone()
+    con.close()
+
+    if not cfg:
+        return None, None
+
+    client_id, client_secret = cfg
 
     creds = Credentials(
         token=access,
         refresh_token=refresh,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=scopes.split(",")
     )
 
     return uid, creds
-
 
 # ---------------- FETCH ---------------- #
 

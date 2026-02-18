@@ -2058,6 +2058,9 @@ def gmail_dashboard():
 def drive_page():
     return render_template("connectors/drive.html")
 
+@app.route("/connectors/drive/connect")
+def drive_connect():
+    return redirect("http://localhost:4000/google/connect?source=drive")
 
 @app.route("/connectors/drive/sync")
 def drive_sync():
@@ -2086,10 +2089,49 @@ def drive_dashboard():
 @app.route("/api/status/drive")
 def drive_status():
 
+    uid = request.cookies.get("uid") or "demo_user"
+    source = "drive"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Check credentials
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Check connection
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source=?
+        LIMIT 1
+    """, (uid, source))
+    row = cur.fetchone()
+
+    conn.close()
+
+    connected = False
+    if row and row[0] == 1:
+        connected = True
+
     return jsonify({
-        "connected": get_google_status("drive")
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
 
+@app.route("/connectors/drive/save_app", methods=["POST"])
+def drive_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/drive/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
 
 @app.route("/connectors/drive/disconnect")
 def drive_disconnect():
@@ -2116,6 +2158,31 @@ def drive_files_data():
     conn.close()
 
     return jsonify([dict(r) for r in rows])
+
+@app.route("/connectors/drive/job/get")
+def drive_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/drive/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+
+    try:
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({
+            "exists": False,
+            "sync_type": "incremental",
+            "schedule_time": None
+        }), 200
+
+@app.route("/connectors/drive/job/save", methods=["POST"])
+def drive_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/drive/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
 
 # ================= GOOGLE CALENDAR ========================
 

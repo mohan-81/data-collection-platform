@@ -54,8 +54,8 @@ All metadata and message headers are securely synchronized.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/drive",
+  connect_url:"/connectors/drive/connect",
+  sync_url:"/connectors/drive/sync",
   dashboard:"/dashboard/drive",
 
   long_description:`

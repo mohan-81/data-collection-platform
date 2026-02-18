@@ -1982,24 +1982,43 @@ def gmail_status():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # Check credentials saved
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector=?
+        LIMIT 1
+    """, (uid, source))
+    creds = cur.fetchone()
+
+    # Check connection enabled
     cur.execute("""
         SELECT enabled
         FROM google_connections
         WHERE uid=? AND source=?
         LIMIT 1
     """, (uid, source))
-
     row = cur.fetchone()
+
     conn.close()
 
     connected = False
-
     if row and row[0] == 1:
         connected = True
 
     return jsonify({
-        "connected": connected
+        "connected": connected,
+        "has_credentials": bool(creds)
     })
+
+@app.route("/connectors/gmail/save_app", methods=["POST"])
+def gmail_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/gmail/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json()), r.status_code
 
 @app.route("/api/gmail/data/<table>")
 def gmail_data(table):

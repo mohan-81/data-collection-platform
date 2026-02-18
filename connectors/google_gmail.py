@@ -1,5 +1,4 @@
 import sqlite3
-import os
 import json
 import datetime
 import time
@@ -88,28 +87,14 @@ def get_db():
 
 # ---------------- AUTH ---------------- #
 
+# ---------------- AUTH ---------------- #
+
 def get_creds():
 
     con = get_db()
     cur = con.cursor()
 
-
-    # Check if enabled
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE source='gmail'
-        LIMIT 1
-    """)
-
-    row = cur.fetchone()
-
-    if not row or row[0] == 0:
-        con.close()
-        return None, None
-
-
-    # Get token
+    # Get enabled Gmail connection for current user
     cur.execute("""
         SELECT uid, access_token, refresh_token, scopes
         FROM google_accounts
@@ -119,28 +104,41 @@ def get_creds():
     """)
 
     row = cur.fetchone()
-    con.close()
-
 
     if not row:
+        con.close()
         return None, None
-
 
     uid, access, refresh, scopes = row
 
     if not access or not refresh:
+        con.close()
         return None, None
 
+    # Fetch Google App credentials (Client ID + Secret)
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector='gmail'
+        LIMIT 1
+    """, (uid,))
+
+    cfg = cur.fetchone()
+    con.close()
+
+    if not cfg:
+        return None, None
+
+    client_id, client_secret = cfg
 
     creds = Credentials(
         token=access,
         refresh_token=refresh,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=scopes.split(",")
     )
-
 
     return uid, creds
 

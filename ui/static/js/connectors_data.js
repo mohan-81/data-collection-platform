@@ -10,8 +10,8 @@ const CONNECTORS = [
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/gmail",
+  connect_url:"/connectors/gmail/connect",
+  sync_url:"/connectors/gmail/sync",
   dashboard:"/dashboard/gmail",
 
   long_description:`

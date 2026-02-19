@@ -3127,6 +3127,175 @@ def pagespeed_sync():
 
     return jsonify(result)
 
+# ---------------- GOOGLE PAGESPEED CONNECT ----------------
+@app.route("/connectors/pagespeed/connect")
+def pagespeed_connect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    # ✅ ensure API key exists first
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='pagespeed'
+        LIMIT 1
+    """, (uid,))
+
+    key = cur.fetchone()
+
+    if not key:
+        con.close()
+        return jsonify({
+            "status": "error",
+            "message": "Save API key first"
+        }), 400
+
+    # enable only after credential exists
+    cur.execute("""
+        INSERT OR REPLACE INTO google_connections
+        (uid, source, enabled)
+        VALUES (?, 'pagespeed', 1)
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "connected"})
+
+@app.route("/connectors/pagespeed/disconnect")
+def pagespeed_disconnect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='pagespeed'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "disconnected"})
+
+@app.route("/connectors/pagespeed/save_config", methods=["POST"])
+def pagespeed_save_config():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    api_key = data.get("api_key")
+
+    if not api_key:
+        return jsonify({"error": "API key required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, api_key, created_at)
+        VALUES (?, 'pagespeed', ?, datetime('now'))
+    """, (uid, api_key))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+@app.route("/api/status/pagespeed")
+def pagespeed_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    # ---------- connection ----------
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='pagespeed'
+        LIMIT 1
+    """, (uid,))
+    row = cur.fetchone()
+
+    connected = bool(row and row[0] == 1)
+
+    # ---------- api key ----------
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='pagespeed'
+        LIMIT 1
+    """, (uid,))
+    key_row = cur.fetchone()
+
+    api_key_saved = key_row is not None
+
+    con.close()
+
+    return jsonify({
+        "connected": connected,
+        "api_key_saved": api_key_saved
+    })
+
+@app.route("/connectors/pagespeed/job/get")
+def pagespeed_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='pagespeed'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/pagespeed/job/save", methods=["POST"])
+def pagespeed_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'pagespeed', ?, ?)
+    """, (
+        uid,
+        data.get("sync_type"),
+        data.get("schedule_time")
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
+
 @app.route("/google/sync/forms")
 def sync_forms_api():
 
@@ -3736,14 +3905,104 @@ def contacts_job_save():
 
     return jsonify({"status": "ok"})
 
-@app.route("/connectors/gcs/sync")
-def gcs_sync():
+# ---------------- GOOGLE GCS SYNC ----------------
 
-    sync_type = request.args.get("sync_type", "incremental")
+@app.route("/google/sync/gcs")
+def google_sync_gcs():
 
-    result = sync_gcs(sync_type)
+    try:
+        from connectors.google_gcs import sync_gcs
 
-    return jsonify(result)
+        result = sync_gcs()
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
+# ---------------- GCS DISCONNECT ----------------
+
+@app.route("/google/disconnect/gcs")
+def disconnect_gcs():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='gcs'
+    """, (uid,))
+
+    cur.execute("""
+        DELETE FROM google_accounts
+        WHERE uid=? AND source='gcs'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='gcs'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+@app.route("/connectors/gcs/job/get")
+def gcs_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='gcs'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/gcs/job/save", methods=["POST"])
+def gcs_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'gcs', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
 
 @app.route("/google/sync/webfonts", methods=["GET", "POST"])
 def google_sync_webfonts():

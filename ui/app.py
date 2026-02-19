@@ -3625,19 +3625,39 @@ def pagespeed_dashboard():
 @app.route("/api/status/pagespeed")
 def pagespeed_status():
 
+    uid = request.cookies.get("uid") or "demo_user"
+
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) FROM google_pagespeed")
-    count = cur.fetchone()[0]
+    # ---------- connection ----------
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='pagespeed'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    connected = bool(row and row[0] == 1)
+
+    # ---------- api key ----------
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='pagespeed'
+        LIMIT 1
+    """, (uid,))
+
+    key_row = cur.fetchone()
+    api_key_saved = key_row is not None
 
     conn.close()
 
     return jsonify({
-        "connected": count > 0,
-        "count": count
+        "connected": connected,
+        "api_key_saved": api_key_saved
     })
-
 
 @app.route("/api/pagespeed/data")
 def pagespeed_data():
@@ -3658,6 +3678,51 @@ def pagespeed_data():
 
     return jsonify([dict(r) for r in rows])
 
+@app.route("/connectors/pagespeed/connect")
+def pagespeed_connect_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/pagespeed/connect",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/pagespeed/disconnect")
+def pagespeed_disconnect_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/pagespeed/disconnect",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/pagespeed/save_config", methods=["POST"])
+def pagespeed_save_config_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/pagespeed/save_config",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/pagespeed/job/get")
+def pagespeed_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/pagespeed/job/get",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/pagespeed/job/save", methods=["POST"])
+def pagespeed_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/pagespeed/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
 # ================= GOOGLE CLOUD STORAGE =================
 
 @app.route("/connectors/gcs")
@@ -3668,63 +3733,27 @@ def gcs_page():
 # ---- CONNECT (Google OAuth) ----
 @app.route("/connectors/gcs/connect")
 def gcs_connect():
-
-    # Must pass source=gcs
     return redirect(
         "http://localhost:4000/google/connect?source=gcs"
     )
-
 
 # ---- SYNC ----
 @app.route("/connectors/gcs/sync")
 def gcs_sync():
 
+    sync_type = request.args.get("sync_type","incremental")
+
     r = requests.get(
         "http://localhost:4000/google/sync/gcs",
-        timeout=180
+        params={"sync_type": sync_type}
     )
 
-    if r.status_code != 200:
-        return r.text, 400
-
-    return r.json()
-
+    return jsonify(r.json())
 
 # ---- DASHBOARD ----
 @app.route("/dashboard/gcs")
 def gcs_dashboard():
     return render_template("dashboards/gcs.html")
-
-
-@app.route("/api/status/gcs")
-def gcs_status():
-
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    # Check Google token
-    cur.execute("""
-        SELECT COUNT(*)
-        FROM google_accounts
-    """)
-    has_google = cur.fetchone()[0] > 0
-
-
-    # Check GCS data
-    cur.execute("""
-        SELECT COUNT(*)
-        FROM google_gcs_buckets
-    """)
-    has_data = cur.fetchone()[0] > 0
-
-
-    conn.close()
-
-    return jsonify({
-        "connected": has_google,
-        "has_data": has_data
-    })
-
 
 # ---- DATA APIs ----
 @app.route("/api/gcs/data/buckets")
@@ -3764,8 +3793,59 @@ def gcs_objects():
 
     return jsonify([dict(r) for r in rows])
 
-# ================= GOOGLE CLASSROOM =================
+@app.route("/api/status/gcs")
+def gcs_status():
 
+    uid = request.cookies.get("uid") or "demo_user"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='gcs'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    conn.close()
+
+    return jsonify({
+        "connected": bool(row and row[0] == 1)
+    })
+
+@app.route("/connectors/gcs/disconnect")
+def gcs_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/gcs"
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/gcs/job/get")
+def gcs_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/gcs/job/get",
+        headers={"Cookie": request.headers.get("Cookie","")}
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/gcs/job/save", methods=["POST"])
+def gcs_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/gcs/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie","")}
+    )
+
+    return jsonify(r.json())
+
+# ================= GOOGLE CLASSROOM =================
 
 @app.route("/connectors/classroom")
 def classroom_page():

@@ -3566,6 +3566,17 @@ def webfonts_data():
 
     return jsonify([dict(r) for r in rows])
 
+@app.route("/connectors/webfonts/save_config", methods=["POST"])
+def webfonts_save_config_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/webfonts/save_config",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
+
 # ================= GOOGLE PAGESPEED ========================
 
 @app.route("/connectors/pagespeed")

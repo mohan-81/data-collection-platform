@@ -63,9 +63,9 @@ def get_api_key(uid):
     cur = con.cursor()
 
     cur.execute("""
-        SELECT config_value
+        SELECT api_key
         FROM connector_configs
-        WHERE uid=? AND source=? AND config_key='api_key'
+        WHERE uid=? AND connector='webfonts'
         LIMIT 1
     """, (uid, SOURCE))
 

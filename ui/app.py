@@ -3340,89 +3340,68 @@ def news_page():
     return render_template("connectors/news.html")
 
 
-@app.route("/connectors/news/sync", methods=["POST"])
+@app.route("/connectors/news/connect", methods=["POST"])
+def news_connect():
+    r = requests.post(
+        "http://localhost:4000/connectors/news/connect",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/news/disconnect", methods=["POST"])
+def news_disconnect():
+    r = requests.post(
+        "http://localhost:4000/connectors/news/disconnect",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/news/sync")
 def news_sync():
 
-    query = request.form.get("query")
+    keyword = request.args.get("keyword")
+    sync_type = request.args.get("sync_type", "incremental")
 
-    if not query:
-        return jsonify({
-            "status": "error",
-            "message": "query required"
-        }), 400
+    r = requests.get(
+        "http://localhost:4000/connectors/news/sync",
+        params={
+            "keyword": keyword,
+            "sync_type": sync_type
+        },
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
 
-
-    try:
-
-        # ✅ Call the REAL backend route
-        r = requests.get(
-            "http://localhost:4000/googlenews/sync/articles",
-            params={
-                "q": query,
-                "limit": 100
-            },
-            timeout=120
-        )
+    return jsonify(r.json())
 
 
-        if r.status_code != 200:
-            return jsonify({
-                "status": "error",
-                "message": r.text
-            }), 500
+@app.route("/connectors/news/job/get")
+def news_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/news/job/get",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json())
 
 
-        return r.json()
-
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-
-
-@app.route("/dashboard/news")
-def news_dashboard():
-    return render_template("dashboards/news.html")
+@app.route("/connectors/news/job/save", methods=["POST"])
+def news_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/news/job/save",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json())
 
 
 @app.route("/api/status/news")
-def news_status():
-
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("SELECT COUNT(*) FROM google_news_articles")
-    articles = cur.fetchone()[0]
-
-    conn.close()
-
-    return jsonify({
-        "connected": articles > 0,
-        "articles": articles
-    })
-
-
-@app.route("/api/news/data")
-def news_data():
-
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT *
-        FROM google_news_articles
-        ORDER BY published DESC
-        LIMIT 2000
-    """)
-
-    rows = cur.fetchall()
-    conn.close()
-
-    return jsonify([dict(r) for r in rows])
+def news_status_proxy():
+    r = requests.get(
+        "http://localhost:4000/api/status/news",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return jsonify(r.json())
 
 # ================= GOOGLE BOOKS ========================
 
@@ -3431,37 +3410,48 @@ def books_page():
     return render_template("connectors/books.html")
 
 
-@app.route("/connectors/books/sync", methods=["POST"])
-def books_sync():
-
-    query = request.form.get("query")
-
-    if not query:
-        return jsonify({"error": "query required"}), 400
+@app.route("/connectors/books/connect")
+def ui_books_connect():
+    r = requests.get("http://localhost:4000/connectors/books/connect")
+    return jsonify(r.json())
 
 
-    try:
-
-        r = requests.get(
-            "http://localhost:4000/googlebooks/sync/volumes",
-            params={
-                "q": query,
-                "limit": 500
-            },
-            timeout=600
-        )
+@app.route("/connectors/books/disconnect")
+def ui_books_disconnect():
+    r = requests.get("http://localhost:4000/connectors/books/disconnect")
+    return jsonify(r.json())
 
 
-        return jsonify(r.json())
+@app.route("/connectors/books/sync")
+def ui_books_sync():
+
+    query = request.args.get("query")
+    sync_type = request.args.get("sync_type", "incremental")
+
+    r = requests.get(
+        "http://localhost:4000/connectors/books/sync",
+        params={
+            "query": query,
+            "sync_type": sync_type
+        }
+    )
+
+    return jsonify(r.json())
 
 
-    except Exception as e:
+@app.route("/connectors/books/job/get")
+def ui_books_job_get():
+    r = requests.get("http://localhost:4000/connectors/books/job/get")
+    return jsonify(r.json())
 
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
 
+@app.route("/connectors/books/job/save", methods=["POST"])
+def ui_books_job_save():
+    r = requests.post(
+        "http://localhost:4000/connectors/books/job/save",
+        json=request.json
+    )
+    return jsonify(r.json())
 
 
 @app.route("/dashboard/books")
@@ -3469,23 +3459,10 @@ def books_dashboard():
     return render_template("dashboards/books.html")
 
 
-
 @app.route("/api/status/books")
 def books_status():
-
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("SELECT COUNT(*) FROM google_books_volumes")
-    count = cur.fetchone()[0]
-
-    conn.close()
-
-    return jsonify({
-        "connected": count > 0,
-        "volumes": count
-    })
-
+    r = requests.get("http://localhost:4000/api/status/books")
+    return jsonify(r.json())
 
 
 @app.route("/api/books/data")
@@ -3514,40 +3491,61 @@ def webfonts_page():
     return render_template("connectors/webfonts.html")
 
 
+@app.route("/connectors/webfonts/connect")
+def webfonts_connect():
+    r = requests.get(
+        "http://localhost:4000/connectors/webfonts/connect",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/webfonts/disconnect")
+def webfonts_disconnect():
+    r = requests.get(
+        "http://localhost:4000/connectors/webfonts/disconnect",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+
 @app.route("/connectors/webfonts/sync")
 def webfonts_sync():
-
-    r = requests.get("http://localhost:4000/google/sync/webfonts")
-
-    return r.json()
-
-
-@app.route("/dashboard/webfonts")
-def webfonts_dashboard():
-    return render_template("dashboards/webfonts.html")
+    r = requests.get(
+        "http://localhost:4000/connectors/webfonts/sync",
+        cookies=request.cookies,
+        timeout=180
+    )
+    return jsonify(r.json())
 
 
-# ================= GOOGLE WEBFONTS STATUS =================
+@app.route("/connectors/webfonts/job/get")
+def webfonts_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/webfonts/job/get",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/webfonts/job/save", methods=["POST"])
+def webfonts_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/webfonts/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
 
 @app.route("/api/status/webfonts")
 def webfonts_status():
+    r = requests.get(
+        "http://localhost:4000/api/status/webfonts",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    # MUST match connector table
-    cur.execute("SELECT COUNT(*) FROM google_webfonts")
-
-    count = cur.fetchone()[0]
-    conn.close()
-
-    return jsonify({
-        "connected": count > 0,
-        "count": count
-    })
-
-
-# ---------- GOOGLE WEBFONTS DATA ----------
 
 @app.route("/api/webfonts/data")
 def webfonts_data():

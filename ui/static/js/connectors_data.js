@@ -427,7 +427,7 @@ to evaluate audience engagement and growth.
   auth_type:"none",
 
   connect_url:null,
-  sync_url:"http://localhost:4000/google/sync/trends",
+  sync_url:"/connectors/trends/sync",
   dashboard:"/dashboard/trends",
 
   long_description:`
@@ -470,7 +470,7 @@ Uses Pytrends for data collection.
   auth_type:"none",
 
   connect_url:null,
-  sync_url:"http://localhost:4000/google/sync/news",
+  sync_url:"/connectors/news/sync",
   dashboard:"/dashboard/news",
 
   long_description:`
@@ -511,7 +511,7 @@ to monitor brand mentions and trending topics.
   auth_type:"api_key",
 
   connect_url:null,
-  sync_url:"http://localhost:4000/google/sync/books",
+  sync_url:"/connectors/books/sync",
   dashboard:"/dashboard/books",
 
   long_description:`
@@ -552,7 +552,7 @@ to build searchable digital libraries.
   auth_type:"api_key",
 
   connect_url:null,
-  sync_url:"http://localhost:4000/google/sync/webfonts",
+  sync_url:"/connectors/webfonts/sync",
   dashboard:"/dashboard/webfonts",
 
   long_description:`

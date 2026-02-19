@@ -3839,18 +3839,36 @@ def webfonts_status():
     con = get_db()
     cur = con.cursor()
 
+    # ---------- connection ----------
     cur.execute("""
         SELECT enabled
         FROM google_connections
         WHERE uid=? AND source='webfonts'
         LIMIT 1
     """, (uid,))
-
     row = cur.fetchone()
+
+    connected = bool(row and row[0] == 1)
+
+    # ---------- API KEY ----------
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='webfonts'
+        LIMIT 1
+    """, (uid,))
+
+    key_row = cur.fetchone()
+
+    api_key_saved = bool(
+        key_row and key_row[0]
+    )
+
     con.close()
 
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": connected,
+        "api_key_saved": api_key_saved
     })
 
 @app.route("/connectors/webfonts/job/get")
@@ -3920,15 +3938,14 @@ def webfonts_save_config():
 
     cur.execute("""
         INSERT OR REPLACE INTO connector_configs
-        (uid, source, config_key, config_value)
-        VALUES (?, 'webfonts', 'api_key', ?)
+        (uid, connector, api_key, created_at)
+        VALUES (?, 'webfonts', ?, datetime('now'))
     """, (uid, api_key))
 
     con.commit()
     con.close()
 
     return jsonify({"status": "saved"})
-
 
 @app.route("/connectors/youtube/sync")
 def youtube_sync():

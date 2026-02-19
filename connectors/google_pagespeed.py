@@ -2,14 +2,10 @@ import requests
 import sqlite3
 import datetime
 import json
-import os
 import time
 
-from dotenv import load_dotenv
 from destinations.destination_router import push_to_destination
 
-# Load .env
-load_dotenv()
 
 SOURCE = "pagespeed"
 DB = "identity.db"
@@ -17,11 +13,18 @@ DB = "identity.db"
 BASE_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
 
-# ---------------- CONNECTION HELPERS ---------------- #
+# DB CONNECTION
+def db_connect():
+    return sqlite3.connect(DB)
+
+# CONNECTED USER
+
 def get_connected_user():
-    con = sqlite3.connect(DB)
+
+    con = db_connect()
     cur = con.cursor()
 
+    # must be explicitly connected
     cur.execute("""
         SELECT uid
         FROM google_connections
@@ -32,11 +35,35 @@ def get_connected_user():
     row = cur.fetchone()
     con.close()
 
+    if not row:
+        return None
+
+    return row[0]
+
+# API KEY (FROM connector_configs)
+
+def get_api_key(uid):
+
+    con = db_connect()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='pagespeed'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
     return row[0] if row else None
 
+# DESTINATION
 
 def get_active_destination(uid):
-    con = sqlite3.connect(DB)
+
+    con = db_connect()
     cur = con.cursor()
 
     cur.execute("""
@@ -68,25 +95,21 @@ def get_active_destination(uid):
         "database_name": row[5]
     }
 
+# API CALL
 
-# ---------------- CORE API CALL ---------------- #
-
-def fetch_pagespeed(url, strategy, categories):
+def fetch_pagespeed(url, strategy, categories, api_key):
 
     params = {
         "url": url,
-        "strategy": strategy
+        "strategy": strategy,
+        "key": api_key
     }
 
     for c in categories:
         params.setdefault("category", []).append(c)
 
-    api_key = os.getenv("GOOGLE_API_KEY")
+    for attempt in range(5):
 
-    if api_key:
-        params["key"] = api_key
-
-    for i in range(5):
         try:
             r = requests.get(BASE_URL, params=params, timeout=60)
 
@@ -94,21 +117,23 @@ def fetch_pagespeed(url, strategy, categories):
                 return r.json()
 
             if r.status_code == 429:
-                wait = 5 * (i + 1)
-                print(f"[PageSpeed] Rate limited. Retrying in {wait}s...")
+                wait = 5 * (attempt + 1)
+                print(f"[PageSpeed] Rate limited → retry {wait}s")
                 time.sleep(wait)
                 continue
 
             raise Exception(f"{r.status_code}: {r.text}")
 
         except Exception as e:
-            print(f"[PageSpeed Error] {e}")
-            if i == 4:
+
+            print("[PageSpeed ERROR]", e)
+
+            if attempt == 4:
                 raise e
+
             time.sleep(3)
 
-
-# ---------------- SCORE EXTRACTION ---------------- #
+# SCORE EXTRACTION
 
 def extract_scores(data):
 
@@ -126,8 +151,7 @@ def extract_scores(data):
         "pwa": score("pwa")
     }
 
-
-# ---------------- MAIN SYNC ---------------- #
+# MAIN SYNC
 
 def sync_pagespeed(url, sync_type="incremental"):
 
@@ -139,7 +163,16 @@ def sync_pagespeed(url, sync_type="incremental"):
             "message": "PageSpeed connector not connected"
         }
 
+    api_key = get_api_key(uid)
+
+    if not api_key:
+        return {
+            "status": "error",
+            "message": "API key not configured"
+        }
+
     strategies = ["mobile", "desktop"]
+
     categories = [
         "performance",
         "seo",
@@ -148,33 +181,48 @@ def sync_pagespeed(url, sync_type="incremental"):
         "pwa"
     ]
 
-    con = sqlite3.connect(DB)
+    con = db_connect()
     cur = con.cursor()
 
-    rows_for_destination = []
-
     now = datetime.datetime.utcnow().isoformat()
+
+    rows_for_destination = []
     count = 0
 
-    for strat in strategies:
+    for strategy in strategies:
 
-        print(f"[PageSpeed] Fetching {url} ({strat})")
+        print(f"[PageSpeed] Fetching {url} ({strategy})")
 
-        data = fetch_pagespeed(url, strat, categories)
+        data = fetch_pagespeed(
+            url,
+            strategy,
+            categories,
+            api_key
+        )
+
         scores = extract_scores(data)
 
-        # Insert locally
+        # ---------------- SAVE LOCAL ----------------
         cur.execute("""
             INSERT INTO google_pagespeed
-            (uid, url, strategy, categories,
-            performance_score, seo_score, accessibility_score,
-            best_practices_score, pwa_score,
-            raw_response, fetched_at)
+            (
+                uid,
+                url,
+                strategy,
+                categories,
+                performance_score,
+                seo_score,
+                accessibility_score,
+                best_practices_score,
+                pwa_score,
+                raw_response,
+                fetched_at
+            )
             VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """, (
             uid,
             url,
-            strat,
+            strategy,
             ",".join(categories),
             scores["performance"],
             scores["seo"],
@@ -185,10 +233,9 @@ def sync_pagespeed(url, sync_type="incremental"):
             now
         ))
 
-        # Prepare for destination
         rows_for_destination.append({
             "url": url,
-            "strategy": strat,
+            "strategy": strategy,
             "performance_score": scores["performance"],
             "seo_score": scores["seo"],
             "accessibility_score": scores["accessibility"],
@@ -202,7 +249,7 @@ def sync_pagespeed(url, sync_type="incremental"):
     con.commit()
     con.close()
 
-    # Push to destination
+    # ---------------- DESTINATION PUSH ----------------
     dest = get_active_destination(uid)
 
     if dest and rows_for_destination:

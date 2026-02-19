@@ -6369,8 +6369,8 @@ from connectors.github import (
 
 @app.route("/github/connect")
 def github_connect():
-    return redirect(get_auth_url())
-
+    uid = get_uid()
+    return redirect(get_auth_url(uid))
 
 @app.route("/github/callback")
 def github_callback():
@@ -6381,7 +6381,7 @@ def github_callback():
 
     uid = get_uid()
 
-    token = exchange_code(code)
+    token = exchange_code(uid, code)
 
     if not token.get("access_token"):
         return "Token exchange failed", 400
@@ -6399,14 +6399,14 @@ def github_disconnect():
     con = get_db()
     cur = con.cursor()
 
-    # 1️⃣ Disable connection
+    # Disable connection
     cur.execute("""
         UPDATE google_connections
         SET enabled=0
         WHERE uid=? AND source='github'
     """, (uid,))
 
-    # 2️⃣ DELETE stored GitHub token
+    # DELETE stored GitHub token
     cur.execute("""
         DELETE FROM github_tokens
         WHERE uid=?
@@ -6422,6 +6422,118 @@ def github_sync():
     uid = get_uid()
     return jsonify(sync_github(uid))
 
+@app.route("/connectors/github/save_app", methods=["POST"])
+def github_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID & Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'github', ?, ?, datetime('now'))
+    """, (
+        uid,
+        client_id,
+        client_secret
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+@app.route("/api/status/github")
+def github_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # credentials exist?
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='github'
+        LIMIT 1
+    """, (uid,))
+    creds = cur.fetchone()
+
+    # connection enabled?
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='github'
+        LIMIT 1
+    """, (uid,))
+    row = cur.fetchone()
+
+    conn.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected": bool(row and row[0] == 1)
+    })
+
+@app.route("/connectors/github/job/get")
+def github_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='github'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/github/job/save", methods=["POST"])
+def github_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'github', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
+
 # ---------------- GITLAB ----------------
 
 @app.route("/gitlab/connect")
@@ -6429,7 +6541,9 @@ def gitlab_connect():
 
     from connectors.gitlab import get_auth_url
 
-    return redirect(get_auth_url())
+    uid = get_uid()
+    return redirect(get_auth_url(uid))
+
 
 @app.route("/connectors/gitlab/disconnect")
 def gitlab_disconnect():

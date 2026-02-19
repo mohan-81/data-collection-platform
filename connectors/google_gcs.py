@@ -77,26 +77,43 @@ def get_active_destination(uid):
 
 # ---------------- AUTH ---------------- #
 
-def get_creds(uid):
+def get_creds():
 
     con = db_connect()
     cur = con.cursor()
 
+    # ---------- CHECK CONNECTED ----------
+    cur.execute("""
+        SELECT uid
+        FROM google_connections
+        WHERE source=? AND enabled=1
+        LIMIT 1
+    """, (SOURCE,))
+
+    row = cur.fetchone()
+
+    if not row:
+        con.close()
+        return None, None
+
+    uid = row[0]
+
+    # ---------- FETCH TOKEN ----------
     cur.execute("""
         SELECT access_token, refresh_token, scopes
         FROM google_accounts
-        WHERE uid=? AND source=?
-        ORDER BY created_at DESC
+        WHERE source=?
+        ORDER BY id DESC
         LIMIT 1
-    """, (uid, SOURCE))
+    """, (SOURCE,))
 
-    row = cur.fetchone()
+    token_row = cur.fetchone()
     con.close()
 
-    if not row:
-        raise Exception("No GCS OAuth token found in google_accounts")
+    if not token_row:
+        return None, None
 
-    access, refresh, scopes = row
+    access, refresh, scopes = token_row
 
     creds = Credentials(
         token=access,
@@ -107,21 +124,19 @@ def get_creds(uid):
         scopes=scopes.split(",") if scopes else None
     )
 
-    return creds
+    return uid, creds
 
 # ---------------- SYNC ---------------- #
 
 def sync_gcs(sync_type="incremental"):
 
-    uid = get_connected_user()
+    uid, creds = get_creds()
 
     if not uid:
         return {
             "status": "error",
             "message": "GCS connector not connected"
         }
-
-    creds = get_creds(uid)
 
     project_id = os.getenv("GOOGLE_PROJECT_ID")
 

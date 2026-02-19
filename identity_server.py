@@ -4004,6 +4004,39 @@ def gcs_job_save():
 
     return jsonify({"status": "job_saved"})
 
+
+@app.route("/connectors/gcs/save_app", methods=["POST"])
+def gcs_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error":"missing"}),400
+
+    con=get_db()
+    cur=con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid,connector,client_id,client_secret,created_at)
+        VALUES (?,?,?, ?,?)
+    """,(
+        uid,
+        "gcs",
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status":"saved"})
+
 @app.route("/google/sync/webfonts", methods=["GET", "POST"])
 def google_sync_webfonts():
 

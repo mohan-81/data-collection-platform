@@ -221,6 +221,7 @@ def init_db():
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS connector_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         uid TEXT,
         source TEXT,
         sync_type TEXT,
@@ -725,7 +726,7 @@ def init_db():
 
     # google_webfonts
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS google_webfonts_fonts (
+    CREATE TABLE IF NOT EXISTS google_webfonts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         family TEXT,
         category TEXT,
@@ -3763,13 +3764,170 @@ def google_sync_webfonts():
             "message": str(e)
         }), 500
     
-@app.route("/connectors/webfonts/sync")
-def webfonts_sync():
+from connectors.google_webfonts import sync_webfonts
 
-    sync_type = request.args.get("sync_type", "incremental")
-    result = sync_webfonts(sync_type)
+@app.route("/connectors/webfonts/sync")
+def webfonts_sync_route():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='webfonts'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row or row[0] != 1:
+        return jsonify({"error": "WebFonts not connected"}), 400
+
+    result = sync_webfonts()
 
     return jsonify(result)
+
+# ---------------- GOOGLE WEBFONTS CONNECT ----------------
+
+@app.route("/connectors/webfonts/connect")
+def webfonts_connect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO google_connections (uid, source, enabled)
+        VALUES (?, 'webfonts', 1)
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "connected"})
+
+# ---------------- GOOGLE WEBFONTS DISCONNECT ----------------
+
+@app.route("/connectors/webfonts/disconnect")
+def webfonts_disconnect():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled = 0
+        WHERE uid=? AND source='webfonts'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "disconnected"})
+
+@app.route("/api/status/webfonts")
+def webfonts_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='webfonts'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    return jsonify({
+        "connected": bool(row and row[0] == 1)
+    })
+
+@app.route("/connectors/webfonts/job/get")
+def webfonts_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='webfonts'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/webfonts/job/save", methods=["POST"])
+def webfonts_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'webfonts', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
+
+# ---------------- GOOGLE WEBFONTS SAVE CONFIG ----------------
+
+@app.route("/connectors/webfonts/save_config", methods=["POST"])
+def webfonts_save_config():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    api_key = data.get("api_key")
+
+    if not api_key:
+        return jsonify({"error": "API key required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, source, config_key, config_value)
+        VALUES (?, 'webfonts', 'api_key', ?)
+    """, (uid, api_key))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 
 @app.route("/connectors/youtube/sync")
@@ -4942,31 +5100,141 @@ def discord_sync_universal():
 
 # ---------------- GOOGLE BOOKS ----------------
 
-@app.route("/googlebooks/sync/volumes")
-def googlebooks_sync():
+from connectors.googlebooks import sync_books
+
+
+@app.route("/connectors/books/connect")
+def connect_books():
 
     uid = get_uid()
-    query = request.args.get("q")
-    limit = int(request.args.get("limit", 500))
 
-    from connectors.googlebooks import sync_volumes
+    con = get_db()
+    cur = con.cursor()
 
-    return jsonify(sync_volumes(uid, query, limit))
+    cur.execute("""
+        INSERT OR REPLACE INTO google_connections(uid, source, enabled)
+        VALUES (?, 'books', 1)
+    """, (uid,))
 
-from connectors.googlebooks import sync_books
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "connected"})
+
+
+@app.route("/connectors/books/disconnect")
+def disconnect_books():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='books'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='books'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "disconnected"})
+
+
 @app.route("/connectors/books/sync")
 def books_sync():
 
+    uid = get_uid()
     query = request.args.get("query")
     sync_type = request.args.get("sync_type", "incremental")
 
     if not query:
-        return jsonify({"error": "query required"}), 400
+        return jsonify({"status": "error", "message": "query required"})
 
-    result = sync_books(query, sync_type)
+    return jsonify(sync_books(query, sync_type))
 
-    return jsonify(result)
 
+@app.route("/connectors/books/job/get")
+def get_books_job():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='books'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({
+            "sync_type": "incremental",
+            "schedule_time": "00:00"
+        })
+
+    return jsonify({
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+
+@app.route("/connectors/books/job/save", methods=["POST"])
+def save_books_job():
+
+    uid = get_uid()
+    data = request.json
+
+    sync_type = data.get("sync_type")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, 'books', ?, ?, 1)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+
+@app.route("/api/status/books")
+def books_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='books'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    return jsonify({
+        "connected": bool(row and row[0] == 1)
+    })
 
 # ---------------- GOOGLE FACT CHECK ----------------
 
@@ -5017,55 +5285,66 @@ def news_sync():
 
     return jsonify(result)
 
+# ---------------- GOOGLE NEWS CONNECT ----------------
 
 @app.route("/connectors/news/connect", methods=["POST"])
 def connect_news():
 
-    uid = "demo_user"   # same pattern as other connectors
+    uid = get_uid()
 
-    con = sqlite3.connect("identity.db")
+    con = get_db()
     cur = con.cursor()
 
     cur.execute("""
         INSERT OR REPLACE INTO google_connections
         (uid, source, enabled)
-        VALUES (?, ?, 1)
-    """, (uid, "news"))
+        VALUES (?, 'news', 1)
+    """, (uid,))
 
     con.commit()
     con.close()
 
     return jsonify({"status": "connected"})
 
+
+# ---------------- GOOGLE NEWS DISCONNECT ----------------
+
 @app.route("/connectors/news/disconnect", methods=["POST"])
 def disconnect_news():
 
-    con = sqlite3.connect("identity.db")
+    uid = get_uid()
+
+    con = get_db()
     cur = con.cursor()
 
     cur.execute("""
         UPDATE google_connections
         SET enabled=0
-        WHERE source='news'
-    """)
+        WHERE uid=? AND source='news'
+    """, (uid,))
 
     con.commit()
     con.close()
 
     return jsonify({"status": "disconnected"})
 
+
+# ---------------- GOOGLE NEWS STATUS ----------------
+
 @app.route("/api/status/news")
 def news_status():
 
-    con = sqlite3.connect("identity.db")
+    uid = get_uid()
+
+    con = get_db()
     cur = con.cursor()
 
     cur.execute("""
         SELECT enabled
         FROM google_connections
-        WHERE source='news'
+        WHERE uid=? AND source='news'
         LIMIT 1
-    """)
+    """, (uid,))
 
     row = cur.fetchone()
     con.close()
@@ -5074,33 +5353,63 @@ def news_status():
         "connected": bool(row and row[0] == 1)
     })
 
-@app.route("/connectors/news/job/get")
-def get_news_job():
+# ---------------- GOOGLE NEWS JOB GET ----------------
 
-    con = sqlite3.connect("identity.db")
+@app.route("/connectors/news/job/get")
+def news_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
     cur = con.cursor()
 
     cur.execute("""
         SELECT sync_type, schedule_time
         FROM connector_jobs
-        WHERE source='news'
-        ORDER BY id DESC
-        LIMIT 1
-    """)
+        WHERE uid=? AND source='news'
+    """, (uid,))
 
     row = cur.fetchone()
     con.close()
 
     if not row:
         return jsonify({
+            "exists": False,
             "sync_type": "incremental",
             "schedule_time": "00:00"
         })
 
     return jsonify({
+        "exists": True,
         "sync_type": row[0],
         "schedule_time": row[1]
     })
+
+
+# ---------------- GOOGLE NEWS JOB SAVE ----------------
+
+@app.route("/connectors/news/job/save", methods=["POST"])
+def news_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'news', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 # ---------------- GOOGLE TRENDS ----------------
 

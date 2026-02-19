@@ -8,62 +8,78 @@
 
   <div class="max-w-7xl mx-auto relative z-10 space-y-24">
 
-    <!-- Hero -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-      <div data-aos="fade-right">
-        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/5 text-blue-400 text-[10px] font-mono mb-8 tracking-widest uppercase">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-          </span>
-          NEWS_FEED_RSS_READY
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      <div data-aos="fade-right" class="pt-8">
+        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 text-[10px] font-mono mb-8 tracking-widest uppercase">
+          <span class="h-2 w-2 rounded-full bg-slate-600"></span>
+          NOT CONNECTED
         </div>
 
         <h1 class="text-7xl font-black text-white tracking-tighter mb-6">
-            News <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Monitor</span>
+          Google <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">News</span> <span class="text-white">Connector</span>
         </h1>
-        <p class="text-slate-300 text-xl mb-10 leading-relaxed font-medium max-w-xl">
-          Automate the discovery of global headlines, publisher metadata, and publication timestamps to track brand mentions in real-time.
+        
+        <p class="text-slate-300 text-lg mb-6 leading-relaxed font-medium max-w-xl">
+          Streamline media monitoring by piping global news coverage directly into your database. Track mentions, sentiment, and trending stories automatically.
         </p>
 
-        <div class="flex flex-wrap gap-4 items-center mb-6" id="connectSection">
-            <button onclick="connectNews()" id="connectBtn" class="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-white hover:text-blue-600 transition-all shadow-xl shadow-blue-600/20">Connect News</button>
-            <button onclick="disconnectNews()" id="disconnectBtn" class="hidden px-10 py-4 bg-slate-700 text-white rounded-2xl font-black hover:bg-slate-600 transition-all">Disconnect</button>
-            <a href="/dashboard/news" id="dashboardBtn" class="px-10 py-4 border border-slate-700 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all">Dashboard</a>
+        <div class="space-y-4 text-slate-400 text-sm max-w-lg mb-10">
+          <div class="flex gap-3">
+            <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Public RSS Integration: No API keys or OAuth credentials required.</span>
+          </div>
+          <div class="flex gap-3">
+            <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+            <span>Automated ingestion of headlines, source metadata, and article links.</span>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-4 items-center">
-            <div class="px-6 py-3 border border-blue-500/30 bg-blue-500/5 rounded-2xl text-blue-300 font-mono text-sm">
-                Provider: Google News RSS
-            </div>
+          <a href="/dashboard/news" id="dashboardBtn" class="px-10 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold hover:bg-white hover:text-blue-900 transition-all shadow-xl">
+            Dashboard
+          </a>
+          <button onclick="connectNews()" id="connectBtn" class="px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">
+            Connect
+          </button>
+          <button onclick="disconnectNews()" id="disconnectBtn" class="hidden px-10 py-4 bg-red-900/20 border border-red-500/50 text-red-400 rounded-2xl font-bold hover:bg-red-600 hover:text-white transition-all">
+            Disconnect
+          </button>
         </div>
       </div>
 
-      <div class="flex justify-center items-center" data-aos="zoom-in">
-        <div class="relative w-full max-w-[500px] h-[350px] bg-white/5 backdrop-blur-xl rounded-[3rem] border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
-            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
-            <div class="flex items-center justify-between w-full px-12 relative z-10">
-                <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform">
-                    <img src="/static/images/logos/googlenews.png" class="w-12 h-12 object-contain">
-                </div>
-                <div class="flex-1 h-[2px] mx-4 relative bg-slate-700">
-                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 animate-[flow_2s_infinite_linear]"></div>
-                </div>
-                <div class="w-20 h-20 bg-slate-800 border-2 border-indigo-500 rounded-full flex items-center justify-center shadow-2xl">
-                    <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2zM14 4v4h4"/>
-                    </svg>
-                </div>
+      <div class="relative" data-aos="zoom-in">
+        <div class="relative bg-slate-800/60 backdrop-blur-xl border border-white/10 p-10 rounded-[3.5rem] shadow-2xl">
+          <h3 class="text-white font-black text-xl mb-6">Topic Configuration</h3>
+          
+          <div class="space-y-6">
+            <div class="p-6 bg-slate-900/50 border border-white/5 rounded-3xl">
+              <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Search Keyword / Topic</label>
+              <input id="keywordInput" placeholder="e.g. Nvidia Stock or Climate Change" class="w-full px-6 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-400 transition-all shadow-inner">
+              <p class="text-[10px] text-slate-500 mt-3 italic">Our engine will monitor the Google News RSS feed for this term.</p>
             </div>
-            <div class="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/5 font-mono text-[10px] text-blue-400 flex justify-between">
-                <span id="protocolStatus" class="animate-pulse">● NEWS_POLLING_STANDBY</span>
-                <span id="dbStatus" class="text-slate-400 tracking-tighter">SOURCE: GLOBAL_HEADLINES</span>
+
+            <div class="mt-4">
+              <h4 class="text-white text-xs font-bold mb-4 uppercase tracking-widest">Setup Instructions</h4>
+              <ul class="space-y-3">
+                <li class="flex items-start gap-3 text-[11px] text-slate-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+                  <span>Google News uses public RSS feeds; no OAuth is required.</span>
+                </li>
+                <li class="flex items-start gap-3 text-[11px] text-slate-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+                  <span>Enter your target keyword above and click "Connect".</span>
+                </li>
+                <li class="flex items-start gap-3 text-[11px] text-slate-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+                  <span>Avoid very frequent syncs (e.g., every 5 minutes) to prevent rate limiting.</span>
+                </li>
+              </ul>
             </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Controls: Sync Engine + Destination -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div class="lg:col-span-1">
             <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
@@ -78,15 +94,10 @@
                 
                 <div class="space-y-6">
                     <div>
-                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Keyword / Topic</label>
-                        <input id="keywordInput" placeholder="e.g. OpenAI Sora" class="w-full p-4 rounded-xl bg-slate-900/80 text-white border border-white/10 focus:border-blue-500 outline-none text-sm font-bold">
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Refresh Strategy</label>
-                        <select id="syncType" class="w-full p-4 rounded-xl bg-slate-900/80 text-white border border-white/10 focus:border-blue-500 outline-none text-sm cursor-pointer hover:bg-slate-900 transition-all font-bold">
-                            <option value="incremental">Incremental</option>
-                            <option value="historical">Historical</option>
+                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Article Depth</label>
+                        <select id="syncType" class="w-full p-4 rounded-xl bg-slate-900/80 text-white border border-white/10 focus:border-blue-500 outline-none text-sm cursor-pointer hover:bg-slate-900 transition-all">
+                            <option value="incremental">Incremental (Latest 100)</option>
+                            <option value="historical">Historical (Full Feed)</option>
                         </select>
                     </div>
 
@@ -108,7 +119,7 @@
 
                     <div class="pt-6 space-y-3">
                         <button onclick="saveJob()" class="w-full py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl font-bold transition-all text-xs uppercase tracking-widest">Update Schedule</button>
-                        <button onclick="runSync()" id="syncBtn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-600/30 text-xs uppercase tracking-widest">Search & Sync</button>
+                        <button onclick="runSync()" id="syncBtn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-600/30 text-xs uppercase tracking-widest">Ingest News Feed</button>
                     </div>
                 </div>
             </div>
@@ -118,54 +129,53 @@
             <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl h-full">
                 <div class="flex items-center justify-between mb-8">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
-                            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
+                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                             </svg>
                         </div>
                         <h3 class="text-white font-black text-xl tracking-tight">Warehouse Destination</h3>
                     </div>
-                    <div id="destStatus" class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-4 py-1.5 rounded-full border border-indigo-500/20 uppercase font-bold tracking-tighter">System Ready</div>
+                    <div id="destStatus" class="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20 uppercase font-bold tracking-tighter">System Ready</div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div class="md:col-span-2">
                         <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Target Platform</label>
-                        <select id="destType" onchange="toggleDest()" class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 focus:border-indigo-500 transition-all outline-none font-bold">
+                        <select id="destType" onchange="toggleDest()" class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 focus:border-blue-500 transition-all outline-none">
                             <option value="">Select Connector...</option>
                             <option value="mysql">MySQL</option>
                             <option value="postgres">PostgreSQL</option>
                             <option value="bigquery">BigQuery</option>
                             <option value="snowflake">SnowFlake</option>
+                            <option value="clickhouse">ClickHouse</option>
                         </select>
                     </div>
 
-                    <div id="dbFields" class="hidden md:contents animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div id="dbFields" class="hidden md:contents animate-in fade-in duration-500">
                         <div id="sqlFields" class="contents">
-                            <input id="dbHost" placeholder="Host (e.g. 127.0.0.1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
-                            <input id="dbPort" placeholder="Port" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
-                            <input id="dbUser" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
-                            <input id="dbPass" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
-                            <input id="dbName" placeholder="Database Name" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
+                            <input id="dbHost" placeholder="Host" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
+                            <input id="dbPort" placeholder="Port" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
+                            <input id="dbUser" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
+                            <input id="dbPass" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
+                            <input id="dbName" placeholder="Database Name" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
                         </div>
-
                         <div id="bigqueryFields" class="hidden contents">
-                            <input id="bqProject" placeholder="Project ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
-                            <input id="bqDataset" placeholder="Dataset ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all">
+                            <input id="bqProject" placeholder="Project ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
+                            <input id="bqDataset" placeholder="Dataset ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all">
                             <div class="md:col-span-2">
-                                <textarea id="bqKey" placeholder="Service Account JSON Key" rows="3" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-indigo-500 outline-none text-sm transition-all resize-y"></textarea>
+                                <textarea id="bqKey" placeholder="Service Account JSON" rows="3" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-blue-500 outline-none text-sm transition-all font-mono"></textarea>
                             </div>
                         </div>
-                        
                         <div class="md:col-span-2 pt-2">
-                            <button onclick="saveDestination()" id="saveDestBtn" class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-indigo-600/30 text-xs uppercase tracking-widest">Authenticate & Save</button>
+                            <button onclick="saveDestination()" id="saveDestBtn" class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-600/30 text-xs uppercase tracking-widest">Authenticate & Save</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-8 pt-8 border-t border-white/5">
-                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Active Connection</label>
-                    <select id="destDropdown" onchange="activateDest(this.value)" class="w-full p-4 rounded-xl bg-black/40 text-indigo-300 border border-indigo-500/20 outline-none text-sm font-bold cursor-pointer hover:bg-black/60 transition-all">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Active Connection Switcher</label>
+                    <select id="destDropdown" onchange="activateDest(this.value)" class="w-full p-4 rounded-xl bg-black/40 text-blue-300 border border-blue-500/20 outline-none text-sm font-bold cursor-pointer hover:bg-black/60 transition-all">
                         <option value="">Loading connections...</option>
                     </select>
                 </div>
@@ -173,66 +183,57 @@
         </div>
     </div>
 
-    <!-- Pipeline / Steps -->
-    <div>
-      <h2 class="text-4xl font-black mb-16 text-center text-white tracking-tight">Monitoring <span class="text-blue-400">Architecture</span></h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        {% for step, title, desc in [
-          ('01', 'Keyword Scoping', 'Targeting specific brand mentions across verified news domains.'),
-          ('02', 'Headless Parsing', 'Extracting structured data from RSS feeds including title and source metadata.'),
-          ('03', 'Sentiment Triage', 'Mapping discovered articles into the warehouse for immediate keyword analysis.')
-        ] %}
-        <div class="group p-10 bg-slate-800/40 border border-white/5 rounded-[2.5rem] hover:bg-slate-800/80 transition-all hover:-translate-y-2">
-          <div class="text-5xl font-black text-slate-700/30 mb-6 group-hover:text-blue-400 transition-colors">{{step}}</div>
-          <h3 class="text-2xl font-bold text-white mb-3">{{title}}</h3>
-          <p class="text-slate-400 leading-relaxed text-sm">{{desc}}</p>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Schema -->
-    <div>
-      <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">News <span class="text-blue-400">Data Schema</span></h2>
+    <div class="pt-12">
+      <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">News <span class="text-blue-500">Schema</span></h2>
       <div class="grid lg:grid-cols-2 gap-12 items-start">
         <div class="grid grid-cols-1 gap-4">
           {% for table, columns in [
-            ('news_articles', ['id', 'title', 'link', 'source', 'published_at']),
-            ('news_monitors', ['id', 'query_string', 'last_sync', 'article_count']),
-            ('news_mentions', ['id', 'article_id', 'keyword_detected', 'context'])
+            ('news_articles', ['article_id', 'title', 'source_name', 'published_at', 'url', 'summary']),
+            ('news_mentions', ['keyword', 'article_id', 'match_count', 'relevance_score']),
+            ('news_sources', ['source_name', 'source_url', 'trust_score', 'category'])
           ] %}
           <div class="p-6 bg-slate-800/40 border border-white/5 rounded-3xl hover:border-blue-500/30 transition-all group">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-3 h-3 rounded-full bg-blue-600 group-hover:animate-pulse"></div>
+                <div class="w-3 h-3 rounded-full bg-blue-600 group-hover:animate-pulse shadow-[0_0_10px_rgba(37,99,235,0.8)]"></div>
                 <h4 class="text-white font-mono font-bold text-sm tracking-widest uppercase">{{table}}</h4>
             </div>
             <div class="flex flex-wrap gap-2">
                 {% for col in columns %}
-                <span class="px-3 py-1.5 bg-slate-900/80 border border-white/10 rounded-xl text-[10px] font-mono text-slate-400">{{col}}</span>
+                <span class="px-3 py-1.5 bg-slate-900/80 border border-white/10 rounded-xl text-[10px] font-mono text-slate-400 group-hover:text-blue-300 transition-colors">{{col}}</span>
                 {% endfor %}
             </div>
           </div>
           {% endfor %}
         </div>
-        <div class="relative bg-slate-800 border border-white/10 rounded-[3rem] p-10 shadow-3xl sticky top-10">
-          <div class="absolute inset-0 bg-blue-600/5 rounded-[3rem] blur-xl"></div>
-          <img src="/static/images/erd/news_erd.png" class="relative z-10 mx-auto max-w-full rounded-2xl opacity-90 grayscale hover:grayscale-0 transition-all duration-700"/>
+        
+        <div class="sticky top-10 group">
+            <div class="absolute -inset-4 bg-blue-500/10 rounded-[4rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            <div class="relative bg-slate-800/80 border border-white/10 rounded-[3.5rem] p-4 shadow-3xl overflow-hidden backdrop-blur-md">
+                <div class="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white/5 to-transparent flex items-center px-8 justify-between">
+                    <div class="flex gap-2">
+                        <div class="w-2 h-2 rounded-full bg-red-500/40"></div>
+                        <div class="w-2 h-2 rounded-full bg-yellow-500/40"></div>
+                        <div class="w-2 h-2 rounded-full bg-green-500/40"></div>
+                    </div>
+                    <span class="text-[9px] font-mono text-slate-500 tracking-widest uppercase">News_Feed_ERD.vuerd</span>
+                </div>
+                <div class="mt-12 p-6 rounded-[2.5rem] bg-slate-900/50 border border-white/5">
+                    <img src="/static/images/erd/news_erd.png" class="mx-auto max-w-full rounded-2xl opacity-80 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-[1.02]"/>
+                </div>
+            </div>
         </div>
       </div>
     </div>
 
-    <!-- Extraction Entities -->
     <div class="mb-32">
-      <h2 class="text-4xl font-black mb-12 text-center text-white">Extraction Entities</h2>
-      <div class="grid md:grid-cols-3 gap-6">
-        {% for table in ['news_articles', 'news_monitors', 'news_mentions'] %}
+      <h2 class="text-4xl font-black mb-12 text-center text-white">Data <span class="text-blue-500">Extracted</span></h2>
+      <div class="grid md:grid-cols-4 gap-6">
+        {% for table in ['Article Metadata', 'Source Ranking', 'Keyword Density', 'Global Coverage'] %}
         <div class="p-8 bg-slate-800/40 border border-white/5 rounded-[2rem] hover:bg-blue-600/5 hover:border-blue-500/20 transition-all flex flex-col items-center text-center group cursor-pointer">
           <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500 shadow-xl">
-            <svg class="w-6 h-6 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2zM14 4v4h4"/>
-            </svg>
+            <svg class="w-6 h-6 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
           </div>
-          <span class="font-mono text-slate-400 font-bold text-xs tracking-widest group-hover:text-white transition-colors">{{table}}</span>
+          <span class="font-mono text-slate-400 font-bold text-sm tracking-widest group-hover:text-white transition-colors uppercase">{{table}}</span>
         </div>
         {% endfor %}
       </div>
@@ -242,231 +243,165 @@
 </section>
 
 <style>
-  @keyframes flow { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
   .bg-slate-900 { background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0); background-size: 40px 40px; }
   select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    checkStatus();
+    checkNewsStatus();
     loadDestinations();
     loadJob();
 });
 
-async function loadJob() {
+async function checkNewsStatus(){
     try {
-        const res = await fetch("http://localhost:4000/google/job/get/news");
+        const res = await fetch("/api/status/news");
         const data = await res.json();
-
-        if (data.sync_type) {
-            document.getElementById("syncType").value = data.sync_type;
-        }
-
-        if (data.schedule_time) {
-            const [hour, minute] = data.schedule_time.split(":");
-            document.getElementById("hourSelect").value = hour;
-            document.getElementById("minSelect").value = minute;
-        }
-
-    } catch (err) {
-        console.error("Failed to load job config", err);
-    }
-}
-
-function toggleDest() {
-    const type = document.getElementById("destType").value;
-    const wrapper = document.getElementById("dbFields");
-    const sql = document.getElementById("sqlFields");
-    const bq = document.getElementById("bigqueryFields");
-
-    if (!type) {
-        wrapper.classList.add("hidden");
-        return;
-    }
-
-    wrapper.classList.remove("hidden");
-
-    if(type === "bigquery"){
-        sql.classList.add("hidden");
-        bq.classList.remove("hidden");
-    } else {
-        sql.classList.remove("hidden");
-        bq.classList.add("hidden");
-    }
-}
-
-async function checkStatus() {
-    try {
-        const res = await fetch("http://localhost:4000/api/status/news").then(r => r.json());
-
-        const connectBtn   = document.getElementById("connectBtn");
+        const badge = document.getElementById("statusBadge");
+        const connectBtn = document.getElementById("connectBtn");
         const disconnectBtn = document.getElementById("disconnectBtn");
-        const badge         = document.getElementById("statusBadge");
 
-        const isConnected = res.connected || res.active || res.status === "connected" || false;
-
-        if (isConnected) {
+        if(data.connected){
+            badge.innerHTML = `<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span> CONNECTED`;
+            badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[10px] font-mono mb-8 uppercase tracking-widest";
             connectBtn.classList.add("hidden");
             disconnectBtn.classList.remove("hidden");
-            badge.innerHTML = `
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-                CONNECTED
-            `;
         } else {
+            badge.innerHTML = `<span class="h-2 w-2 rounded-full bg-red-600"></span> NOT CONNECTED`;
+            badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/5 text-red-400 text-[10px] font-mono mb-8 uppercase tracking-widest";
             connectBtn.classList.remove("hidden");
             disconnectBtn.classList.add("hidden");
-            badge.innerHTML = `
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-                NEWS_FEED_RSS_READY
-            `;
         }
-    } catch (err) {
-        console.error("Status check failed:", err);
-    }
+    } catch(e){ console.error(e); }
 }
 
-function connectNews() {
-    fetch("http://localhost:4000/connectors/news/connect", {
-        method: "POST"
-    })
-    .then(() => setTimeout(checkStatus, 700))
-    .catch(err => console.error("Connect failed", err));
+async function connectNews(){
+    const res = await fetch("/connectors/news/connect", { method: "POST" });
+    if(res.ok) { checkNewsStatus(); }
 }
 
-async function disconnectNews() {
-    if (!confirm("Disconnect News Monitor?")) return;
+async function disconnectNews(){
+    if(!confirm("Are you sure you want to disconnect Google News?")) return;
+    const res = await fetch("/connectors/news/disconnect", { method: "POST" });
+    if(res.ok) { checkNewsStatus(); }
+}
+
+async function loadDestinations(){
     try {
-        await fetch("http://localhost:4000/connectors/news/disconnect", { method: "POST" });
-        checkStatus();
-    } catch (err) {
-        console.error("Disconnect failed", err);
-    }
-}
-
-async function loadDestinations() {
-    try {
-        const res = await fetch("http://localhost:4000/destination/list/news");
+        const res = await fetch(`/destination/list/news`);
         const data = await res.json();
         const dropdown = document.getElementById("destDropdown");
-        dropdown.innerHTML = '<option value="">Select Existing Destination...</option>';
-        data.destinations?.forEach(d => {
-            const opt = document.createElement("option");
-            opt.value = d.id;
-            opt.textContent = `${d.active ? '● ' : ''}${d.type.toUpperCase()} | ${d.database}`;
-            if (d.active) opt.selected = true;
-            dropdown.appendChild(opt);
-        });
-    } catch (e) {}
-}
-
-async function activateDest(id) {
-    if (!id) return;
-    await fetch("http://localhost:4000/destination/activate", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ source: "news", dest_id: id })
-    });
-    loadDestinations();
-}
-
-async function saveDestination() {
-    const btn = document.getElementById("saveDestBtn");
-    btn.innerText = "AUTHENTICATING..."; btn.disabled = true;
-    const type = document.getElementById("destType").value;
-    
-    let payload = { source: "news", type };
-    
-    if(type === "bigquery"){
-        payload.host = document.getElementById("bqProject")?.value || "";
-        payload.database = document.getElementById("bqDataset")?.value || "";
-        payload.password = document.getElementById("bqKey")?.value || "";
-        payload.port = "";
-        payload.username = "";
-    } else if (type && type !== "") {
-        payload.host     = document.getElementById("dbHost")?.value   || "";
-        payload.port     = document.getElementById("dbPort")?.value   || "";
-        payload.username = document.getElementById("dbUser")?.value   || "";
-        payload.password = document.getElementById("dbPass")?.value   || "";
-        payload.database = document.getElementById("dbName")?.value   || "";
-    }
-
-    try {
-        const res = await fetch("http://localhost:4000/destination/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-            btn.innerText = "SAVED ✓";
-            loadDestinations();
-            setTimeout(() => { btn.innerText = "Authenticate & Save"; btn.disabled = false; }, 2000);
-        } else {
-            throw new Error();
+        const statusEl = document.getElementById("destStatus");
+        dropdown.innerHTML = '<option value="">Select Connection...</option>';
+        if(data.destinations?.length) {
+            data.destinations.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.id;
+                opt.textContent = `${d.active ? '● ' : ''}${d.type.toUpperCase()} | ${d.database}`;
+                if(d.active) {
+                    opt.selected = true;
+                    statusEl.innerText = "Connection Active";
+                }
+                dropdown.appendChild(opt);
+            });
         }
-    } catch (e) {
-        alert("Connection failed");
-        btn.innerText = "RETRY";
-        btn.disabled = false;
-    }
+    } catch(e) {}
 }
 
-async function saveJob() {
-    const time = `${document.getElementById("hourSelect").value}:${document.getElementById("minSelect").value}`;
-    await fetch("/connectors/news/job/save", {
+function toggleDest(){
+    const type = document.getElementById("destType").value;
+    const fields = document.getElementById("dbFields");
+    if(type){ fields.classList.remove("hidden"); } else { fields.classList.add("hidden"); return; }
+    document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery");
+    document.getElementById("bigqueryFields").classList.toggle("hidden", type !== "bigquery");
+}
+
+async function saveDestination(){
+    const btn = document.getElementById("saveDestBtn");
+    btn.innerText = "CONNECTING...";
+    const type = document.getElementById("destType").value;
+    let payload = { source: "news", type };
+    if(type === "bigquery"){
+        payload.host = document.getElementById("bqProject").value;
+        payload.database = document.getElementById("bqDataset").value;
+        payload.password = document.getElementById("bqKey").value;
+    } else {
+        payload.host = document.getElementById("dbHost").value;
+        payload.port = document.getElementById("dbPort").value;
+        payload.username = document.getElementById("dbUser").value;
+        payload.password = document.getElementById("dbPass").value;
+        payload.database = document.getElementById("dbName").value;
+    }
+    const res = await fetch("/destination/save", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+    if(res.ok) { btn.innerText = "SUCCESS ✓"; loadDestinations(); setTimeout(() => btn.innerText = "Authenticate & Save", 2000); }
+}
+
+async function loadJob(){
+    try {
+        const data = await fetch("/connectors/news/job/get").then(r => r.json());
+        if(data.schedule_time){
+            const [h, m] = data.schedule_time.split(':');
+            document.getElementById("hourSelect").value = h;
+            document.getElementById("minSelect").value = m;
+            document.getElementById("syncType").value = data.sync_type || "incremental";
+        }
+    } catch(e) {}
+}
+
+async function saveJob(){
+    const time = `${document.getElementById("hourSelect").value}:${document.getElementById("minSelect").value}`;
+    const res = await fetch("/connectors/news/job/save", {
+        method: "POST", 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
             sync_type: document.getElementById("syncType").value, 
             schedule_time: time 
         })
     });
-    alert("Sync Job Updated");
+    if(res.ok) alert("Job Schedule Updated");
 }
 
 async function runSync() {
     const keyword = document.getElementById("keywordInput").value.trim();
-    const syncType = document.getElementById("syncType").value;
-
-    if (!keyword) {
-        alert("Please enter a keyword or topic");
-        return;
-    }
+    if (!keyword) { alert("Please enter a keyword or topic before syncing."); return; }
 
     const btn = document.getElementById("syncBtn");
-    btn.innerText = "POLLING SOURCES...";
+    const syncType = document.getElementById("syncType").value;
+    btn.innerText = "POLLING RSS...";
     btn.disabled = true;
 
     try {
-        const res = await fetch(`http://localhost:4000/connectors/news/sync?keyword=${encodeURIComponent(keyword)}&sync_type=${syncType}`);
-
-        if (!res.ok) {
-            throw new Error("Server error");
-        }
-
+        const res = await fetch(`/connectors/news/sync?keyword=${encodeURIComponent(keyword)}&sync_type=${syncType}`);
         const d = await res.json();
 
         if (d.status === "success") {
-            btn.innerText = `SYNCED (${d.fetched} articles)`;
+            btn.innerText = `SUCCESS (${d.fetched || 0} ITEMS)`;
         } else {
             btn.innerText = "SYNC FAILED";
         }
-
     } catch (err) {
-        console.error(err);
-        btn.innerText = "FAILED";
+        btn.innerText = "ERROR";
     } finally {
         setTimeout(() => {
-            btn.innerText = "Search & Sync";
+            btn.innerText = "Ingest News Feed";
             btn.disabled = false;
-        }, 4000);
+        }, 3000);
     }
+}
+
+async function activateDest(id){
+    if(!id) return;
+    await fetch("/destination/activate", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ source: "news", dest_id: id })
+    });
+    loadDestinations();
 }
 </script>
 

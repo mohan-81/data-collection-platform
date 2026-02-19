@@ -592,7 +592,7 @@ and typography optimization.
   auth_type:"api_key",
 
   connect_url:null,
-  sync_url:"http://localhost:4000/google/sync/pagespeed",
+  sync_url:"/connectors/pagespeed/sync",
   dashboard:"/dashboard/pagespeed",
 
   long_description:`
@@ -631,8 +631,8 @@ to optimize SEO and loading speed.
 
   auth_type:"oauth",
 
-  connect_url:"http://localhost:4000/google/connect",
-  sync_url:"http://localhost:4000/google/sync/gcs",
+  connect_url:"/connectors/gcs/connect",
+  sync_url:"/connectors/gcs/sync", 
   dashboard:"/dashboard/gcs",
 
   long_description:`

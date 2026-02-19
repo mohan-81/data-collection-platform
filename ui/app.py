@@ -3796,23 +3796,32 @@ def gcs_objects():
 @app.route("/api/status/gcs")
 def gcs_status():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid=request.cookies.get("uid") or "demo_user"
+    conn=sqlite3.connect(DB_PATH)
+    cur=conn.cursor()
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+    # credentials saved?
+    cur.execute("""
+        SELECT 1 FROM connector_configs
+        WHERE uid=? AND connector='gcs'
+        LIMIT 1
+    """,(uid,))
+    creds=cur.fetchone()
 
+    # connected?
     cur.execute("""
         SELECT enabled
         FROM google_connections
         WHERE uid=? AND source='gcs'
         LIMIT 1
-    """, (uid,))
+    """,(uid,))
+    row=cur.fetchone()
 
-    row = cur.fetchone()
     conn.close()
 
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": bool(row and row[0]==1),
+        "has_credentials": bool(creds)
     })
 
 @app.route("/connectors/gcs/disconnect")
@@ -3844,6 +3853,15 @@ def gcs_job_save_proxy():
     )
 
     return jsonify(r.json())
+
+@app.route("/connectors/gcs/save_app",methods=["POST"])
+def gcs_save_app_proxy():
+    r=requests.post(
+        "http://localhost:4000/connectors/gcs/save_app",
+        json=request.get_json(),
+        headers={"Cookie":request.headers.get("Cookie","")}
+    )
+    return jsonify(r.json()),r.status_code
 
 # ================= GOOGLE CLASSROOM =================
 

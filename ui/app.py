@@ -160,6 +160,48 @@ def github_data(table):
 
     return jsonify([dict(r) for r in rows])
 
+@app.route("/api/status/github")
+def github_status_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/api/status/github",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/github/job/get")
+def github_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/github/job/get",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/github/job/save", methods=["POST"])
+def github_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/github/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/github/save_app", methods=["POST"])
+def github_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/github/save_app",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
+
 # ================= REDDIT ========================
 
 @app.route("/connectors/reddit")

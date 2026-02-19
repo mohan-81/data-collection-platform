@@ -8,13 +8,10 @@ from urllib.parse import urlencode
 from dotenv import load_dotenv
 from destinations.destination_router import push_to_destination
 
-load_dotenv()
 
 DB = "identity.db"
 SOURCE = "github"
 
-CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 API = "https://api.github.com"
 
 
@@ -129,31 +126,62 @@ def get_active_destination(uid):
         "database_name": row[5]
     }
 
+def get_github_app(uid):
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector='github'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        raise Exception("GitHub App credentials not configured")
+
+    return {
+        "client_id": row[0],
+        "client_secret": row[1]
+    }
 
 # ---------------- AUTH ---------------- #
 
-def get_auth_url():
+def get_auth_url(uid):
+
+    app = get_github_app(uid)
+
     params = {
-        "client_id": CLIENT_ID,
+        "client_id": app["client_id"],
         "scope": "repo read:user",
         "allow_signup": "true"
     }
-    return "https://github.com/login/oauth/authorize?" + urlencode(params)
 
+    return (
+        "https://github.com/login/oauth/authorize?"
+        + urlencode(params)
+    )
 
-def exchange_code(code):
+def exchange_code(uid, code):
+
+    app = get_github_app(uid)
+
     r = requests.post(
         "https://github.com/login/oauth/access_token",
         headers={"Accept": "application/json"},
         data={
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
+            "client_id": app["client_id"],
+            "client_secret": app["client_secret"],
             "code": code
         },
         timeout=20
     )
-    return r.json()
 
+    return r.json()
 
 def save_token(uid, data):
     con = get_db()

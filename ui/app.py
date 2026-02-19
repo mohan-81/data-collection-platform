@@ -3870,13 +3870,31 @@ def classroom_page():
     return render_template("connectors/classroom.html")
 
 
-# ---- CONNECT ----
 @app.route("/connectors/classroom/connect")
 def classroom_connect():
-
     return redirect(
         "http://localhost:4000/google/connect?source=classroom"
     )
+
+@app.route("/connectors/classroom/save_app", methods=["POST"])
+def classroom_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/classroom/save_app",
+        json=request.get_json(),
+        headers={"Cookie": request.headers.get("Cookie","")}
+    )
+
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/classroom/disconnect")
+def classroom_disconnect():
+
+    r = requests.get(
+        "http://localhost:4000/google/disconnect/classroom"
+    )
+
+    return jsonify(r.json())
 
 
 # ---- SYNC ----
@@ -3899,27 +3917,37 @@ def classroom_sync():
 def classroom_dashboard():
     return render_template("dashboards/classroom.html")
 
-
-# ---- STATUS (DATA BASED) ----
 @app.route("/api/status/classroom")
 def classroom_status():
+
+    uid = request.cookies.get("uid") or "demo_user"
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # credentials saved?
     cur.execute("""
-        SELECT COUNT(*)
-        FROM google_classroom_courses
-    """)
+        SELECT 1 FROM connector_configs
+        WHERE uid=? AND connector='classroom'
+        LIMIT 1
+    """,(uid,))
+    creds = cur.fetchone()
 
-    count = cur.fetchone()[0]
+    # oauth connected?
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='classroom'
+        LIMIT 1
+    """,(uid,))
+    row = cur.fetchone()
 
     conn.close()
 
     return jsonify({
-        "connected": count > 0
+        "connected": bool(row and row[0]==1),
+        "has_credentials": bool(creds)
     })
-
 
 # ---- DATA APIs ----
 

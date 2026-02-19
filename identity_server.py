@@ -3691,6 +3691,117 @@ def classroom_sync():
 
     return jsonify(result)
 
+@app.route("/connectors/classroom/save_app", methods=["POST"])
+def classroom_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Missing credentials"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'classroom', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.utcnow().isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+@app.route("/google/disconnect/classroom")
+def disconnect_classroom():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE google_connections
+        SET enabled=0
+        WHERE uid=? AND source='classroom'
+    """, (uid,))
+
+    cur.execute("""
+        DELETE FROM google_accounts
+        WHERE uid=? AND source='classroom'
+    """, (uid,))
+
+    cur.execute("""
+        UPDATE connector_jobs
+        SET enabled=0
+        WHERE uid=? AND source='classroom'
+    """, (uid,))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "ok"})
+
+@app.route("/connectors/classroom/job/get")
+def classroom_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='classroom'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/classroom/job/save", methods=["POST"])
+def classroom_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'classroom', ?, ?)
+    """, (
+        uid,
+        data.get("sync_type","incremental"),
+        data.get("schedule_time")
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status":"job_saved"})
+
 @app.route("/google/sync/tasks")
 def google_sync_tasks():
 

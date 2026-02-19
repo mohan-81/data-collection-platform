@@ -38,28 +38,43 @@ def get_creds(uid):
     con = sqlite3.connect(DB)
     cur = con.cursor()
 
+    # OAuth token
     cur.execute("""
         SELECT access_token, refresh_token, scopes
         FROM google_accounts
-        WHERE uid=? AND source=?
+        WHERE uid=? AND source='classroom'
         ORDER BY created_at DESC
         LIMIT 1
-    """, (uid, SOURCE))
+    """, (uid,))
+    token = cur.fetchone()
 
-    row = cur.fetchone()
+    if not token:
+        raise Exception("Classroom not authorized")
+
+    access, refresh, scopes = token
+
+    # Connector specific app creds
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector='classroom'
+        LIMIT 1
+    """, (uid,))
+    app = cur.fetchone()
+
     con.close()
 
-    if not row:
-        raise Exception("No Google OAuth token found for Classroom")
+    if not app:
+        raise Exception("Classroom app credentials missing")
 
-    access, refresh, scopes = row
+    client_id, client_secret = app
 
     return Credentials(
         token=access,
         refresh_token=refresh,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=scopes.split(",") if scopes else None
     )
 

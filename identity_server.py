@@ -4819,7 +4819,6 @@ def telegram_sync_universal():
     con = get_db()
     cur = con.cursor()
 
-    # 1️⃣ Check connection
     cur.execute("""
         SELECT COUNT(*)
         FROM telegram_accounts
@@ -4829,7 +4828,6 @@ def telegram_sync_universal():
         con.close()
         return jsonify({"error": "not connected"}), 400
 
-    # 2️⃣ Get sync type
     cur.execute("""
         SELECT sync_type
         FROM connector_jobs
@@ -4848,7 +4846,6 @@ def telegram_sync_universal():
     total_messages = res["messages"]
     rows = res["rows"]
 
-    # 3️⃣ Destination lookup
     con = get_db()
     cur = con.cursor()
 
@@ -4890,42 +4887,51 @@ def telegram_sync_universal():
         "sync_type": sync_type
     })
 
-@app.route("/connectors/telegram/connect", methods=["POST"])
+@app.route("/connectors/telegram/connect")
 def telegram_connect():
 
     uid = get_uid()
-    data = request.json
-
-    bot_token = data.get("bot_token")
-
-    if not bot_token:
-        return jsonify({"error": "bot_token required"}), 400
 
     con = get_db()
     cur = con.cursor()
 
-    # Save token
+    # read saved token
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='telegram'
+        LIMIT 1
+    """,(uid,))
+
+    row = cur.fetchone()
+
+    if not row:
+        return jsonify({"error":"config missing"}),400
+
+    bot_token = row[0]
+
+    # store runtime connection
     cur.execute("""
         INSERT OR REPLACE INTO telegram_accounts
         (uid, bot_token, created_at)
         VALUES (?,?,?)
-    """, (
+    """,(
         uid,
         bot_token,
-        datetime.datetime.now().isoformat()
+        datetime.datetime.utcnow().isoformat()
     ))
 
-    # Mark enabled
+    # enable connector
     cur.execute("""
         INSERT OR REPLACE INTO google_connections
-        (uid, source, enabled)
-        VALUES (?, 'telegram', 1)
-    """, (uid,))
+        (uid,source,enabled)
+        VALUES (?, 'telegram',1)
+    """,(uid,))
 
     con.commit()
     con.close()
 
-    return jsonify({"status": "connected"})
+    return jsonify({"status":"connected"})
 
 @app.route("/connectors/telegram/disconnect")
 def telegram_disconnect():
@@ -4948,6 +4954,63 @@ def telegram_disconnect():
 
     return jsonify({"status": "disconnected"})
 
+@app.route("/api/status/telegram")
+def telegram_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    # enabled
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='telegram'
+    """,(uid,))
+    conn = cur.fetchone()
+
+    # credentials saved
+    cur.execute("""
+        SELECT api_key
+        FROM connector_configs
+        WHERE uid=? AND connector='telegram'
+    """,(uid,))
+    cfg = cur.fetchone()
+
+    con.close()
+
+    return jsonify({
+        "connected": bool(conn and conn[0]==1),
+        "has_credentials": bool(cfg and cfg[0])
+    })
+
+# ---------------- TELEGRAM SAVE CONFIG ----------------
+
+@app.route("/connectors/telegram/save_config", methods=["POST"])
+def telegram_save_config():
+
+    uid = get_uid()
+    data = request.json
+
+    bot_token = data.get("bot_token")
+
+    if not bot_token:
+        return jsonify({"error": "bot_token required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, api_key, created_at)
+        VALUES (?, 'telegram', ?, datetime('now'))
+    """, (uid, bot_token))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 # ---------------- MEDIUM ----------------
 
 @app.route("/medium/sync")

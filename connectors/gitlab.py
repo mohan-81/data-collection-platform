@@ -10,9 +10,6 @@ load_dotenv()
 
 DB = "identity.db"
 
-CLIENT_ID = os.getenv("GITLAB_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GITLAB_CLIENT_SECRET")
-
 API = "https://gitlab.com/api/v4"
 
 
@@ -21,6 +18,28 @@ API = "https://gitlab.com/api/v4"
 def db():
     return sqlite3.connect(DB, timeout=60, check_same_thread=False)
 
+def get_gitlab_app(uid):
+
+    con = db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT client_id, client_secret
+        FROM connector_configs
+        WHERE uid=? AND connector='gitlab'
+        LIMIT 1
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        raise Exception("GitLab credentials not configured")
+
+    return {
+        "client_id": row[0],
+        "client_secret": row[1]
+    }
 # ---------------- STATE ---------------- #
 
 def get_project_state(uid, project_id):
@@ -66,10 +85,12 @@ def save_project_state(uid, project_id, commit_date=None, issue_date=None):
 
 # ---------------- AUTH ----------------
 
-def get_auth_url():
+def get_auth_url(uid):
+
+    app = get_gitlab_app(uid)
 
     params = {
-        "client_id": CLIENT_ID,
+        "client_id": app["client_id"],
         "redirect_uri": "http://localhost:4000/gitlab/callback",
         "response_type": "code",
         "scope": "read_user read_api read_repository"
@@ -77,14 +98,15 @@ def get_auth_url():
 
     return "https://gitlab.com/oauth/authorize?" + urlencode(params)
 
+def exchange_code(uid, code):
 
-def exchange_code(code):
+    app = get_gitlab_app(uid)
 
     r = requests.post(
         "https://gitlab.com/oauth/token",
         data={
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
+            "client_id": app["client_id"],
+            "client_secret": app["client_secret"],
             "code": code,
             "grant_type": "authorization_code",
             "redirect_uri": "http://localhost:4000/gitlab/callback"
@@ -93,7 +115,6 @@ def exchange_code(code):
     )
 
     return r.json()
-
 
 def save_token(uid, data):
 

@@ -6544,6 +6544,39 @@ def gitlab_connect():
     uid = get_uid()
     return redirect(get_auth_url(uid))
 
+# ---------------- GITLAB SAVE CONFIG ----------------
+
+@app.route("/connectors/gitlab/save_app", methods=["POST"])
+def gitlab_save_app():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({
+            "error": "Client ID & Secret required"
+        }), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'gitlab', ?, ?, datetime('now'))
+    """, (
+        uid,
+        client_id,
+        client_secret
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
 
 @app.route("/connectors/gitlab/disconnect")
 def gitlab_disconnect():
@@ -6579,7 +6612,7 @@ def gitlab_callback():
 
     from connectors.gitlab import exchange_code, save_token
 
-    data = exchange_code(code)
+    data = exchange_code(uid, code)
     save_token(uid, data)
 
     # Enable connection
@@ -6596,6 +6629,92 @@ def gitlab_callback():
     con.close()
 
     return redirect("http://localhost:3000/connectors/gitlab")
+
+@app.route("/api/status/gitlab")
+def gitlab_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    # credentials exist?
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='gitlab'
+        LIMIT 1
+    """, (uid,))
+    creds = cur.fetchone()
+
+    # connection enabled?
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='gitlab'
+        LIMIT 1
+    """, (uid,))
+    row = cur.fetchone()
+
+    con.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected": bool(row and row[0] == 1)
+    })
+
+@app.route("/connectors/gitlab/job/get")
+def gitlab_job_get():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source='gitlab'
+    """, (uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row[0],
+        "schedule_time": row[1]
+    })
+
+@app.route("/connectors/gitlab/job/save", methods=["POST"])
+def gitlab_job_save():
+
+    uid = get_uid()
+    data = request.get_json()
+
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'gitlab', ?, ?)
+    """, (
+        uid,
+        sync_type,
+        schedule_time
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
 
 @app.route("/connectors/gitlab/sync")
 def gitlab_sync_universal():

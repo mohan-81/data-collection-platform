@@ -899,17 +899,18 @@ def discord_status_proxy():
 def telegram_page():
     return render_template("connectors/telegram.html")
 
-@app.route("/connectors/telegram/connect", methods=["POST"])
-def telegram_connect():
+@app.route("/connectors/telegram/connect")
+def telegram_connect_proxy():
 
-    data = request.json
-
-    r = requests.post(
+    r = requests.get(
         "http://localhost:4000/connectors/telegram/connect",
-        json=data
+        cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    if r.status_code != 200:
+        return r.text, 400
+
+    return redirect("/connectors/telegram")
 
 @app.route("/connectors/telegram/disconnect")
 def telegram_disconnect():
@@ -940,24 +941,14 @@ def telegram_dashboard():
 # -------- STATUS --------
 
 @app.route("/api/status/telegram")
-def telegram_status():
+def telegram_status_proxy():
 
-    conn = sqlite3.connect("../identity.db")
-    cur = conn.cursor()
+    r = requests.get(
+        "http://localhost:4000/api/status/telegram",
+        cookies=request.cookies
+    )
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE source='telegram'
-        LIMIT 1
-    """)
-
-    ok = cur.fetchone()[0] > 0
-
-    conn.close()
-
-    return jsonify({"connected": ok})
-
+    return jsonify(r.json())
 
 # -------- DATA APIs --------
 
@@ -1000,6 +991,17 @@ def telegram_messages(cid):
     conn.close()
 
     return jsonify([dict(r) for r in rows])
+
+@app.route("/connectors/telegram/save_config", methods=["POST"])
+def telegram_save_config_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/telegram/save_config",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
 
 # ================= TUMBLR =================
 

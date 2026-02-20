@@ -1695,69 +1695,53 @@ def osm_notes():
 def wikipedia_page():
     return render_template("connectors/wikipedia.html")
 
-
 # -------- CONNECT --------
 
-@app.route("/connectors/wikipedia/connect", methods=["POST"])
+@app.route("/connectors/wikipedia/connect")
 def ui_wikipedia_connect():
 
-    r = requests.post(
+    requests.get(
         "http://localhost:4000/connectors/wikipedia/connect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
-
+    return redirect("/connectors/wikipedia")
 
 # -------- DISCONNECT --------
 
 @app.route("/connectors/wikipedia/disconnect")
 def ui_wikipedia_disconnect():
 
-    r = requests.get(
+    requests.get(
         "http://localhost:4000/connectors/wikipedia/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
-
+    return redirect("/connectors/wikipedia")
 
 # -------- SYNC --------
 
 @app.route("/connectors/wikipedia/sync")
 def ui_wikipedia_sync():
 
-    r = requests.get(
+    r=requests.get(
         "http://localhost:4000/connectors/wikipedia/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
-
+    return jsonify(r.json())
 
 # -------- STATUS (Unified Pattern) --------
 
 @app.route("/api/status/wikipedia")
-def wikipedia_status():
+def wikipedia_status_proxy():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    r=requests.get(
+        "http://localhost:4000/api/status/wikipedia",
+        cookies=request.cookies
+    )
 
-    con = sqlite3.connect("../identity.db")
-    cur = con.cursor()
-
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='wikipedia'
-    """, (uid,))
-
-    row = cur.fetchone()
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
-
+    return jsonify(r.json())
 
 # -------- DASHBOARD --------
 
@@ -1923,8 +1907,6 @@ def ui_producthunt_topics():
     )
 
     return jsonify(r.json())
-
-# ============ DISCOURSE ============
 
 # ================= DISCOURSE =================
 

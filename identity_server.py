@@ -7818,7 +7818,7 @@ def producthunt_data_topics():
 
 # ---------------- WIKIPEDIA ----------------
 
-@app.route("/connectors/wikipedia/connect", methods=["POST"])
+@app.route("/connectors/wikipedia/connect")
 def wikipedia_connect():
 
     uid = get_uid()
@@ -7828,14 +7828,14 @@ def wikipedia_connect():
 
     cur.execute("""
         INSERT OR REPLACE INTO google_connections
-        (uid, source, enabled)
-        VALUES (?, 'wikipedia', 1)
-    """, (uid,))
+        (uid,source,enabled)
+        VALUES (?,?,1)
+    """,(uid,"wikipedia"))
 
     con.commit()
     con.close()
 
-    return jsonify({"status": "connected"})
+    return jsonify({"status":"connected"})
 
 @app.route("/connectors/wikipedia/disconnect")
 def wikipedia_disconnect():
@@ -7855,6 +7855,31 @@ def wikipedia_disconnect():
     con.close()
 
     return jsonify({"status": "disconnected"})
+
+@app.route("/api/status/wikipedia")
+def wikipedia_status():
+
+    uid=get_uid()
+
+    con=get_db()
+    cur=con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='wikipedia'
+    """,(uid,))
+
+    connected=bool(
+        (r:=cur.fetchone()) and r[0]==1
+    )
+
+    con.close()
+
+    return jsonify({
+        "connected":connected,
+        "has_credentials":True
+    })
 
 @app.route("/connectors/wikipedia/sync")
 def wikipedia_sync():

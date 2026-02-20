@@ -1,19 +1,13 @@
+from flask import json
 import requests
 import sqlite3
 import time
 import os
 from datetime import datetime
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 DB = "identity.db"
 
 API_URL = "https://api.producthunt.com/v2/api/graphql"
-
-TOKEN = os.getenv("PRODUCTHUNT_TOKEN")
-
 
 # ---------------- DB Helper ----------------
 
@@ -31,19 +25,35 @@ def db():
 
     return con
 
+def get_token(uid):
+
+    con=db()
+    cur=con.cursor()
+
+    cur.execute("""
+    SELECT config_json
+    FROM connector_configs
+    WHERE uid=? AND connector='producthunt'
+    """,(uid,))
+
+    row=cur.fetchone()
+    con.close()
+
+    if not row:
+        raise Exception("ProductHunt token missing")
+
+    return json.loads(row[0])["api_token"]
 
 # ---------------- Token Helper ----------------
 
-def get_headers():
+def get_headers(uid):
 
-    if not TOKEN:
-        raise Exception("PRODUCTHUNT_TOKEN not set in .env")
+    token=get_token(uid)
 
     return {
-        "Authorization": f"Bearer {TOKEN}",
-        "Content-Type": "application/json"
+        "Authorization":f"Bearer {token}",
+        "Content-Type":"application/json"
     }
-
 
 # ---------------- State ----------------
 
@@ -84,14 +94,14 @@ def save_last_time(uid, ts):
 
 # ---------------- HTTP ----------------
 
-def safe_post(query):
+def safe_post(uid, query):
 
     try:
 
         r = requests.post(
             API_URL,
             json={"query": query},
-            headers=get_headers(),
+            headers=get_headers(uid),
             timeout=15
         )
 
@@ -267,7 +277,7 @@ def sync_producthunt(uid, sync_type="incremental", limit=30):
     }}
     """
 
-    posts_data = safe_post(posts_q)
+    posts_data = safe_post(uid,posts_q)
 
     if not posts_data:
         return {"rows": [], "posts": 0}

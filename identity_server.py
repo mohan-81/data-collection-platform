@@ -8981,10 +8981,15 @@ def nvd_save_config():
 @app.route("/connectors/pinterest/connect")
 def pinterest_connect():
 
-    auth_url = pinterest_get_auth_url() # this uses CLIENT_ID + REDIRECT_URI
+    uid = get_uid()
+
+    auth_url = pinterest_get_auth_url(uid)
+
+    if not auth_url:
+        return jsonify({"error":"credentials missing"}),400
 
     return redirect(auth_url)
-
+    
 @app.route("/connectors/pinterest/disconnect")
 def pinterest_disconnect():
 
@@ -9011,41 +9016,14 @@ def pinterest_disconnect():
 @app.route("/pinterest/callback")
 def pinterest_callback():
 
-    print("PINTEREST CALLBACK HIT")
-
     uid = get_uid()
     code = request.args.get("code")
 
-    if not code:
-        return "Authorization failed", 400
-
-    token_data = pinterest_exchange_code(code)
+    token_data = pinterest_exchange_code(uid, code)
 
     if not token_data:
-        return "Token exchange failed", 400
-
-    access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
-    expires_in = token_data.get("expires_in")
-
-    # Save token
-    pinterest_save_token(uid, access_token, refresh_token, expires_in)
-
-    con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        INSERT OR REPLACE INTO google_connections
-        (uid, source, enabled)
-        VALUES (?, 'pinterest', 1)
-    """, (uid,))
-
-    con.commit()
-    con.close()
-
-    # IMPORTANT: redirect to UI (3000)
-    return redirect("http://localhost:3000/connectors/pinterest")
-
+        return "Token exchange failed",400
+    
 @app.route("/connectors/pinterest/sync")
 def pinterest_sync_universal():
 
@@ -9125,6 +9103,74 @@ def pinterest_sync_universal():
     return jsonify({
         "pins": result.get("pins", 0),
         "rows_pushed": pushed
+    })
+
+# ---------------- PINTEREST SAVE CONFIG ----------------
+
+@app.route("/connectors/pinterest/save_config", methods=["POST"])
+def pinterest_save_config():
+
+    uid = get_uid()
+    data = request.json or {}
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "missing credentials"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, config_json, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+    """, (
+        uid,
+        "pinterest",
+        json.dumps({
+            "client_id": client_id,
+            "client_secret": client_secret
+        })
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})    
+
+@app.route("/api/status/pinterest")
+def pinterest_status():
+
+    uid = get_uid()
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='pinterest'
+    """,(uid,))
+
+    connected = bool(
+        (row := cur.fetchone()) and row[0] == 1
+    )
+
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='pinterest'
+    """,(uid,))
+
+    has_credentials = bool(cur.fetchone())
+
+    con.close()
+
+    return jsonify({
+        "connected": connected,
+        "has_credentials": has_credentials
     })
 
 # ---------------- FACEBOOK PAGES SAVE APP CREDENTIALS ----------------

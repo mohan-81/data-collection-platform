@@ -8,15 +8,11 @@
 
   <div class="max-w-7xl mx-auto relative z-10 space-y-24">
 
-    <!-- Hero -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
       <div data-aos="fade-right">
-        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/5 text-red-400 text-[10px] font-mono mb-8 tracking-widest uppercase">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-          OAUTH2_TOKEN_ACTIVE
+        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 text-[10px] font-mono mb-8 tracking-widest uppercase transition-all">
+          <span id="statusDot" class="h-2 w-2 rounded-full bg-slate-600"></span>
+          <span id="statusText">NOT CONNECTED</span>
         </div>
 
         <h1 class="text-7xl font-black text-white tracking-tighter mb-6">
@@ -26,48 +22,68 @@
           The Segmento Pinterest Connector orchestrates the synchronization of visual boards, pin metadata, and engagement analytics via secure OAuth2 integration.
         </p>
 
-        <div class="flex flex-wrap gap-4 items-center" id="connectSection">
-            <button onclick="connectPinterest()" id="connectBtn" 
-                    class="px-10 py-4 bg-red-600 text-white rounded-2xl font-black hover:bg-white hover:text-red-600 transition-all shadow-xl shadow-red-600/20">
-              Connect Account
-            </button>
-            <button onclick="disconnectPinterest()" id="disconnectBtn" class="hidden px-10 py-4 bg-slate-700 text-white rounded-2xl font-black hover:bg-slate-600 transition-all">
-              Disconnect
-            </button>
+        <div class="flex flex-wrap gap-4 items-center">
             <a href="/dashboard/pinterest" class="px-10 py-4 border border-slate-700 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all">
               Dashboard
             </a>
+            <button onclick="disconnectPinterest()" id="disconnectBtn" class="hidden px-10 py-4 bg-red-900/20 border border-red-500/50 text-red-400 rounded-2xl font-bold hover:bg-red-600 hover:text-white transition-all">
+              Disconnect
+            </button>
         </div>
       </div>
 
       <div class="flex justify-center items-center" data-aos="zoom-in">
-        <div class="relative w-full max-w-[500px] h-[350px] bg-white/5 backdrop-blur-xl rounded-[3rem] border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
-            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#E60023 1px, transparent 1px); background-size: 30px 30px;"></div>
-            <div class="flex items-center justify-between w-full px-12 relative z-10">
-                <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl">
-                    <img src="/static/images/logos/pinterest.png" class="w-12 h-12 object-contain">
+        <div id="connectSection" class="relative w-full max-w-[500px] bg-slate-800/60 backdrop-blur-xl border border-white/10 p-10 rounded-[3.5rem] shadow-2xl">
+          
+          <div class="flex justify-between mb-10 px-2">
+            <div class="flex flex-col items-center gap-2">
+              <div id="step1-circle" class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold transition-all">1</div>
+              <span class="text-[9px] font-mono text-red-400 uppercase tracking-tighter font-bold">Credentials</span>
+            </div>
+            <div class="flex-1 h-[1px] bg-slate-700 mt-4 mx-2"></div>
+            <div class="flex flex-col items-center gap-2">
+              <div id="step2-circle" class="w-8 h-8 rounded-full bg-slate-700 text-slate-500 flex items-center justify-center text-xs font-bold transition-all">2</div>
+              <span class="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">Authorize</span>
+            </div>
+            <div class="flex-1 h-[1px] bg-slate-700 mt-4 mx-2"></div>
+            <div class="flex flex-col items-center gap-2">
+              <div id="step3-circle" class="w-8 h-8 rounded-full bg-slate-700 text-slate-500 flex items-center justify-center text-xs font-bold transition-all">3</div>
+              <span class="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">Connected</span>
+            </div>
+          </div>
+
+          <div id="credentialsForm" class="space-y-4">
+            <div id="inputGroup">
+                <div>
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block ml-2 tracking-widest">Pinterest Client ID</label>
+                    <input id="pinterest_client_id" placeholder="Enter Client ID" class="w-full px-6 py-4 bg-slate-900/50 border border-slate-700 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-red-500 transition-all shadow-inner">
                 </div>
-                <div class="flex-1 h-[2px] mx-4 relative bg-slate-700">
-                    <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-white animate-[flow_2s_infinite_linear]"></div>
-                </div>
-                <div class="w-20 h-20 bg-slate-800 border-2 border-red-500 rounded-full flex items-center justify-center shadow-2xl">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+                <div class="mt-4">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block ml-2 tracking-widest">Pinterest Client Secret</label>
+                    <input id="pinterest_client_secret" type="password" placeholder="Enter Client Secret" class="w-full px-6 py-4 bg-slate-900/50 border border-slate-700 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-red-500 transition-all shadow-inner">
                 </div>
             </div>
-            <div class="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/5 font-mono text-[10px] text-red-400 flex justify-between">
-                <span id="protocolStatus" class="animate-pulse">● PINTEREST_API_v5_READY</span>
-                <span id="dbStatus" class="text-slate-400 tracking-tighter">STORAGE_VERIFIED_SQLITE</span>
+            
+            <button id="authBtn" onclick="handleAuthAction()" class="w-full py-5 bg-red-600 text-white rounded-2xl font-black hover:bg-white hover:text-red-600 transition-all shadow-lg shadow-red-600/20 text-xs uppercase tracking-widest mt-2">
+              Save Credentials
+            </button>
+
+            <div class="mt-8 pt-8 border-t border-white/5">
+              <h4 class="text-white text-xs font-bold mb-4 uppercase tracking-widest">OAuth Setup</h4>
+              <ul class="space-y-3">
+                <li class="flex items-start gap-3 text-[11px] text-slate-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></span>
+                  <span>Redirect URI: <code class="bg-slate-900 px-1 rounded text-red-300">/connectors/pinterest/callback</code></span>
+                </li>
+              </ul>
             </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Controls: Sync Engine + Destination -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        <!-- Sync Engine -->
         <div class="lg:col-span-1">
             <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
                 <div class="flex items-center gap-3 mb-8">
@@ -114,7 +130,6 @@
             </div>
         </div>
 
-        <!-- Destination Setup – RED THEME -->
         <div class="lg:col-span-2">
             <div class="bg-slate-800/60 backdrop-blur-md border border-white/10 p-8 rounded-[2.5rem] shadow-2xl h-full">
                 <div class="flex items-center justify-between mb-8">
@@ -180,7 +195,6 @@
         </div>
     </div>
 
-    <!-- Pipeline Steps -->
     <div>
       <h2 class="text-4xl font-black mb-16 text-center text-white tracking-tight">Visual Data <span class="text-red-500">Pipeline</span></h2>
       <div class="grid md:grid-cols-3 gap-8">
@@ -198,7 +212,6 @@
       </div>
     </div>
 
-    <!-- Schema -->
     <div class="pt-12">
       <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">Database <span class="text-red-500">Architecture</span></h2>
       
@@ -230,7 +243,6 @@
       </div>
     </div>
 
-    <!-- Extraction Entities -->
     <div class="mb-32">
       <h2 class="text-4xl font-black mb-12 text-center text-white">Extraction Points</h2>
       <div class="grid md:grid-cols-3 gap-6">
@@ -258,39 +270,89 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    checkPinterestStatus();
+    checkStatus(); // Lifecycle status check
     loadDestinations();
     loadJob();
 });
 
-async function checkPinterestStatus(){
+// --- Lifecycle State Machine Logic ---
+async function checkStatus() {
     try {
-        const res = await fetch("http://localhost:4000/api/status/pinterest").then(r => r.json());
-        const connectBtn = document.getElementById("connectBtn");
-        const disconnectBtn = document.getElementById("disconnectBtn");
-        const badge = document.getElementById("statusBadge");
-
-        if(res.connected){
-            connectBtn.classList.add("hidden");
-            disconnectBtn.classList.remove("hidden");
-            badge.innerHTML = `<span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              </span> CONNECTED`;
-            badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/5 text-red-400 text-[10px] font-mono mb-8 tracking-widest uppercase";
+        const res = await fetch("/api/status/pinterest");
+        const data = await res.json();
+        updateStatusBadge(data.connected);
+        updateSteps(data.has_credentials, data.connected);
+        
+        if (data.connected) {
+            document.getElementById("credentialsForm").classList.add("hidden");
+            document.getElementById("disconnectBtn").classList.remove("hidden");
+        } else if (data.has_credentials) {
+            document.getElementById("inputGroup").classList.add("hidden");
+            document.getElementById("authBtn").innerText = "Connect Pinterest";
         }
-    } catch(e) { console.error(e); }
+    } catch (e) {}
 }
 
-function connectPinterest(){
-    window.location.href = "/connectors/pinterest/connect";
+function updateStatusBadge(connected) {
+    const dot = document.getElementById("statusDot");
+    const text = document.getElementById("statusText");
+    const badge = document.getElementById("statusBadge");
+    
+    if (connected) {
+        dot.className = "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]";
+        text.innerText = "CONNECTED";
+        text.className = "text-emerald-400";
+        badge.classList.replace("border-slate-700", "border-emerald-500/30");
+        badge.classList.replace("bg-slate-800/50", "bg-emerald-500/5");
+    } else {
+        dot.className = "h-2 w-2 rounded-full bg-slate-600";
+        text.innerText = "NOT CONNECTED";
+        text.className = "text-slate-400";
+    }
 }
 
-async function disconnectPinterest(){
+function updateSteps(has_creds, connected) {
+    if (has_creds) {
+        document.getElementById("step1-circle").className = "w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold";
+        document.getElementById("step2-circle").className = "w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold";
+    }
+    if (connected) {
+        document.getElementById("step2-circle").className = "w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold";
+        document.getElementById("step3-circle").className = "w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold";
+    }
+}
+
+async function handleAuthAction() {
+    const btn = document.getElementById("authBtn");
+    
+    // Check status first to decide logic
+    const statusRes = await fetch("/api/status/pinterest").then(r => r.json());
+    
+    if (!statusRes.has_credentials) {
+        // STEP 1: Save Config
+        const config = {
+            client_id: document.getElementById("pinterest_client_id").value,
+            client_secret: document.getElementById("pinterest_client_secret").value
+        };
+        const res = await fetch("/connectors/pinterest/save_config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(config)
+        });
+        if (res.ok) checkStatus();
+    } else {
+        // STEP 2: Trigger OAuth
+        window.location.href = "/connectors/pinterest/connect";
+    }
+}
+
+async function disconnectPinterest() {
     if(!confirm("Disconnect Pinterest?")) return;
     await fetch("/connectors/pinterest/disconnect");
-    location.reload();  // Auto-reload to update UI
+    location.reload();
 }
+
+// --- Provided Legacy Section Logic (Untouched) ---
 
 async function loadDestinations(){
     try {

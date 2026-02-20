@@ -1382,26 +1382,14 @@ def pinterest_dashboard():
 # -------- STATUS --------
 
 @app.route("/api/status/pinterest")
-def pinterest_status():
+def pinterest_status_proxy():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    r = requests.get(
+        "http://localhost:4000/api/status/pinterest",
+        cookies=request.cookies
+    )
 
-    con = sqlite3.connect("../identity.db")
-    cur = con.cursor()
-
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='pinterest'
-        LIMIT 1
-    """, (uid,))
-
-    row = cur.fetchone()
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
+    return jsonify(r.json())
 
 # -------- DATA --------
 
@@ -1441,6 +1429,17 @@ def pinterest_pins():
     con.close()
 
     return jsonify(rows)
+
+@app.route("/connectors/pinterest/save_config", methods=["POST"])
+def pinterest_save_config_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/pinterest/save_config",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
 
 # ================= TWITCH =================
 

@@ -6,13 +6,9 @@ load_dotenv()
 
 DB="identity.db"
 
-CLIENT_ID=os.getenv("PINTEREST_CLIENT_ID")
-CLIENT_SECRET=os.getenv("PINTEREST_CLIENT_SECRET")
-REDIRECT_URI=os.getenv("PINTEREST_REDIRECT_URI")
-
 AUTH_URL="https://www.pinterest.com/oauth/"
 TOKEN_URL="https://api.pinterest.com/v5/oauth/token"
-
+REDIRECT_URI="http://localhost:4000/pinterest/callback"
 API_BASE="https://api.pinterest.com/v5"
 
 
@@ -24,6 +20,25 @@ def db():
     con.execute("PRAGMA synchronous=NORMAL;")
     return con
 
+def get_app_credentials(uid):
+
+    con = db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='pinterest'
+        LIMIT 1
+    """,(uid,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return None
+
+    return json.loads(row[0])
 
 # ---------------- Utils ----------------
 
@@ -67,14 +82,20 @@ def pinterest_save_token(uid, token, refresh, exp):
 
 # ---------------- OAuth ----------------
 
-def pinterest_get_auth_url():
+def pinterest_get_auth_url(uid):
+
+    cfg = get_app_credentials(uid)
+
+    if not cfg:
+        return None
+
     from urllib.parse import urlencode
 
     params = {
         "response_type": "code",
-        "client_id": CLIENT_ID,
+        "client_id": cfg["client_id"],
         "redirect_uri": REDIRECT_URI,
-        "scope": "boards:read,pins:read,user_accounts:read",
+        "scope": "boards:read,pins:read,user_accounts:read"
     }
 
     return AUTH_URL + "?" + urlencode(params)
@@ -82,9 +103,16 @@ def pinterest_get_auth_url():
 import base64
 
 
-def pinterest_exchange_code(code):
+def pinterest_exchange_code(uid, code):
 
-    creds = f"{CLIENT_ID}:{CLIENT_SECRET}"
+    cfg = get_app_credentials(uid)
+
+    if not cfg:
+        return None
+
+    import base64
+
+    creds = f"{cfg['client_id']}:{cfg['client_secret']}"
     b64 = base64.b64encode(creds.encode()).decode()
 
     headers = {
@@ -98,22 +126,17 @@ def pinterest_exchange_code(code):
         "redirect_uri": REDIRECT_URI
     }
 
-    try:
-        r = requests.post(
-            TOKEN_URL,
-            headers=headers,
-            data=data,
-            timeout=20
-        )
+    r = requests.post(
+        TOKEN_URL,
+        headers=headers,
+        data=data,
+        timeout=20
+    )
 
-        print("PINTEREST TOKEN STATUS:", r.status_code)
+    if r.status_code == 200:
+        return r.json()
 
-        if r.status_code == 200:
-            return r.json()
-
-    except Exception as e:
-        print("PINTEREST TOKEN ERROR:", e)
-
+    print("Pinterest token error:", r.text)
     return None
 
 # ---------------- HTTP ----------------

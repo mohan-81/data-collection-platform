@@ -393,6 +393,48 @@ def medium_data():
 def gitlab_page():
     return render_template("connectors/gitlab.html")
 
+@app.route("/connectors/gitlab/save_app", methods=["POST"])
+def gitlab_save_app_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/gitlab/save_app",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json()), r.status_code
+
+@app.route("/api/status/gitlab")
+def gitlab_status_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/api/status/gitlab",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/gitlab/job/get")
+def gitlab_job_get_proxy():
+
+    r = requests.get(
+        "http://localhost:4000/connectors/gitlab/job/get",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+
+@app.route("/connectors/gitlab/job/save", methods=["POST"])
+def gitlab_job_save_proxy():
+
+    r = requests.post(
+        "http://localhost:4000/connectors/gitlab/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
 
 @app.route("/connectors/gitlab/connect")
 def gitlab_connect():

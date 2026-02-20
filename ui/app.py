@@ -1817,16 +1817,15 @@ def producthunt_page():
 
 # -------- CONNECT --------
 
-@app.route("/connectors/producthunt/connect", methods=["POST"])
+@app.route("/connectors/producthunt/connect")
 def ui_producthunt_connect():
 
-    r = requests.post(
+    requests.get(
         "http://localhost:4000/connectors/producthunt/connect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
-
+    return redirect("/connectors/producthunt")
 
 # -------- DISCONNECT --------
 
@@ -1859,24 +1858,12 @@ def ui_producthunt_sync():
 @app.route("/api/status/producthunt")
 def ui_producthunt_status():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    r=requests.get(
+        "http://localhost:4000/api/status/producthunt",
+        cookies=request.cookies
+    )
 
-    con = sqlite3.connect("../identity.db")
-    cur = con.cursor()
-
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='producthunt'
-    """, (uid,))
-
-    row = cur.fetchone()
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
-
+    return jsonify(r.json())
 
 # -------- DASHBOARD --------
 
@@ -1903,6 +1890,17 @@ def ui_producthunt_topics():
 
     r = requests.get(
         "http://localhost:4000/producthunt/data/topics",
+        cookies=request.cookies
+    )
+
+    return jsonify(r.json())
+
+@app.route("/connectors/producthunt/save_config",methods=["POST"])
+def ui_producthunt_save():
+
+    r=requests.post(
+        "http://localhost:4000/connectors/producthunt/save_config",
+        json=request.get_json(),
         cookies=request.cookies
     )
 

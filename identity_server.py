@@ -7652,24 +7652,61 @@ def hackernews_job_save():
 
 # ---------------- PRODUCTHUNT ----------------
 
-@app.route("/connectors/producthunt/connect", methods=["POST"])
+@app.route("/connectors/producthunt/connect")
 def producthunt_connect():
 
-    uid = get_uid()
+    uid=get_uid()
 
-    con = get_db()
-    cur = con.cursor()
+    con=get_db()
+    cur=con.cursor()
 
     cur.execute("""
-        INSERT OR REPLACE INTO google_connections
-        (uid, source, enabled)
-        VALUES (?, 'producthunt', 1)
-    """, (uid,))
+    SELECT 1 FROM connector_configs
+    WHERE uid=? AND connector='producthunt'
+    """,(uid,))
+
+    if not cur.fetchone():
+        return jsonify({"error":"config missing"}),400
+
+    cur.execute("""
+    INSERT OR REPLACE INTO google_connections
+    (uid,source,enabled)
+    VALUES (?,?,1)
+    """,(uid,"producthunt"))
 
     con.commit()
     con.close()
 
-    return jsonify({"status": "connected"})
+    return jsonify({"status":"connected"})
+
+@app.route("/connectors/producthunt/save_config", methods=["POST"])
+def producthunt_save_config():
+
+    uid = get_uid()
+    data = request.json or {}
+
+    token = data.get("api_token")
+
+    if not token:
+        return jsonify({"error":"token required"}),400
+
+    con=get_db()
+    cur=con.cursor()
+
+    cur.execute("""
+    INSERT OR REPLACE INTO connector_configs
+    (uid,connector,config_json,created_at)
+    VALUES (?,?,?,datetime('now'))
+    """,(
+        uid,
+        "producthunt",
+        json.dumps({"api_token":token})
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status":"saved"})
 
 @app.route("/connectors/producthunt/disconnect")
 def producthunt_disconnect():
@@ -7689,6 +7726,37 @@ def producthunt_disconnect():
     con.close()
 
     return jsonify({"status": "disconnected"})
+
+@app.route("/api/status/producthunt")
+def producthunt_status():
+
+    uid=get_uid()
+    con=get_db()
+    cur=con.cursor()
+
+    cur.execute("""
+    SELECT enabled
+    FROM google_connections
+    WHERE uid=? AND source='producthunt'
+    """,(uid,))
+
+    connected=bool(
+        (r:=cur.fetchone()) and r[0]==1
+    )
+
+    cur.execute("""
+    SELECT 1 FROM connector_configs
+    WHERE uid=? AND connector='producthunt'
+    """,(uid,))
+
+    has_credentials=bool(cur.fetchone())
+
+    con.close()
+
+    return jsonify({
+        "connected":connected,
+        "has_credentials":has_credentials
+    })
 
 @app.route("/connectors/producthunt/sync")
 def producthunt_sync():

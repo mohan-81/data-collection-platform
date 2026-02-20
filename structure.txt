@@ -4,54 +4,91 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
+¦   identity.db-shm
+¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
 ¦   site_app.py
+¦   structure.tct
 ¦   structure.txt
 ¦   
 +---connectors
-¦       classroom.py
-¦       devto.py
-¦       discord.py
-¦       discourse.py
-¦       facebook_ads.py
-¦       facebook_pages.py
-¦       github.py
-¦       gitlab.py
-¦       googlebooks.py
-¦       googlefactcheck.py
-¦       googlenews.py
-¦       googletrends.py
-¦       google_calendar.py
-¦       google_contacts.py
-¦       google_drive.py
-¦       google_forms.py
-¦       google_ga4.py
-¦       google_gcs.py
-¦       google_gmail.py
-¦       google_pagespeed.py
-¦       google_search_console.py
-¦       google_sheets.py
-¦       google_tasks.py
-¦       google_webfonts.py
-¦       google_youtube.py
-¦       hackernews.py
-¦       lemmy.py
-¦       mastodon.py
-¦       medium.py
-¦       nvd.py
-¦       openstreetmap.py
-¦       peertube.py
-¦       pinterest.py
-¦       producthunt.py
-¦       reddit.py
-¦       stackoverflow.py
-¦       telegram.py
-¦       tumblr.py
-¦       twitch.py
-¦       wikipedia.py
-¦       
+¦   ¦   classroom.py
+¦   ¦   devto.py
+¦   ¦   discord.py
+¦   ¦   discourse.py
+¦   ¦   facebook_ads.py
+¦   ¦   facebook_pages.py
+¦   ¦   github.py
+¦   ¦   gitlab.py
+¦   ¦   googlebooks.py
+¦   ¦   googlefactcheck.py
+¦   ¦   googlenews.py
+¦   ¦   googletrends.py
+¦   ¦   google_calendar.py
+¦   ¦   google_contacts.py
+¦   ¦   google_drive.py
+¦   ¦   google_forms.py
+¦   ¦   google_ga4.py
+¦   ¦   google_gcs.py
+¦   ¦   google_gmail.py
+¦   ¦   google_pagespeed.py
+¦   ¦   google_search_console.py
+¦   ¦   google_sheets.py
+¦   ¦   google_tasks.py
+¦   ¦   google_webfonts.py
+¦   ¦   google_youtube.py
+¦   ¦   hackernews.py
+¦   ¦   lemmy.py
+¦   ¦   mastodon.py
+¦   ¦   medium.py
+¦   ¦   nvd.py
+¦   ¦   openstreetmap.py
+¦   ¦   peertube.py
+¦   ¦   pinterest.py
+¦   ¦   producthunt.py
+¦   ¦   reddit.py
+¦   ¦   stackoverflow.py
+¦   ¦   telegram.py
+¦   ¦   tumblr.py
+¦   ¦   twitch.py
+¦   ¦   wikipedia.py
+¦   ¦   
+¦   +---__pycache__
+¦           classroom.cpython-312.pyc
+¦           discourse.cpython-312.pyc
+¦           facebook_ads.cpython-312.pyc
+¦           facebook_pages.cpython-312.pyc
+¦           github.cpython-312.pyc
+¦           gitlab.cpython-312.pyc
+¦           googlebooks.cpython-312.pyc
+¦           googlefactcheck.cpython-312.pyc
+¦           googlenews.cpython-312.pyc
+¦           googletrends.cpython-312.pyc
+¦           google_calendar.cpython-312.pyc
+¦           google_contacts.cpython-312.pyc
+¦           google_drive.cpython-312.pyc
+¦           google_forms.cpython-312.pyc
+¦           google_ga4.cpython-312.pyc
+¦           google_gcs.cpython-312.pyc
+¦           google_gmail.cpython-312.pyc
+¦           google_pagespeed.cpython-312.pyc
+¦           google_search_console.cpython-312.pyc
+¦           google_sheets.cpython-312.pyc
+¦           google_tasks.cpython-312.pyc
+¦           google_webfonts.cpython-312.pyc
+¦           google_youtube.cpython-312.pyc
+¦           hackernews.cpython-312.pyc
+¦           lemmy.cpython-312.pyc
+¦           mastodon.cpython-312.pyc
+¦           nvd.cpython-312.pyc
+¦           openstreetmap.cpython-312.pyc
+¦           peertube.cpython-312.pyc
+¦           pinterest.cpython-312.pyc
+¦           producthunt.cpython-312.pyc
+¦           wikipedia.cpython-312.pyc
+¦           
 +---destinations
 ¦   ¦   bigquery_writer.py
 ¦   ¦   clickhouse_writer.py
@@ -195,7 +232,6 @@ C:.
 ¦       ¦       lemmy.html
 ¦       ¦       mastodon.html
 ¦       ¦       medium.html
-¦       ¦       medium_login.html
 ¦       ¦       news.html
 ¦       ¦       nvd.html
 ¦       ¦       openstreetmap.html
@@ -204,7 +240,6 @@ C:.
 ¦       ¦       pinterest.html
 ¦       ¦       producthunt.html
 ¦       ¦       reddit.html
-¦       ¦       reddit_login.html
 ¦       ¦       search_console.html
 ¦       ¦       sheets.html
 ¦       ¦       stackoverflow.html

@@ -1,27 +1,22 @@
-print("### BIGQUERY WRITER FILE LOADED ###")
+print("### BIGQUERY PARQUET WRITER LOADED ###")
 
 import json
 import tempfile
 import os
+import pandas as pd
+
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from datetime import datetime, timezone
 
 
 def push_bigquery(dest, source, rows):
-    print("### USING FILE-BASED BIGQUERY LOADER ###")
 
     if not rows:
         return 0
 
+    print("[BIGQUERY] Using PARQUET loader")
 
-    print("### USING FILE-BASED BIGQUERY LOADER ###")
-
-
-    # -------------------------------
     # Credentials
-    # -------------------------------
-
     creds_dict = json.loads(dest["password"])
 
     credentials = service_account.Credentials.from_service_account_info(
@@ -33,85 +28,57 @@ def push_bigquery(dest, source, rows):
         project=dest["host"]
     )
 
-
     project_id = dest["host"]
     dataset_id = dest["database_name"]
     table_id = f"{project_id}.{dataset_id}.{source}_data"
 
-
-    # -------------------------------
-    # Dataset
-    # -------------------------------
-
+    # Dataset (create if not exists)
     dataset_ref = bigquery.Dataset(f"{project_id}.{dataset_id}")
 
     try:
         client.create_dataset(dataset_ref)
         print("[BIGQUERY] Dataset created")
-
     except Exception:
         pass
 
+    # DataFrame Conversion
+    df = pd.DataFrame(rows)
 
-    # -------------------------------
-    # Schema
-    # -------------------------------
+    # Convert ONLY connector fields to STRING
+    for col in df.columns:
+        df[col] = df[col].astype(str)
 
-    schema = []
+    df["fetched_at"] = pd.Timestamp.utcnow()
 
-    for col in rows[0].keys():
-        schema.append(bigquery.SchemaField(col, "STRING"))
-
-    schema.append(bigquery.SchemaField("fetched_at", "TIMESTAMP"))
-
-
-    table = bigquery.Table(table_id, schema=schema)
-
-    try:
-        client.create_table(table)
-        print(f"[BIGQUERY] Table created: {table_id}")
-
-    except Exception:
-        pass
-
-
-    # -------------------------------
-    # Write Temp File (JSONL)
-    # -------------------------------
-
+    # Write TEMP PARQUET
     tmp = tempfile.NamedTemporaryFile(
-        mode="w",
         delete=False,
-        suffix=".json"
+        suffix=".parquet"
     )
 
-
-    for r in rows:
-
-        row = {}
-
-        for k, v in r.items():
-            row[k] = str(v)
-
-        row["fetched_at"] = datetime.now(timezone.utc).isoformat()
-
-        tmp.write(json.dumps(row) + "\n")
-
-
+    parquet_path = tmp.name
     tmp.close()
 
-
-    # -------------------------------
-    # Load Job (NO STREAMING)
-    # -------------------------------
-
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-        write_disposition="WRITE_APPEND"
+    df.to_parquet(
+        parquet_path,
+        engine="pyarrow",
+        index=False
     )
 
+    print(
+        "[BIGQUERY] Parquet size:",
+        os.path.getsize(parquet_path),
+        "bytes"
+    )
 
-    with open(tmp.name, "rb") as f:
+    # Load into BigQuery
+    job_config = bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.PARQUET,
+        write_disposition="WRITE_APPEND",
+        autodetect=True
+    )
+
+    with open(parquet_path, "rb") as f:
 
         job = client.load_table_from_file(
             f,
@@ -119,13 +86,10 @@ def push_bigquery(dest, source, rows):
             job_config=job_config
         )
 
-
     job.result()
 
+    os.unlink(parquet_path)
 
-    os.unlink(tmp.name)
-
-
-    print(f"[BIGQUERY] Loaded {len(rows)} rows")
+    print(f"[BIGQUERY] Loaded {len(rows)} rows via PARQUET")
 
     return len(rows)

@@ -4,13 +4,10 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
-¦   identity.db-shm
-¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
 ¦   site_app.py
-¦   structure.tct
 ¦   structure.txt
 ¦   
 +---connectors

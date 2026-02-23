@@ -30,3 +30,4 @@ snowflake-connector-python
 google-cloud-bigquery
 clickhouse-connect
 pyarrow
+cryptography

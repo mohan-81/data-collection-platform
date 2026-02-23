@@ -19,6 +19,15 @@ from destinations.destination_router import push_to_destination
 from dotenv import load_dotenv
 from google_auth_oauthlib.flow import Flow
 
+#credentials security
+from security.secure_db import encrypt_payload
+from security.secure_db import decrypt_payload
+from security.secure_fetch import auto_decrypt_row
+from security.secure_fetch import (
+    fetchone_secure,
+    fetchall_secure
+)
+
 # Connectors
 from connectors.pinterest import (
     pinterest_get_auth_url,
@@ -2470,7 +2479,7 @@ def connector_status(source):
         LIMIT 1
     """, (uid, source))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -2498,13 +2507,15 @@ def google_connect():
         WHERE uid=? AND connector=?
     """, (uid, source))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
+
     con.close()
 
     if not row:
-        return "Google App credentials not saved for this connector", 400
+        return "Google App credentials not saved", 400
 
-    client_id, client_secret = row
+    client_id = row["client_id"]
+    client_secret = row["client_secret"]
 
     # Define scopes dynamically (for now only gmail)
     if source == "gmail":
@@ -2596,13 +2607,13 @@ def google_callback():
         WHERE uid=? AND connector=?
     """, (uid, source))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
-        con.close()
-        return "Google App credentials not found", 400
+        return "Google App credentials not saved", 400
 
-    client_id, client_secret = row
+    client_id = row["client_id"]
+    client_secret = row["client_secret"]
 
     # Define scopes
     if source == "gmail":
@@ -2701,6 +2712,7 @@ def google_callback():
         """, (uid, source))
 
         con.commit()
+        con.close()
 
     finally:
         con.close()
@@ -2724,7 +2736,7 @@ def sync_drive():
 def drive_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -2763,7 +2775,7 @@ def sync_sheets():
 def sheets_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -2827,7 +2839,7 @@ def sheets_job_get():
         WHERE uid=? AND source='sheets'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -2894,7 +2906,7 @@ def google_ga4_sync():
 def ga4_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -2943,7 +2955,7 @@ def ga4_job_get():
         WHERE uid=? AND source='ga4'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3001,7 +3013,7 @@ def gsc_sync():
 def search_console_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3044,7 +3056,7 @@ def gsc_job_get():
         WHERE uid=? AND source='search-console'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3096,7 +3108,7 @@ def search_console_status():
         WHERE uid=? AND source='search-console'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -3155,7 +3167,7 @@ def pagespeed_connect():
     con = get_db()
     cur = con.cursor()
 
-    # ✅ ensure API key exists first
+    # ensure API key exists first
     cur.execute("""
         SELECT api_key
         FROM connector_configs
@@ -3207,7 +3219,7 @@ def pagespeed_disconnect():
 def pagespeed_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
 
@@ -3243,7 +3255,7 @@ def pagespeed_status():
         WHERE uid=? AND source='pagespeed'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     connected = bool(row and row[0] == 1)
 
@@ -3254,7 +3266,7 @@ def pagespeed_status():
         WHERE uid=? AND connector='pagespeed'
         LIMIT 1
     """, (uid,))
-    key_row = cur.fetchone()
+    key_row = fetchone_secure(cur)
 
     api_key_saved = key_row is not None
 
@@ -3279,7 +3291,7 @@ def pagespeed_job_get():
         WHERE uid=? AND source='pagespeed'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3333,7 +3345,7 @@ def sync_forms_api():
 def forms_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3397,7 +3409,7 @@ def forms_job_get():
         WHERE uid=? AND source='forms'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3469,7 +3481,7 @@ def sync_gmail_route():
 def calendar_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3557,7 +3569,7 @@ def google_disconnect_gmail():
 def gmail_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3714,7 +3726,7 @@ def classroom_sync():
 def classroom_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3785,7 +3797,7 @@ def classroom_job_get():
         WHERE uid=? AND source='classroom'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3841,7 +3853,7 @@ def google_sync_tasks():
 def tasks_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3884,7 +3896,7 @@ def tasks_job_get():
         WHERE uid=? AND source='tasks'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -3933,7 +3945,7 @@ def sync_contacts_api():
 def contacts_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -3997,7 +4009,7 @@ def contacts_job_get():
         WHERE uid=? AND source='contacts'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -4099,7 +4111,7 @@ def gcs_job_get():
         WHERE uid=? AND source='gcs'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -4139,7 +4151,7 @@ def gcs_job_save():
 def gcs_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -4202,7 +4214,7 @@ def webfonts_sync_route():
         WHERE uid=? AND source='webfonts'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row or row[0] != 1:
@@ -4268,7 +4280,7 @@ def webfonts_status():
         WHERE uid=? AND source='webfonts'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     connected = bool(row and row[0] == 1)
 
@@ -4280,7 +4292,7 @@ def webfonts_status():
         LIMIT 1
     """, (uid,))
 
-    key_row = cur.fetchone()
+    key_row = fetchone_secure(cur)
 
     api_key_saved = bool(
         key_row and key_row[0]
@@ -4307,7 +4319,7 @@ def webfonts_job_get():
         WHERE uid=? AND source='webfonts'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -4348,7 +4360,7 @@ def webfonts_job_save():
 def webfonts_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
 
@@ -4384,7 +4396,7 @@ def youtube_sync():
 def youtube_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -4457,7 +4469,7 @@ def youtube_job_get():
         WHERE uid=? AND source='youtube'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -4511,7 +4523,7 @@ def reddit_connect():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         return jsonify({"error":"Config missing"}),400
@@ -4594,7 +4606,7 @@ def reddit_status():
 def reddit_save_config():
 
     uid = get_uid()
-    data = request.json
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -4641,7 +4653,7 @@ def reddit_job_get():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -4693,7 +4705,7 @@ def reddit_sync_universal():
         WHERE uid=? AND source='reddit'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -4745,7 +4757,7 @@ def reddit_sync_universal():
         LIMIT 1
     """, (uid, "reddit"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -4857,7 +4869,7 @@ def telegram_sync_universal():
         LIMIT 1
     """, (uid,))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -4904,7 +4916,7 @@ def telegram_connect():
         LIMIT 1
     """,(uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         return jsonify({"error":"config missing"}),400
@@ -4992,7 +5004,7 @@ def telegram_status():
 def telegram_save_config():
 
     uid = get_uid()
-    data = request.json
+    data = encrypt_payload(request.get_json())
 
     bot_token = data.get("bot_token")
 
@@ -5057,7 +5069,7 @@ def medium_connect():
 def medium_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     username = data.get("username")
 
@@ -5075,7 +5087,7 @@ def medium_save_config():
         LIMIT 1
     """,(uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if row:
         # UPDATE
@@ -5194,7 +5206,7 @@ def medium_sync_universal():
         LIMIT 1
     """, (uid,))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -5368,7 +5380,7 @@ def twitch_sync():
         FROM google_connections
         WHERE uid=? AND source='twitch'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -5380,7 +5392,7 @@ def twitch_sync():
         FROM connector_configs
         WHERE uid=? AND source='twitch'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         con.close()
@@ -5422,7 +5434,7 @@ def twitch_sync():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     dest = None
@@ -5455,7 +5467,7 @@ def twitch_sync():
 def twitch_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     username = data.get("username")
 
@@ -5486,7 +5498,7 @@ def twitch_save_config():
 def tumblr_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
 
@@ -5522,7 +5534,7 @@ def tumblr_connect():
         WHERE uid=? AND connector='tumblr'
     """,(uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         con.close()
@@ -5653,7 +5665,7 @@ def discord_connect():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         return jsonify({"error":"token missing"}),400
@@ -5716,7 +5728,7 @@ def discord_sync_universal():
         FROM google_connections
         WHERE uid=? AND source='discord'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -5787,7 +5799,7 @@ def discord_sync_universal():
         LIMIT 1
     """, (uid, "discord"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -5860,7 +5872,7 @@ def discord_status():
 def discord_save_config():
 
     uid = get_uid()
-    data = request.json
+    data = encrypt_payload(request.get_json())
 
     bot_token = data.get("bot_token")
 
@@ -5958,7 +5970,7 @@ def get_books_job():
         WHERE uid=? AND source='books'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6012,7 +6024,7 @@ def books_status():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -6044,7 +6056,7 @@ def factcheck_sync():
 def factcheck_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
 
@@ -6118,7 +6130,7 @@ def factcheck_status():
         WHERE uid=? AND source='factcheck'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     connected = bool(row and row[0] == 1)
 
@@ -6153,7 +6165,7 @@ def factcheck_job_get():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6281,7 +6293,7 @@ def news_status():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -6304,7 +6316,7 @@ def news_job_get():
         WHERE uid=? AND source='news'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6422,7 +6434,7 @@ def trends_status():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -6470,7 +6482,7 @@ def trends_job_get():
         WHERE uid=? AND source='trends'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6546,7 +6558,7 @@ def devto_status():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     return jsonify({
@@ -6588,7 +6600,7 @@ def devto_job_get():
         WHERE uid=? AND source='devto'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6640,7 +6652,7 @@ def devto_sync_universal():
         WHERE uid=? AND source='devto'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -6685,7 +6697,7 @@ def devto_sync_universal():
         LIMIT 1
     """, (uid, "devto"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -6798,7 +6810,7 @@ def github_sync():
 def github_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -6848,13 +6860,13 @@ def github_status():
         WHERE uid=? AND source='github'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     conn.close()
 
     return jsonify({
         "has_credentials": bool(creds),
-        "connected": bool(row and row[0] == 1)
+        "connected": bool(row and row["enabled"] == 1)
     })
 
 @app.route("/connectors/github/job/get")
@@ -6871,7 +6883,7 @@ def github_job_get():
         WHERE uid=? AND source='github'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -6879,7 +6891,7 @@ def github_job_get():
 
     return jsonify({
         "exists": True,
-        "sync_type": row[0],
+        "sync_type": row["sync_type"],
         "schedule_time": row[1]
     })
 
@@ -6922,7 +6934,7 @@ def gitlab_connect():
 def gitlab_save_app():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -7026,7 +7038,7 @@ def gitlab_status():
         WHERE uid=? AND source='gitlab'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     con.close()
 
@@ -7049,7 +7061,7 @@ def gitlab_job_get():
         WHERE uid=? AND source='gitlab'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -7102,7 +7114,7 @@ def gitlab_sync_universal():
         WHERE uid=? AND source='gitlab'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -7165,7 +7177,7 @@ def gitlab_sync_universal():
         LIMIT 1
     """, (uid,))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -7238,7 +7250,7 @@ def stackoverflow_status():
         WHERE uid=? AND source='stackoverflow'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     connected = bool(row and row[0] == 1)
 
@@ -7250,7 +7262,7 @@ def stackoverflow_status():
         LIMIT 1
     """, (uid,))
 
-    key_row = cur.fetchone()
+    key_row = fetchone_secure(cur)
 
     api_key_saved = bool(key_row and key_row[0])
 
@@ -7296,7 +7308,7 @@ def stackoverflow_job_get():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -7348,7 +7360,7 @@ def stackoverflow_sync_universal():
         WHERE uid=? AND source='stackoverflow'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -7392,7 +7404,7 @@ def stackoverflow_sync_universal():
         LIMIT 1
     """, (uid, "stackoverflow"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -7443,7 +7455,7 @@ def stackoverflow_sync_universal():
 def stackoverflow_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
 
@@ -7490,7 +7502,7 @@ def hackernews_sync_universal():
         WHERE uid=? AND source='hackernews'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -7526,7 +7538,7 @@ def hackernews_sync_universal():
         LIMIT 1
     """, (uid, "hackernews"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -7616,7 +7628,7 @@ def hackernews_job_get():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -7684,7 +7696,7 @@ def producthunt_connect():
 def producthunt_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     token = data.get("api_token")
 
@@ -7774,7 +7786,7 @@ def producthunt_sync():
         WHERE uid=? AND source='producthunt'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -7965,7 +7977,7 @@ def wikipedia_sync():
         WHERE uid=? AND source='wikipedia'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -8045,7 +8057,7 @@ def peertube_sync():
         FROM google_connections
         WHERE uid=? AND source='peertube'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -8072,7 +8084,7 @@ def peertube_sync():
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     dest = None
@@ -8145,7 +8157,7 @@ def peertube_disconnect():
 def peertube_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
 
@@ -8219,7 +8231,7 @@ def mastodon_sync_universal():
         FROM google_connections
         WHERE uid=? AND source='mastodon'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -8241,7 +8253,7 @@ def mastodon_sync_universal():
         FROM connector_state
         WHERE uid=? AND source='mastodon'
     """, (uid,))
-    state_row = cur.fetchone()
+    state_row = fetchone_secure(cur)
 
     instance = "https://mastodon.social"
 
@@ -8268,7 +8280,7 @@ def mastodon_sync_universal():
         LIMIT 1
     """, (uid, "mastodon"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     pushed = 0
@@ -8353,7 +8365,7 @@ def mastodon_status():
         WHERE uid=? AND source='mastodon'
         LIMIT 1
     """,(uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     connected = bool(row and row[0] == 1)
 
@@ -8400,7 +8412,7 @@ def mastodon_disconnect():
 def mastodon_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
 
@@ -8456,7 +8468,7 @@ def discourse_connect():
 def discourse_save():
 
     uid=get_uid()
-    data=request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     forum=data.get("forum")
     api_key=data.get("api_key")
@@ -8553,7 +8565,7 @@ def discourse_sync():
         WHERE uid=? AND source='discourse'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -8637,7 +8649,7 @@ def discourse_topics():
         LIMIT 200
     """, (uid,))
 
-    rows = cur.fetchall()
+    rows = fetchall_secure(cur)
 
     con.close()
 
@@ -8659,7 +8671,7 @@ def discourse_categories():
         WHERE uid=?
     """, (uid,))
 
-    rows = cur.fetchall()
+    rows = fetchall_secure(cur)
 
     con.close()
 
@@ -8745,7 +8757,7 @@ def lemmy_sync_universal():
         FROM google_connections
         WHERE uid=? AND source='lemmy'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -8794,7 +8806,7 @@ def lemmy_sync_universal():
         LIMIT 1
     """, (uid,))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -8831,7 +8843,7 @@ def lemmy_sync_universal():
 def lemmy_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
 
@@ -8947,7 +8959,7 @@ def osm_sync():
         WHERE uid=? AND source='openstreetmap'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -9052,7 +9064,7 @@ def nvd_sync_universal():
         WHERE uid=? AND source='nvd'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -9088,7 +9100,7 @@ def nvd_sync_universal():
         LIMIT 1
     """, (uid, "nvd"))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -9186,7 +9198,7 @@ def nvd_status():
         WHERE uid=? AND source='nvd'
         LIMIT 1
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     con.close()
 
@@ -9225,7 +9237,7 @@ def nvd_job_save():
 def nvd_save_config():
 
     uid = get_uid()
-    data = request.get_json()
+    data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
     keywords = data.get("keywords", [])
@@ -9321,7 +9333,7 @@ def pinterest_sync_universal():
         FROM google_connections
         WHERE uid=? AND source='pinterest'
     """, (uid,))
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row or row[0] != 1:
         con.close()
@@ -9359,7 +9371,7 @@ def pinterest_sync_universal():
         LIMIT 1
     """, (uid,))
 
-    dest_row = cur.fetchone()
+    dest_row = fetchone_secure(cur)
     con.close()
 
     if not dest_row:
@@ -9394,7 +9406,7 @@ def pinterest_sync_universal():
 def pinterest_save_config():
 
     uid = get_uid()
-    data = request.json or {}
+    data = encrypt_payload(request.get_json) or {}
 
     client_id = data.get("client_id")
     client_secret = data.get("client_secret")
@@ -9535,7 +9547,7 @@ def facebook_connect():
         WHERE uid=?
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -9575,7 +9587,7 @@ def facebook_callback():
         WHERE uid=?
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         con.close()
@@ -9689,7 +9701,7 @@ def facebook_sync():
         WHERE uid=? AND source='facebook'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row or row[0] != 1:
@@ -9749,7 +9761,7 @@ def facebook_job_get():
         WHERE uid=? AND source='facebook'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -9830,7 +9842,7 @@ def facebook_ads_connect():
         WHERE uid=?
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -9871,7 +9883,7 @@ def facebook_ads_callback():
         WHERE uid=?
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
 
     if not row:
         con.close()
@@ -10018,7 +10030,7 @@ def facebook_ads_job_get():
         WHERE uid=? AND source='facebook_ads'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
@@ -10074,7 +10086,7 @@ def facebook_ads_sync():
         WHERE uid=? AND source='facebook_ads'
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row or row[0] != 1:
@@ -10216,10 +10228,8 @@ def sdk_file(filename):
 
 @app.route("/api/domains")
 def get_domains():
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT DISTINCT domain
         FROM visits
@@ -10227,13 +10237,9 @@ def get_domains():
           AND domain != ''
         ORDER BY domain
     """)
-
-    rows = cur.fetchall()
-
-    domains = [r[0] for r in rows]
-
+    rows = fetchall_secure(cur)  # List of dicts
+    domains = [r["domain"] for r in rows]  # Use key instead of r[0]
     con.close()
-
     return jsonify(domains)
 
 @app.route("/api/dashboard")
@@ -10369,59 +10375,45 @@ def save_connector_job(source):
 
 @app.route("/google/job/get/<source>")
 def get_connector_job(source):
-
     uid = request.cookies.get("uid") or "demo_user"
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT sync_type, schedule_time, enabled
         FROM connector_jobs
         WHERE uid=? AND source=?
         LIMIT 1
     """, (uid, source))
-
-    row = cur.fetchone()
-
+    row = fetchone_secure(cur)  # Dict
     con.close()
-
-
     if not row:
         return jsonify({"exists": False})
-
-
     return jsonify({
         "exists": True,
-        "sync_type": row[0],
-        "schedule_time": row[1],
-        "enabled": row[2]
+        "sync_type": row["sync_type"],  # Use key
+        "schedule_time": row["schedule_time"],
+        "enabled": row["enabled"]
     })
 
 def get_connector_sync_type(uid, source):
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT sync_type
         FROM connector_jobs
         WHERE uid=? AND source=? AND enabled=1
         LIMIT 1
     """, (uid, source))
-
-    row = cur.fetchone()
+    row = fetchone_secure(cur)  # Dict
     con.close()
-
     if not row:
         return "historical"
-
-    return row[0]
+    return row["sync_type"]  # Use key
 
 @app.route("/destination/save", methods=["POST"])
 def save_destination():
 
-    data = request.json
+    data = encrypt_payload(request.json)
 
     uid = data.get("uid", "demo_user")
     source = data.get("source")
@@ -10433,7 +10425,6 @@ def save_destination():
 
     username = data.get("username")
     password = data.get("password")
-
     database = data.get("database")
 
     # ---------------- Validation ---------------- #
@@ -10530,7 +10521,6 @@ def save_destination():
         "status": "ok",
         "message": "Destination saved and activated"
     })
-
 @app.route("/destination/list/<source>")
 def list_destinations(source):
 
@@ -10554,21 +10544,21 @@ def list_destinations(source):
         ORDER BY created_at DESC
     """, (uid, source))
 
-    rows = cur.fetchall()
+    rows = fetchall_secure(cur)
     con.close()
 
     result = []
 
     for r in rows:
         result.append({
-            "id": r[0],
-            "type": r[1],
-            "host": r[2],
-            "port": r[3],
-            "username": r[4],
-            "database": r[5],
-            "active": bool(r[6]),
-            "created_at": r[7]
+            "id": r["id"],
+            "type": r["dest_type"],
+            "host": r["host"],
+            "port": r["port"],
+            "username": r["username"],
+            "database": r["database_name"],
+            "active": bool(r["is_active"]),
+            "created_at": r["created_at"]
         })
 
     return jsonify({
@@ -10661,25 +10651,18 @@ def delete_destination():
 
 #============ Helper Function ==============
 def get_connector_state(uid, source):
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT state_json
         FROM connector_state
         WHERE uid=? AND source=?
     """, (uid, source))
-
-    row = cur.fetchone()
+    row = fetchone_secure(cur)  # Dict
     con.close()
-
     if not row:
         return None
-
-    return json.loads(row[0])
-
-
+    return json.loads(row["state_json"])  # Use key
 
 def save_connector_state(uid, source, state_dict):
 
@@ -10701,10 +10684,8 @@ def save_connector_state(uid, source, state_dict):
     con.close()
 
 def get_destination(uid, source):
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT dest_type, host, port,
                username, password, database_name
@@ -10713,66 +10694,52 @@ def get_destination(uid, source):
         ORDER BY id DESC
         LIMIT 1
     """, (uid, source))
-
-    row = cur.fetchone()
+    row = fetchone_secure(cur)  # Dict
     con.close()
-
     if not row:
         return None
-
-
     return {
-        "type": row[0],
-        "host": row[1],
-        "port": row[2],
-        "username": row[3],
-        "password": row[4],
-        "database_name": row[5]
+        "type": row["dest_type"],  # Use keys
+        "host": row["host"],
+        "port": row["port"],
+        "username": row["username"],
+        "password": row["password"],
+        "database_name": row["database_name"]
     }
 
 def get_active_destination(uid, source):
-
     con = get_db()
-    con.row_factory = sqlite3.Row
+    # con.row_factory = sqlite3.Row  # Remove this; auto_decrypt_row handles dict conversion
     cur = con.cursor()
-
     cur.execute("""
         SELECT *
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
     """, (uid, source))
-
-    row = cur.fetchone()
+    row = fetchone_secure(cur)  # Already dict
     con.close()
-
     if not row:
         return None
-
-    return dict(row)
+    return row  # No need for dict(row); it's already a dict
 
 # ---------- GA4 STATUS (FINAL) ----------
 
 @app.route("/api/status/ga4")
 def ga4_status():
-
     uid = request.cookies.get("uid") or "demo_user"
-
     con = get_db()
     cur = con.cursor()
-
     cur.execute("""
         SELECT enabled
         FROM google_connections
         WHERE uid=? AND source='ga4'
         LIMIT 1
     """, (uid,))
-
-    row = cur.fetchone()
+    row = fetchone_secure(cur)  # Dict
     con.close()
-
     return jsonify({
-        "connected": bool(row and row[0] == 1)
+        "connected": bool(row and row["enabled"] == 1)  # Use key
     })
 
 # ---------------- RUN ----------------

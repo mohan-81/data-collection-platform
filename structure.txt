@@ -4,9 +4,12 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
+¦   identity.db-shm
+¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
+¦   secret.key
 ¦   site_app.py
 ¦   structure.txt
 ¦   
@@ -92,6 +95,7 @@ C:.
 ¦   ¦   destination_router.py
 ¦   ¦   mysql_writer.py
 ¦   ¦   postgres_writer.py
+¦   ¦   s3_writer.py
 ¦   ¦   snowflake_writer.py
 ¦   ¦   
 ¦   +---__pycache__
@@ -100,7 +104,16 @@ C:.
 ¦           destination_router.cpython-312.pyc
 ¦           mysql_writer.cpython-312.pyc
 ¦           postgres_writer.cpython-312.pyc
+¦           s3_writer.cpython-312.pyc
 ¦           snowflake_writer.cpython-312.pyc
+¦           
++---security
+¦   ¦   crypto.py
+¦   ¦   secure_db.py
+¦   ¦   secure_fetch.py
+¦   ¦   
+¦   +---__pycache__
+¦           crypto.cpython-312.pyc
 ¦           
 +---static
 ¦   +---sdk
@@ -15616,6 +15629,989 @@ C:.
     ¦       ¦       libcrypto-3-x64-51c45f697a173917ac2ce2ccbe4291ee.dll
     ¦       ¦       libpq-39ced5d7c01d21795d0b9597d2cf5921.dll
     ¦       ¦       libssl-3-x64-d3fc11f8b66f745a6288de6a00662144.dll
+    ¦       ¦       
+    ¦       +---pyarrow
+    ¦       ¦   ¦   acero.py
+    ¦       ¦   ¦   array.pxi
+    ¦       ¦   ¦   arrow.dll
+    ¦       ¦   ¦   arrow.lib
+    ¦       ¦   ¦   arrow_acero.dll
+    ¦       ¦   ¦   arrow_acero.lib
+    ¦       ¦   ¦   arrow_compute.dll
+    ¦       ¦   ¦   arrow_compute.lib
+    ¦       ¦   ¦   arrow_dataset.dll
+    ¦       ¦   ¦   arrow_dataset.lib
+    ¦       ¦   ¦   arrow_flight.dll
+    ¦       ¦   ¦   arrow_flight.lib
+    ¦       ¦   ¦   arrow_python.dll
+    ¦       ¦   ¦   arrow_python.lib
+    ¦       ¦   ¦   arrow_python_flight.dll
+    ¦       ¦   ¦   arrow_python_flight.lib
+    ¦       ¦   ¦   arrow_python_parquet_encryption.dll
+    ¦       ¦   ¦   arrow_python_parquet_encryption.lib
+    ¦       ¦   ¦   arrow_substrait.dll
+    ¦       ¦   ¦   arrow_substrait.lib
+    ¦       ¦   ¦   benchmark.pxi
+    ¦       ¦   ¦   benchmark.py
+    ¦       ¦   ¦   builder.pxi
+    ¦       ¦   ¦   cffi.py
+    ¦       ¦   ¦   compat.pxi
+    ¦       ¦   ¦   compute.py
+    ¦       ¦   ¦   config.pxi
+    ¦       ¦   ¦   conftest.py
+    ¦       ¦   ¦   csv.py
+    ¦       ¦   ¦   cuda.py
+    ¦       ¦   ¦   dataset.py
+    ¦       ¦   ¦   device.pxi
+    ¦       ¦   ¦   error.pxi
+    ¦       ¦   ¦   feather.py
+    ¦       ¦   ¦   flight.py
+    ¦       ¦   ¦   fs.py
+    ¦       ¦   ¦   gandiva.pyx
+    ¦       ¦   ¦   io.pxi
+    ¦       ¦   ¦   ipc.pxi
+    ¦       ¦   ¦   ipc.py
+    ¦       ¦   ¦   json.py
+    ¦       ¦   ¦   jvm.py
+    ¦       ¦   ¦   lib.cp312-win_amd64.pyd
+    ¦       ¦   ¦   lib.h
+    ¦       ¦   ¦   lib.pxd
+    ¦       ¦   ¦   lib.pyx
+    ¦       ¦   ¦   lib_api.h
+    ¦       ¦   ¦   memory.pxi
+    ¦       ¦   ¦   orc.py
+    ¦       ¦   ¦   pandas-shim.pxi
+    ¦       ¦   ¦   pandas_compat.py
+    ¦       ¦   ¦   parquet.dll
+    ¦       ¦   ¦   parquet.lib
+    ¦       ¦   ¦   public-api.pxi
+    ¦       ¦   ¦   scalar.pxi
+    ¦       ¦   ¦   substrait.py
+    ¦       ¦   ¦   table.pxi
+    ¦       ¦   ¦   tensor.pxi
+    ¦       ¦   ¦   types.pxi
+    ¦       ¦   ¦   types.py
+    ¦       ¦   ¦   util.py
+    ¦       ¦   ¦   _acero.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _acero.pxd
+    ¦       ¦   ¦   _acero.pyx
+    ¦       ¦   ¦   _azurefs.pyx
+    ¦       ¦   ¦   _compute.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _compute.pxd
+    ¦       ¦   ¦   _compute.pyx
+    ¦       ¦   ¦   _compute_docstrings.py
+    ¦       ¦   ¦   _csv.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _csv.pxd
+    ¦       ¦   ¦   _csv.pyx
+    ¦       ¦   ¦   _cuda.pxd
+    ¦       ¦   ¦   _cuda.pyx
+    ¦       ¦   ¦   _dataset.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _dataset.pxd
+    ¦       ¦   ¦   _dataset.pyx
+    ¦       ¦   ¦   _dataset_orc.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _dataset_orc.pyx
+    ¦       ¦   ¦   _dataset_parquet.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _dataset_parquet.pxd
+    ¦       ¦   ¦   _dataset_parquet.pyx
+    ¦       ¦   ¦   _dataset_parquet_encryption.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _dataset_parquet_encryption.pyx
+    ¦       ¦   ¦   _dlpack.pxi
+    ¦       ¦   ¦   _feather.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _feather.pyx
+    ¦       ¦   ¦   _flight.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _flight.pyx
+    ¦       ¦   ¦   _fs.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _fs.pxd
+    ¦       ¦   ¦   _fs.pyx
+    ¦       ¦   ¦   _gcsfs.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _gcsfs.pyx
+    ¦       ¦   ¦   _generated_version.py
+    ¦       ¦   ¦   _hdfs.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _hdfs.pyx
+    ¦       ¦   ¦   _json.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _json.pxd
+    ¦       ¦   ¦   _json.pyx
+    ¦       ¦   ¦   _orc.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _orc.pxd
+    ¦       ¦   ¦   _orc.pyx
+    ¦       ¦   ¦   _parquet.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _parquet.pxd
+    ¦       ¦   ¦   _parquet.pyx
+    ¦       ¦   ¦   _parquet_encryption.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _parquet_encryption.pxd
+    ¦       ¦   ¦   _parquet_encryption.pyx
+    ¦       ¦   ¦   _pyarrow_cpp_tests.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _pyarrow_cpp_tests.pxd
+    ¦       ¦   ¦   _pyarrow_cpp_tests.pyx
+    ¦       ¦   ¦   _s3fs.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _s3fs.pyx
+    ¦       ¦   ¦   _substrait.cp312-win_amd64.pyd
+    ¦       ¦   ¦   _substrait.pyx
+    ¦       ¦   ¦   __init__.pxd
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---include
+    ¦       ¦   ¦   +---arrow
+    ¦       ¦   ¦   ¦   ¦   api.h
+    ¦       ¦   ¦   ¦   ¦   array.h
+    ¦       ¦   ¦   ¦   ¦   buffer.h
+    ¦       ¦   ¦   ¦   ¦   buffer_builder.h
+    ¦       ¦   ¦   ¦   ¦   builder.h
+    ¦       ¦   ¦   ¦   ¦   chunked_array.h
+    ¦       ¦   ¦   ¦   ¦   chunk_resolver.h
+    ¦       ¦   ¦   ¦   ¦   compare.h
+    ¦       ¦   ¦   ¦   ¦   config.h
+    ¦       ¦   ¦   ¦   ¦   datum.h
+    ¦       ¦   ¦   ¦   ¦   device.h
+    ¦       ¦   ¦   ¦   ¦   device_allocation_type_set.h
+    ¦       ¦   ¦   ¦   ¦   extension_type.h
+    ¦       ¦   ¦   ¦   ¦   memory_pool.h
+    ¦       ¦   ¦   ¦   ¦   memory_pool_test.h
+    ¦       ¦   ¦   ¦   ¦   pretty_print.h
+    ¦       ¦   ¦   ¦   ¦   record_batch.h
+    ¦       ¦   ¦   ¦   ¦   result.h
+    ¦       ¦   ¦   ¦   ¦   scalar.h
+    ¦       ¦   ¦   ¦   ¦   sparse_tensor.h
+    ¦       ¦   ¦   ¦   ¦   status.h
+    ¦       ¦   ¦   ¦   ¦   stl.h
+    ¦       ¦   ¦   ¦   ¦   stl_allocator.h
+    ¦       ¦   ¦   ¦   ¦   stl_iterator.h
+    ¦       ¦   ¦   ¦   ¦   table.h
+    ¦       ¦   ¦   ¦   ¦   table_builder.h
+    ¦       ¦   ¦   ¦   ¦   tensor.h
+    ¦       ¦   ¦   ¦   ¦   type.h
+    ¦       ¦   ¦   ¦   ¦   type_fwd.h
+    ¦       ¦   ¦   ¦   ¦   type_traits.h
+    ¦       ¦   ¦   ¦   ¦   visitor.h
+    ¦       ¦   ¦   ¦   ¦   visitor_generate.h
+    ¦       ¦   ¦   ¦   ¦   visit_array_inline.h
+    ¦       ¦   ¦   ¦   ¦   visit_data_inline.h
+    ¦       ¦   ¦   ¦   ¦   visit_scalar_inline.h
+    ¦       ¦   ¦   ¦   ¦   visit_type_inline.h
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---acero
+    ¦       ¦   ¦   ¦   ¦       accumulation_queue.h
+    ¦       ¦   ¦   ¦   ¦       aggregate_node.h
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       asof_join_node.h
+    ¦       ¦   ¦   ¦   ¦       backpressure_handler.h
+    ¦       ¦   ¦   ¦   ¦       benchmark_util.h
+    ¦       ¦   ¦   ¦   ¦       bloom_filter.h
+    ¦       ¦   ¦   ¦   ¦       exec_plan.h
+    ¦       ¦   ¦   ¦   ¦       hash_join.h
+    ¦       ¦   ¦   ¦   ¦       hash_join_dict.h
+    ¦       ¦   ¦   ¦   ¦       hash_join_node.h
+    ¦       ¦   ¦   ¦   ¦       map_node.h
+    ¦       ¦   ¦   ¦   ¦       options.h
+    ¦       ¦   ¦   ¦   ¦       order_by_impl.h
+    ¦       ¦   ¦   ¦   ¦       partition_util.h
+    ¦       ¦   ¦   ¦   ¦       query_context.h
+    ¦       ¦   ¦   ¦   ¦       schema_util.h
+    ¦       ¦   ¦   ¦   ¦       task_util.h
+    ¦       ¦   ¦   ¦   ¦       test_nodes.h
+    ¦       ¦   ¦   ¦   ¦       time_series_util.h
+    ¦       ¦   ¦   ¦   ¦       tpch_node.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       util.h
+    ¦       ¦   ¦   ¦   ¦       visibility.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---adapters
+    ¦       ¦   ¦   ¦   ¦   +---orc
+    ¦       ¦   ¦   ¦   ¦   ¦       adapter.h
+    ¦       ¦   ¦   ¦   ¦   ¦       options.h
+    ¦       ¦   ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   ¦   +---tensorflow
+    ¦       ¦   ¦   ¦   ¦           convert.h
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---array
+    ¦       ¦   ¦   ¦   ¦       array_base.h
+    ¦       ¦   ¦   ¦   ¦       array_binary.h
+    ¦       ¦   ¦   ¦   ¦       array_decimal.h
+    ¦       ¦   ¦   ¦   ¦       array_dict.h
+    ¦       ¦   ¦   ¦   ¦       array_nested.h
+    ¦       ¦   ¦   ¦   ¦       array_primitive.h
+    ¦       ¦   ¦   ¦   ¦       array_run_end.h
+    ¦       ¦   ¦   ¦   ¦       builder_adaptive.h
+    ¦       ¦   ¦   ¦   ¦       builder_base.h
+    ¦       ¦   ¦   ¦   ¦       builder_binary.h
+    ¦       ¦   ¦   ¦   ¦       builder_decimal.h
+    ¦       ¦   ¦   ¦   ¦       builder_dict.h
+    ¦       ¦   ¦   ¦   ¦       builder_nested.h
+    ¦       ¦   ¦   ¦   ¦       builder_primitive.h
+    ¦       ¦   ¦   ¦   ¦       builder_run_end.h
+    ¦       ¦   ¦   ¦   ¦       builder_time.h
+    ¦       ¦   ¦   ¦   ¦       builder_union.h
+    ¦       ¦   ¦   ¦   ¦       concatenate.h
+    ¦       ¦   ¦   ¦   ¦       data.h
+    ¦       ¦   ¦   ¦   ¦       diff.h
+    ¦       ¦   ¦   ¦   ¦       statistics.h
+    ¦       ¦   ¦   ¦   ¦       util.h
+    ¦       ¦   ¦   ¦   ¦       validate.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---c
+    ¦       ¦   ¦   ¦   ¦       abi.h
+    ¦       ¦   ¦   ¦   ¦       bridge.h
+    ¦       ¦   ¦   ¦   ¦       dlpack.h
+    ¦       ¦   ¦   ¦   ¦       dlpack_abi.h
+    ¦       ¦   ¦   ¦   ¦       helpers.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---compute
+    ¦       ¦   ¦   ¦   ¦   ¦   api.h
+    ¦       ¦   ¦   ¦   ¦   ¦   api_aggregate.h
+    ¦       ¦   ¦   ¦   ¦   ¦   api_scalar.h
+    ¦       ¦   ¦   ¦   ¦   ¦   api_vector.h
+    ¦       ¦   ¦   ¦   ¦   ¦   cast.h
+    ¦       ¦   ¦   ¦   ¦   ¦   exec.h
+    ¦       ¦   ¦   ¦   ¦   ¦   expression.h
+    ¦       ¦   ¦   ¦   ¦   ¦   function.h
+    ¦       ¦   ¦   ¦   ¦   ¦   function_options.h
+    ¦       ¦   ¦   ¦   ¦   ¦   initialize.h
+    ¦       ¦   ¦   ¦   ¦   ¦   kernel.h
+    ¦       ¦   ¦   ¦   ¦   ¦   ordering.h
+    ¦       ¦   ¦   ¦   ¦   ¦   registry.h
+    ¦       ¦   ¦   ¦   ¦   ¦   type_fwd.h
+    ¦       ¦   ¦   ¦   ¦   ¦   util.h
+    ¦       ¦   ¦   ¦   ¦   ¦   visibility.h
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---row
+    ¦       ¦   ¦   ¦   ¦           grouper.h
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---csv
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       chunker.h
+    ¦       ¦   ¦   ¦   ¦       column_builder.h
+    ¦       ¦   ¦   ¦   ¦       column_decoder.h
+    ¦       ¦   ¦   ¦   ¦       converter.h
+    ¦       ¦   ¦   ¦   ¦       invalid_row.h
+    ¦       ¦   ¦   ¦   ¦       options.h
+    ¦       ¦   ¦   ¦   ¦       parser.h
+    ¦       ¦   ¦   ¦   ¦       reader.h
+    ¦       ¦   ¦   ¦   ¦       test_common.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       writer.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---dataset
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       dataset.h
+    ¦       ¦   ¦   ¦   ¦       dataset_writer.h
+    ¦       ¦   ¦   ¦   ¦       discovery.h
+    ¦       ¦   ¦   ¦   ¦       file_base.h
+    ¦       ¦   ¦   ¦   ¦       file_csv.h
+    ¦       ¦   ¦   ¦   ¦       file_ipc.h
+    ¦       ¦   ¦   ¦   ¦       file_json.h
+    ¦       ¦   ¦   ¦   ¦       file_orc.h
+    ¦       ¦   ¦   ¦   ¦       file_parquet.h
+    ¦       ¦   ¦   ¦   ¦       parquet_encryption_config.h
+    ¦       ¦   ¦   ¦   ¦       partition.h
+    ¦       ¦   ¦   ¦   ¦       plan.h
+    ¦       ¦   ¦   ¦   ¦       projector.h
+    ¦       ¦   ¦   ¦   ¦       scanner.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       visibility.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---engine
+    ¦       ¦   ¦   ¦   ¦   ¦   api.h
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---substrait
+    ¦       ¦   ¦   ¦   ¦           api.h
+    ¦       ¦   ¦   ¦   ¦           extension_set.h
+    ¦       ¦   ¦   ¦   ¦           extension_types.h
+    ¦       ¦   ¦   ¦   ¦           options.h
+    ¦       ¦   ¦   ¦   ¦           relation.h
+    ¦       ¦   ¦   ¦   ¦           serde.h
+    ¦       ¦   ¦   ¦   ¦           test_plan_builder.h
+    ¦       ¦   ¦   ¦   ¦           test_util.h
+    ¦       ¦   ¦   ¦   ¦           type_fwd.h
+    ¦       ¦   ¦   ¦   ¦           util.h
+    ¦       ¦   ¦   ¦   ¦           visibility.h
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---extension
+    ¦       ¦   ¦   ¦   ¦       bool8.h
+    ¦       ¦   ¦   ¦   ¦       fixed_shape_tensor.h
+    ¦       ¦   ¦   ¦   ¦       json.h
+    ¦       ¦   ¦   ¦   ¦       opaque.h
+    ¦       ¦   ¦   ¦   ¦       uuid.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---filesystem
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       azurefs.h
+    ¦       ¦   ¦   ¦   ¦       filesystem.h
+    ¦       ¦   ¦   ¦   ¦       filesystem_library.h
+    ¦       ¦   ¦   ¦   ¦       gcsfs.h
+    ¦       ¦   ¦   ¦   ¦       hdfs.h
+    ¦       ¦   ¦   ¦   ¦       localfs.h
+    ¦       ¦   ¦   ¦   ¦       mockfs.h
+    ¦       ¦   ¦   ¦   ¦       path_util.h
+    ¦       ¦   ¦   ¦   ¦       s3fs.h
+    ¦       ¦   ¦   ¦   ¦       s3_test_util.h
+    ¦       ¦   ¦   ¦   ¦       test_util.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---flight
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       client.h
+    ¦       ¦   ¦   ¦   ¦       client_auth.h
+    ¦       ¦   ¦   ¦   ¦       client_cookie_middleware.h
+    ¦       ¦   ¦   ¦   ¦       client_middleware.h
+    ¦       ¦   ¦   ¦   ¦       client_tracing_middleware.h
+    ¦       ¦   ¦   ¦   ¦       middleware.h
+    ¦       ¦   ¦   ¦   ¦       otel_logging.h
+    ¦       ¦   ¦   ¦   ¦       platform.h
+    ¦       ¦   ¦   ¦   ¦       server.h
+    ¦       ¦   ¦   ¦   ¦       server_auth.h
+    ¦       ¦   ¦   ¦   ¦       server_middleware.h
+    ¦       ¦   ¦   ¦   ¦       server_tracing_middleware.h
+    ¦       ¦   ¦   ¦   ¦       test_auth_handlers.h
+    ¦       ¦   ¦   ¦   ¦       test_definitions.h
+    ¦       ¦   ¦   ¦   ¦       test_flight_server.h
+    ¦       ¦   ¦   ¦   ¦       test_util.h
+    ¦       ¦   ¦   ¦   ¦       transport.h
+    ¦       ¦   ¦   ¦   ¦       transport_server.h
+    ¦       ¦   ¦   ¦   ¦       types.h
+    ¦       ¦   ¦   ¦   ¦       types_async.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       visibility.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---io
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       buffered.h
+    ¦       ¦   ¦   ¦   ¦       caching.h
+    ¦       ¦   ¦   ¦   ¦       compressed.h
+    ¦       ¦   ¦   ¦   ¦       concurrency.h
+    ¦       ¦   ¦   ¦   ¦       file.h
+    ¦       ¦   ¦   ¦   ¦       hdfs.h
+    ¦       ¦   ¦   ¦   ¦       interfaces.h
+    ¦       ¦   ¦   ¦   ¦       memory.h
+    ¦       ¦   ¦   ¦   ¦       mman.h
+    ¦       ¦   ¦   ¦   ¦       slow.h
+    ¦       ¦   ¦   ¦   ¦       stdio.h
+    ¦       ¦   ¦   ¦   ¦       test_common.h
+    ¦       ¦   ¦   ¦   ¦       transform.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---ipc
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       dictionary.h
+    ¦       ¦   ¦   ¦   ¦       feather.h
+    ¦       ¦   ¦   ¦   ¦       message.h
+    ¦       ¦   ¦   ¦   ¦       options.h
+    ¦       ¦   ¦   ¦   ¦       reader.h
+    ¦       ¦   ¦   ¦   ¦       test_common.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       util.h
+    ¦       ¦   ¦   ¦   ¦       writer.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---json
+    ¦       ¦   ¦   ¦   ¦       api.h
+    ¦       ¦   ¦   ¦   ¦       chunked_builder.h
+    ¦       ¦   ¦   ¦   ¦       chunker.h
+    ¦       ¦   ¦   ¦   ¦       converter.h
+    ¦       ¦   ¦   ¦   ¦       from_string.h
+    ¦       ¦   ¦   ¦   ¦       object_parser.h
+    ¦       ¦   ¦   ¦   ¦       object_writer.h
+    ¦       ¦   ¦   ¦   ¦       options.h
+    ¦       ¦   ¦   ¦   ¦       parser.h
+    ¦       ¦   ¦   ¦   ¦       rapidjson_defs.h
+    ¦       ¦   ¦   ¦   ¦       reader.h
+    ¦       ¦   ¦   ¦   ¦       test_common.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---python
+    ¦       ¦   ¦   ¦   ¦   ¦   api.h
+    ¦       ¦   ¦   ¦   ¦   ¦   arrow_to_pandas.h
+    ¦       ¦   ¦   ¦   ¦   ¦   async.h
+    ¦       ¦   ¦   ¦   ¦   ¦   benchmark.h
+    ¦       ¦   ¦   ¦   ¦   ¦   common.h
+    ¦       ¦   ¦   ¦   ¦   ¦   config.h
+    ¦       ¦   ¦   ¦   ¦   ¦   csv.h
+    ¦       ¦   ¦   ¦   ¦   ¦   datetime.h
+    ¦       ¦   ¦   ¦   ¦   ¦   decimal.h
+    ¦       ¦   ¦   ¦   ¦   ¦   extension_type.h
+    ¦       ¦   ¦   ¦   ¦   ¦   filesystem.h
+    ¦       ¦   ¦   ¦   ¦   ¦   flight.h
+    ¦       ¦   ¦   ¦   ¦   ¦   gdb.h
+    ¦       ¦   ¦   ¦   ¦   ¦   helpers.h
+    ¦       ¦   ¦   ¦   ¦   ¦   inference.h
+    ¦       ¦   ¦   ¦   ¦   ¦   io.h
+    ¦       ¦   ¦   ¦   ¦   ¦   ipc.h
+    ¦       ¦   ¦   ¦   ¦   ¦   iterators.h
+    ¦       ¦   ¦   ¦   ¦   ¦   lib.h
+    ¦       ¦   ¦   ¦   ¦   ¦   lib_api.h
+    ¦       ¦   ¦   ¦   ¦   ¦   numpy_convert.h
+    ¦       ¦   ¦   ¦   ¦   ¦   numpy_init.h
+    ¦       ¦   ¦   ¦   ¦   ¦   numpy_interop.h
+    ¦       ¦   ¦   ¦   ¦   ¦   numpy_to_arrow.h
+    ¦       ¦   ¦   ¦   ¦   ¦   parquet_encryption.h
+    ¦       ¦   ¦   ¦   ¦   ¦   platform.h
+    ¦       ¦   ¦   ¦   ¦   ¦   pyarrow.h
+    ¦       ¦   ¦   ¦   ¦   ¦   pyarrow_api.h
+    ¦       ¦   ¦   ¦   ¦   ¦   pyarrow_lib.h
+    ¦       ¦   ¦   ¦   ¦   ¦   python_test.h
+    ¦       ¦   ¦   ¦   ¦   ¦   python_to_arrow.h
+    ¦       ¦   ¦   ¦   ¦   ¦   type_traits.h
+    ¦       ¦   ¦   ¦   ¦   ¦   udf.h
+    ¦       ¦   ¦   ¦   ¦   ¦   util.h
+    ¦       ¦   ¦   ¦   ¦   ¦   visibility.h
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---vendored
+    ¦       ¦   ¦   ¦   ¦           pythoncapi_compat.h
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---tensor
+    ¦       ¦   ¦   ¦   ¦       converter.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---testing
+    ¦       ¦   ¦   ¦   ¦       async_test_util.h
+    ¦       ¦   ¦   ¦   ¦       builder.h
+    ¦       ¦   ¦   ¦   ¦       executor_util.h
+    ¦       ¦   ¦   ¦   ¦       extension_type.h
+    ¦       ¦   ¦   ¦   ¦       fixed_width_test_util.h
+    ¦       ¦   ¦   ¦   ¦       future_util.h
+    ¦       ¦   ¦   ¦   ¦       generator.h
+    ¦       ¦   ¦   ¦   ¦       gtest_compat.h
+    ¦       ¦   ¦   ¦   ¦       gtest_util.h
+    ¦       ¦   ¦   ¦   ¦       matchers.h
+    ¦       ¦   ¦   ¦   ¦       math.h
+    ¦       ¦   ¦   ¦   ¦       process.h
+    ¦       ¦   ¦   ¦   ¦       random.h
+    ¦       ¦   ¦   ¦   ¦       uniform_real.h
+    ¦       ¦   ¦   ¦   ¦       util.h
+    ¦       ¦   ¦   ¦   ¦       visibility.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---util
+    ¦       ¦   ¦   ¦   ¦       algorithm.h
+    ¦       ¦   ¦   ¦   ¦       aligned_storage.h
+    ¦       ¦   ¦   ¦   ¦       align_util.h
+    ¦       ¦   ¦   ¦   ¦       async_generator.h
+    ¦       ¦   ¦   ¦   ¦       async_generator_fwd.h
+    ¦       ¦   ¦   ¦   ¦       async_util.h
+    ¦       ¦   ¦   ¦   ¦       base64.h
+    ¦       ¦   ¦   ¦   ¦       basic_decimal.h
+    ¦       ¦   ¦   ¦   ¦       benchmark_util.h
+    ¦       ¦   ¦   ¦   ¦       binary_view_util.h
+    ¦       ¦   ¦   ¦   ¦       bitmap.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_builders.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_generate.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_ops.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_reader.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_visit.h
+    ¦       ¦   ¦   ¦   ¦       bitmap_writer.h
+    ¦       ¦   ¦   ¦   ¦       bit_block_counter.h
+    ¦       ¦   ¦   ¦   ¦       bit_run_reader.h
+    ¦       ¦   ¦   ¦   ¦       bit_util.h
+    ¦       ¦   ¦   ¦   ¦       byte_size.h
+    ¦       ¦   ¦   ¦   ¦       cancel.h
+    ¦       ¦   ¦   ¦   ¦       checked_cast.h
+    ¦       ¦   ¦   ¦   ¦       compare.h
+    ¦       ¦   ¦   ¦   ¦       compression.h
+    ¦       ¦   ¦   ¦   ¦       concurrent_map.h
+    ¦       ¦   ¦   ¦   ¦       config.h
+    ¦       ¦   ¦   ¦   ¦       converter.h
+    ¦       ¦   ¦   ¦   ¦       cpu_info.h
+    ¦       ¦   ¦   ¦   ¦       crc32.h
+    ¦       ¦   ¦   ¦   ¦       debug.h
+    ¦       ¦   ¦   ¦   ¦       decimal.h
+    ¦       ¦   ¦   ¦   ¦       delimiting.h
+    ¦       ¦   ¦   ¦   ¦       endian.h
+    ¦       ¦   ¦   ¦   ¦       float16.h
+    ¦       ¦   ¦   ¦   ¦       formatting.h
+    ¦       ¦   ¦   ¦   ¦       functional.h
+    ¦       ¦   ¦   ¦   ¦       future.h
+    ¦       ¦   ¦   ¦   ¦       hashing.h
+    ¦       ¦   ¦   ¦   ¦       hash_util.h
+    ¦       ¦   ¦   ¦   ¦       int_util.h
+    ¦       ¦   ¦   ¦   ¦       int_util_overflow.h
+    ¦       ¦   ¦   ¦   ¦       io_util.h
+    ¦       ¦   ¦   ¦   ¦       iterator.h
+    ¦       ¦   ¦   ¦   ¦       key_value_metadata.h
+    ¦       ¦   ¦   ¦   ¦       launder.h
+    ¦       ¦   ¦   ¦   ¦       list_util.h
+    ¦       ¦   ¦   ¦   ¦       logger.h
+    ¦       ¦   ¦   ¦   ¦       logging.h
+    ¦       ¦   ¦   ¦   ¦       macros.h
+    ¦       ¦   ¦   ¦   ¦       math_constants.h
+    ¦       ¦   ¦   ¦   ¦       mutex.h
+    ¦       ¦   ¦   ¦   ¦       parallel.h
+    ¦       ¦   ¦   ¦   ¦       pcg_random.h
+    ¦       ¦   ¦   ¦   ¦       prefetch.h
+    ¦       ¦   ¦   ¦   ¦       queue.h
+    ¦       ¦   ¦   ¦   ¦       range.h
+    ¦       ¦   ¦   ¦   ¦       ree_util.h
+    ¦       ¦   ¦   ¦   ¦       regex.h
+    ¦       ¦   ¦   ¦   ¦       rows_to_batches.h
+    ¦       ¦   ¦   ¦   ¦       secure_string.h
+    ¦       ¦   ¦   ¦   ¦       simd.h
+    ¦       ¦   ¦   ¦   ¦       small_vector.h
+    ¦       ¦   ¦   ¦   ¦       span.h
+    ¦       ¦   ¦   ¦   ¦       string.h
+    ¦       ¦   ¦   ¦   ¦       string_util.h
+    ¦       ¦   ¦   ¦   ¦       task_group.h
+    ¦       ¦   ¦   ¦   ¦       test_common.h
+    ¦       ¦   ¦   ¦   ¦       thread_pool.h
+    ¦       ¦   ¦   ¦   ¦       time.h
+    ¦       ¦   ¦   ¦   ¦       tracing.h
+    ¦       ¦   ¦   ¦   ¦       type_fwd.h
+    ¦       ¦   ¦   ¦   ¦       type_traits.h
+    ¦       ¦   ¦   ¦   ¦       ubsan.h
+    ¦       ¦   ¦   ¦   ¦       union_util.h
+    ¦       ¦   ¦   ¦   ¦       unreachable.h
+    ¦       ¦   ¦   ¦   ¦       uri.h
+    ¦       ¦   ¦   ¦   ¦       utf8.h
+    ¦       ¦   ¦   ¦   ¦       value_parsing.h
+    ¦       ¦   ¦   ¦   ¦       vector.h
+    ¦       ¦   ¦   ¦   ¦       visibility.h
+    ¦       ¦   ¦   ¦   ¦       windows_compatibility.h
+    ¦       ¦   ¦   ¦   ¦       windows_fixup.h
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---vendored
+    ¦       ¦   ¦   ¦       ¦   datetime.h
+    ¦       ¦   ¦   ¦       ¦   ProducerConsumerQueue.h
+    ¦       ¦   ¦   ¦       ¦   strptime.h
+    ¦       ¦   ¦   ¦       ¦   xxhash.h
+    ¦       ¦   ¦   ¦       ¦   
+    ¦       ¦   ¦   ¦       +---datetime
+    ¦       ¦   ¦   ¦       ¦       date.h
+    ¦       ¦   ¦   ¦       ¦       ios.h
+    ¦       ¦   ¦   ¦       ¦       tz.h
+    ¦       ¦   ¦   ¦       ¦       tz_private.h
+    ¦       ¦   ¦   ¦       ¦       visibility.h
+    ¦       ¦   ¦   ¦       ¦       
+    ¦       ¦   ¦   ¦       +---double-conversion
+    ¦       ¦   ¦   ¦       ¦       bignum-dtoa.h
+    ¦       ¦   ¦   ¦       ¦       bignum.h
+    ¦       ¦   ¦   ¦       ¦       cached-powers.h
+    ¦       ¦   ¦   ¦       ¦       diy-fp.h
+    ¦       ¦   ¦   ¦       ¦       double-conversion.h
+    ¦       ¦   ¦   ¦       ¦       double-to-string.h
+    ¦       ¦   ¦   ¦       ¦       fast-dtoa.h
+    ¦       ¦   ¦   ¦       ¦       fixed-dtoa.h
+    ¦       ¦   ¦   ¦       ¦       ieee.h
+    ¦       ¦   ¦   ¦       ¦       string-to-double.h
+    ¦       ¦   ¦   ¦       ¦       strtod.h
+    ¦       ¦   ¦   ¦       ¦       utils.h
+    ¦       ¦   ¦   ¦       ¦       
+    ¦       ¦   ¦   ¦       +---pcg
+    ¦       ¦   ¦   ¦       ¦       pcg_extras.hpp
+    ¦       ¦   ¦   ¦       ¦       pcg_random.hpp
+    ¦       ¦   ¦   ¦       ¦       pcg_uint128.hpp
+    ¦       ¦   ¦   ¦       ¦       
+    ¦       ¦   ¦   ¦       +---portable-snippets
+    ¦       ¦   ¦   ¦       ¦       debug-trap.h
+    ¦       ¦   ¦   ¦       ¦       
+    ¦       ¦   ¦   ¦       +---safeint
+    ¦       ¦   ¦   ¦       ¦       safe_math.h
+    ¦       ¦   ¦   ¦       ¦       safe_math_impl.h
+    ¦       ¦   ¦   ¦       ¦       
+    ¦       ¦   ¦   ¦       +---xxhash
+    ¦       ¦   ¦   ¦               xxhash.h
+    ¦       ¦   ¦   ¦               
+    ¦       ¦   ¦   +---parquet
+    ¦       ¦   ¦       ¦   benchmark_util.h
+    ¦       ¦   ¦       ¦   bloom_filter.h
+    ¦       ¦   ¦       ¦   bloom_filter_reader.h
+    ¦       ¦   ¦       ¦   column_page.h
+    ¦       ¦   ¦       ¦   column_reader.h
+    ¦       ¦   ¦       ¦   column_scanner.h
+    ¦       ¦   ¦       ¦   column_writer.h
+    ¦       ¦   ¦       ¦   encoding.h
+    ¦       ¦   ¦       ¦   exception.h
+    ¦       ¦   ¦       ¦   file_reader.h
+    ¦       ¦   ¦       ¦   file_writer.h
+    ¦       ¦   ¦       ¦   hasher.h
+    ¦       ¦   ¦       ¦   level_comparison.h
+    ¦       ¦   ¦       ¦   level_comparison_inc.h
+    ¦       ¦   ¦       ¦   level_conversion.h
+    ¦       ¦   ¦       ¦   level_conversion_inc.h
+    ¦       ¦   ¦       ¦   metadata.h
+    ¦       ¦   ¦       ¦   page_index.h
+    ¦       ¦   ¦       ¦   parquet_version.h
+    ¦       ¦   ¦       ¦   platform.h
+    ¦       ¦   ¦       ¦   printer.h
+    ¦       ¦   ¦       ¦   properties.h
+    ¦       ¦   ¦       ¦   schema.h
+    ¦       ¦   ¦       ¦   size_statistics.h
+    ¦       ¦   ¦       ¦   statistics.h
+    ¦       ¦   ¦       ¦   stream_reader.h
+    ¦       ¦   ¦       ¦   stream_writer.h
+    ¦       ¦   ¦       ¦   test_util.h
+    ¦       ¦   ¦       ¦   types.h
+    ¦       ¦   ¦       ¦   type_fwd.h
+    ¦       ¦   ¦       ¦   windows_compatibility.h
+    ¦       ¦   ¦       ¦   windows_fixup.h
+    ¦       ¦   ¦       ¦   xxhasher.h
+    ¦       ¦   ¦       ¦   
+    ¦       ¦   ¦       +---api
+    ¦       ¦   ¦       ¦       io.h
+    ¦       ¦   ¦       ¦       reader.h
+    ¦       ¦   ¦       ¦       schema.h
+    ¦       ¦   ¦       ¦       writer.h
+    ¦       ¦   ¦       ¦       
+    ¦       ¦   ¦       +---arrow
+    ¦       ¦   ¦       ¦       reader.h
+    ¦       ¦   ¦       ¦       schema.h
+    ¦       ¦   ¦       ¦       test_util.h
+    ¦       ¦   ¦       ¦       writer.h
+    ¦       ¦   ¦       ¦       
+    ¦       ¦   ¦       +---encryption
+    ¦       ¦   ¦       ¦       crypto_factory.h
+    ¦       ¦   ¦       ¦       encryption.h
+    ¦       ¦   ¦       ¦       file_key_material_store.h
+    ¦       ¦   ¦       ¦       file_key_unwrapper.h
+    ¦       ¦   ¦       ¦       file_key_wrapper.h
+    ¦       ¦   ¦       ¦       file_system_key_material_store.h
+    ¦       ¦   ¦       ¦       key_encryption_key.h
+    ¦       ¦   ¦       ¦       key_material.h
+    ¦       ¦   ¦       ¦       key_metadata.h
+    ¦       ¦   ¦       ¦       key_toolkit.h
+    ¦       ¦   ¦       ¦       kms_client.h
+    ¦       ¦   ¦       ¦       kms_client_factory.h
+    ¦       ¦   ¦       ¦       local_wrap_kms_client.h
+    ¦       ¦   ¦       ¦       test_encryption_util.h
+    ¦       ¦   ¦       ¦       test_in_memory_kms.h
+    ¦       ¦   ¦       ¦       two_level_cache_with_expiration.h
+    ¦       ¦   ¦       ¦       type_fwd.h
+    ¦       ¦   ¦       ¦       
+    ¦       ¦   ¦       +---geospatial
+    ¦       ¦   ¦               statistics.h
+    ¦       ¦   ¦               
+    ¦       ¦   +---includes
+    ¦       ¦   ¦       common.pxd
+    ¦       ¦   ¦       libarrow.pxd
+    ¦       ¦   ¦       libarrow_acero.pxd
+    ¦       ¦   ¦       libarrow_cuda.pxd
+    ¦       ¦   ¦       libarrow_dataset.pxd
+    ¦       ¦   ¦       libarrow_dataset_parquet.pxd
+    ¦       ¦   ¦       libarrow_feather.pxd
+    ¦       ¦   ¦       libarrow_flight.pxd
+    ¦       ¦   ¦       libarrow_fs.pxd
+    ¦       ¦   ¦       libarrow_python.pxd
+    ¦       ¦   ¦       libarrow_substrait.pxd
+    ¦       ¦   ¦       libgandiva.pxd
+    ¦       ¦   ¦       libparquet.pxd
+    ¦       ¦   ¦       libparquet_encryption.pxd
+    ¦       ¦   ¦       __init__.pxd
+    ¦       ¦   ¦       
+    ¦       ¦   +---interchange
+    ¦       ¦   ¦   ¦   buffer.py
+    ¦       ¦   ¦   ¦   column.py
+    ¦       ¦   ¦   ¦   dataframe.py
+    ¦       ¦   ¦   ¦   from_dataframe.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           buffer.cpython-312.pyc
+    ¦       ¦   ¦           column.cpython-312.pyc
+    ¦       ¦   ¦           dataframe.cpython-312.pyc
+    ¦       ¦   ¦           from_dataframe.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---parquet
+    ¦       ¦   ¦   ¦   core.py
+    ¦       ¦   ¦   ¦   encryption.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           core.cpython-312.pyc
+    ¦       ¦   ¦           encryption.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---src
+    ¦       ¦   ¦   +---arrow
+    ¦       ¦   ¦       +---python
+    ¦       ¦   ¦           ¦   api.h
+    ¦       ¦   ¦           ¦   arrow_to_pandas.cc
+    ¦       ¦   ¦           ¦   arrow_to_pandas.h
+    ¦       ¦   ¦           ¦   arrow_to_python_internal.h
+    ¦       ¦   ¦           ¦   async.h
+    ¦       ¦   ¦           ¦   benchmark.cc
+    ¦       ¦   ¦           ¦   benchmark.h
+    ¦       ¦   ¦           ¦   CMakeLists.txt
+    ¦       ¦   ¦           ¦   common.cc
+    ¦       ¦   ¦           ¦   common.h
+    ¦       ¦   ¦           ¦   config.cc
+    ¦       ¦   ¦           ¦   config.h
+    ¦       ¦   ¦           ¦   config_internal.h.cmake
+    ¦       ¦   ¦           ¦   csv.cc
+    ¦       ¦   ¦           ¦   csv.h
+    ¦       ¦   ¦           ¦   datetime.cc
+    ¦       ¦   ¦           ¦   datetime.h
+    ¦       ¦   ¦           ¦   decimal.cc
+    ¦       ¦   ¦           ¦   decimal.h
+    ¦       ¦   ¦           ¦   extension_type.cc
+    ¦       ¦   ¦           ¦   extension_type.h
+    ¦       ¦   ¦           ¦   filesystem.cc
+    ¦       ¦   ¦           ¦   filesystem.h
+    ¦       ¦   ¦           ¦   flight.cc
+    ¦       ¦   ¦           ¦   flight.h
+    ¦       ¦   ¦           ¦   gdb.cc
+    ¦       ¦   ¦           ¦   gdb.h
+    ¦       ¦   ¦           ¦   helpers.cc
+    ¦       ¦   ¦           ¦   helpers.h
+    ¦       ¦   ¦           ¦   inference.cc
+    ¦       ¦   ¦           ¦   inference.h
+    ¦       ¦   ¦           ¦   io.cc
+    ¦       ¦   ¦           ¦   io.h
+    ¦       ¦   ¦           ¦   ipc.cc
+    ¦       ¦   ¦           ¦   ipc.h
+    ¦       ¦   ¦           ¦   iterators.h
+    ¦       ¦   ¦           ¦   numpy_convert.cc
+    ¦       ¦   ¦           ¦   numpy_convert.h
+    ¦       ¦   ¦           ¦   numpy_init.cc
+    ¦       ¦   ¦           ¦   numpy_init.h
+    ¦       ¦   ¦           ¦   numpy_internal.h
+    ¦       ¦   ¦           ¦   numpy_interop.h
+    ¦       ¦   ¦           ¦   numpy_to_arrow.cc
+    ¦       ¦   ¦           ¦   numpy_to_arrow.h
+    ¦       ¦   ¦           ¦   parquet_encryption.cc
+    ¦       ¦   ¦           ¦   parquet_encryption.h
+    ¦       ¦   ¦           ¦   platform.h
+    ¦       ¦   ¦           ¦   pyarrow.cc
+    ¦       ¦   ¦           ¦   pyarrow.h
+    ¦       ¦   ¦           ¦   pyarrow_api.h
+    ¦       ¦   ¦           ¦   pyarrow_lib.h
+    ¦       ¦   ¦           ¦   python_test.cc
+    ¦       ¦   ¦           ¦   python_test.h
+    ¦       ¦   ¦           ¦   python_to_arrow.cc
+    ¦       ¦   ¦           ¦   python_to_arrow.h
+    ¦       ¦   ¦           ¦   type_traits.h
+    ¦       ¦   ¦           ¦   udf.cc
+    ¦       ¦   ¦           ¦   udf.h
+    ¦       ¦   ¦           ¦   util.cc
+    ¦       ¦   ¦           ¦   util.h
+    ¦       ¦   ¦           ¦   visibility.h
+    ¦       ¦   ¦           ¦   
+    ¦       ¦   ¦           +---vendored
+    ¦       ¦   ¦                   CMakeLists.txt
+    ¦       ¦   ¦                   pythoncapi_compat.h
+    ¦       ¦   ¦                   
+    ¦       ¦   +---tests
+    ¦       ¦   ¦   ¦   arrow_16597.py
+    ¦       ¦   ¦   ¦   arrow_39313.py
+    ¦       ¦   ¦   ¦   arrow_7980.py
+    ¦       ¦   ¦   ¦   bound_function_visit_strings.pyx
+    ¦       ¦   ¦   ¦   conftest.py
+    ¦       ¦   ¦   ¦   extensions.pyx
+    ¦       ¦   ¦   ¦   pandas_examples.py
+    ¦       ¦   ¦   ¦   pandas_threaded_import.py
+    ¦       ¦   ¦   ¦   pyarrow_cython_example.pyx
+    ¦       ¦   ¦   ¦   read_record_batch.py
+    ¦       ¦   ¦   ¦   strategies.py
+    ¦       ¦   ¦   ¦   test_acero.py
+    ¦       ¦   ¦   ¦   test_adhoc_memory_leak.py
+    ¦       ¦   ¦   ¦   test_array.py
+    ¦       ¦   ¦   ¦   test_builder.py
+    ¦       ¦   ¦   ¦   test_cffi.py
+    ¦       ¦   ¦   ¦   test_compute.py
+    ¦       ¦   ¦   ¦   test_convert_builtin.py
+    ¦       ¦   ¦   ¦   test_cpp_internals.py
+    ¦       ¦   ¦   ¦   test_csv.py
+    ¦       ¦   ¦   ¦   test_cuda.py
+    ¦       ¦   ¦   ¦   test_cuda_numba_interop.py
+    ¦       ¦   ¦   ¦   test_cython.py
+    ¦       ¦   ¦   ¦   test_dataset.py
+    ¦       ¦   ¦   ¦   test_dataset_encryption.py
+    ¦       ¦   ¦   ¦   test_deprecations.py
+    ¦       ¦   ¦   ¦   test_device.py
+    ¦       ¦   ¦   ¦   test_dlpack.py
+    ¦       ¦   ¦   ¦   test_exec_plan.py
+    ¦       ¦   ¦   ¦   test_extension_type.py
+    ¦       ¦   ¦   ¦   test_feather.py
+    ¦       ¦   ¦   ¦   test_flight.py
+    ¦       ¦   ¦   ¦   test_flight_async.py
+    ¦       ¦   ¦   ¦   test_fs.py
+    ¦       ¦   ¦   ¦   test_gandiva.py
+    ¦       ¦   ¦   ¦   test_gdb.py
+    ¦       ¦   ¦   ¦   test_io.py
+    ¦       ¦   ¦   ¦   test_ipc.py
+    ¦       ¦   ¦   ¦   test_json.py
+    ¦       ¦   ¦   ¦   test_jvm.py
+    ¦       ¦   ¦   ¦   test_memory.py
+    ¦       ¦   ¦   ¦   test_misc.py
+    ¦       ¦   ¦   ¦   test_orc.py
+    ¦       ¦   ¦   ¦   test_pandas.py
+    ¦       ¦   ¦   ¦   test_scalars.py
+    ¦       ¦   ¦   ¦   test_schema.py
+    ¦       ¦   ¦   ¦   test_sparse_tensor.py
+    ¦       ¦   ¦   ¦   test_strategies.py
+    ¦       ¦   ¦   ¦   test_substrait.py
+    ¦       ¦   ¦   ¦   test_table.py
+    ¦       ¦   ¦   ¦   test_tensor.py
+    ¦       ¦   ¦   ¦   test_types.py
+    ¦       ¦   ¦   ¦   test_udf.py
+    ¦       ¦   ¦   ¦   test_util.py
+    ¦       ¦   ¦   ¦   test_without_numpy.py
+    ¦       ¦   ¦   ¦   util.py
+    ¦       ¦   ¦   ¦   wsgi_examples.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---data
+    ¦       ¦   ¦   ¦   +---feather
+    ¦       ¦   ¦   ¦   ¦       v0.17.0.version.2-compression.lz4.feather
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---orc
+    ¦       ¦   ¦   ¦   ¦       decimal.jsn.gz
+    ¦       ¦   ¦   ¦   ¦       decimal.orc
+    ¦       ¦   ¦   ¦   ¦       README.md
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.emptyFile.jsn.gz
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.emptyFile.orc
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.test1.jsn.gz
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.test1.orc
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.testDate1900.jsn.gz
+    ¦       ¦   ¦   ¦   ¦       TestOrcFile.testDate1900.orc
+    ¦       ¦   ¦   ¦   ¦       
+    ¦       ¦   ¦   ¦   +---parquet
+    ¦       ¦   ¦   ¦           v0.7.1.all-named-index.parquet
+    ¦       ¦   ¦   ¦           v0.7.1.column-metadata-handling.parquet
+    ¦       ¦   ¦   ¦           v0.7.1.parquet
+    ¦       ¦   ¦   ¦           v0.7.1.some-named-index.parquet
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---interchange
+    ¦       ¦   ¦   ¦   ¦   test_conversion.py
+    ¦       ¦   ¦   ¦   ¦   test_interchange_spec.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           test_conversion.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_interchange_spec.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---parquet
+    ¦       ¦   ¦   ¦   ¦   common.py
+    ¦       ¦   ¦   ¦   ¦   conftest.py
+    ¦       ¦   ¦   ¦   ¦   encryption.py
+    ¦       ¦   ¦   ¦   ¦   test_basic.py
+    ¦       ¦   ¦   ¦   ¦   test_compliant_nested_type.py
+    ¦       ¦   ¦   ¦   ¦   test_dataset.py
+    ¦       ¦   ¦   ¦   ¦   test_data_types.py
+    ¦       ¦   ¦   ¦   ¦   test_datetime.py
+    ¦       ¦   ¦   ¦   ¦   test_encryption.py
+    ¦       ¦   ¦   ¦   ¦   test_metadata.py
+    ¦       ¦   ¦   ¦   ¦   test_pandas.py
+    ¦       ¦   ¦   ¦   ¦   test_parquet_file.py
+    ¦       ¦   ¦   ¦   ¦   test_parquet_writer.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           common.cpython-312.pyc
+    ¦       ¦   ¦   ¦           conftest.cpython-312.pyc
+    ¦       ¦   ¦   ¦           encryption.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_basic.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_compliant_nested_type.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_dataset.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_data_types.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_datetime.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_encryption.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_metadata.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_pandas.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_parquet_file.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_parquet_writer.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           arrow_16597.cpython-312.pyc
+    ¦       ¦   ¦           arrow_39313.cpython-312.pyc
+    ¦       ¦   ¦           arrow_7980.cpython-312.pyc
+    ¦       ¦   ¦           conftest.cpython-312.pyc
+    ¦       ¦   ¦           pandas_examples.cpython-312.pyc
+    ¦       ¦   ¦           pandas_threaded_import.cpython-312.pyc
+    ¦       ¦   ¦           read_record_batch.cpython-312.pyc
+    ¦       ¦   ¦           strategies.cpython-312.pyc
+    ¦       ¦   ¦           test_acero.cpython-312.pyc
+    ¦       ¦   ¦           test_adhoc_memory_leak.cpython-312.pyc
+    ¦       ¦   ¦           test_array.cpython-312.pyc
+    ¦       ¦   ¦           test_builder.cpython-312.pyc
+    ¦       ¦   ¦           test_cffi.cpython-312.pyc
+    ¦       ¦   ¦           test_compute.cpython-312.pyc
+    ¦       ¦   ¦           test_convert_builtin.cpython-312.pyc
+    ¦       ¦   ¦           test_cpp_internals.cpython-312.pyc
+    ¦       ¦   ¦           test_csv.cpython-312.pyc
+    ¦       ¦   ¦           test_cuda.cpython-312.pyc
+    ¦       ¦   ¦           test_cuda_numba_interop.cpython-312.pyc
+    ¦       ¦   ¦           test_cython.cpython-312.pyc
+    ¦       ¦   ¦           test_dataset.cpython-312.pyc
+    ¦       ¦   ¦           test_dataset_encryption.cpython-312.pyc
+    ¦       ¦   ¦           test_deprecations.cpython-312.pyc
+    ¦       ¦   ¦           test_device.cpython-312.pyc
+    ¦       ¦   ¦           test_dlpack.cpython-312.pyc
+    ¦       ¦   ¦           test_exec_plan.cpython-312.pyc
+    ¦       ¦   ¦           test_extension_type.cpython-312.pyc
+    ¦       ¦   ¦           test_feather.cpython-312.pyc
+    ¦       ¦   ¦           test_flight.cpython-312.pyc
+    ¦       ¦   ¦           test_flight_async.cpython-312.pyc
+    ¦       ¦   ¦           test_fs.cpython-312.pyc
+    ¦       ¦   ¦           test_gandiva.cpython-312.pyc
+    ¦       ¦   ¦           test_gdb.cpython-312.pyc
+    ¦       ¦   ¦           test_io.cpython-312.pyc
+    ¦       ¦   ¦           test_ipc.cpython-312.pyc
+    ¦       ¦   ¦           test_json.cpython-312.pyc
+    ¦       ¦   ¦           test_jvm.cpython-312.pyc
+    ¦       ¦   ¦           test_memory.cpython-312.pyc
+    ¦       ¦   ¦           test_misc.cpython-312.pyc
+    ¦       ¦   ¦           test_orc.cpython-312.pyc
+    ¦       ¦   ¦           test_pandas.cpython-312.pyc
+    ¦       ¦   ¦           test_scalars.cpython-312.pyc
+    ¦       ¦   ¦           test_schema.cpython-312.pyc
+    ¦       ¦   ¦           test_sparse_tensor.cpython-312.pyc
+    ¦       ¦   ¦           test_strategies.cpython-312.pyc
+    ¦       ¦   ¦           test_substrait.cpython-312.pyc
+    ¦       ¦   ¦           test_table.cpython-312.pyc
+    ¦       ¦   ¦           test_tensor.cpython-312.pyc
+    ¦       ¦   ¦           test_types.cpython-312.pyc
+    ¦       ¦   ¦           test_udf.cpython-312.pyc
+    ¦       ¦   ¦           test_util.cpython-312.pyc
+    ¦       ¦   ¦           test_without_numpy.cpython-312.pyc
+    ¦       ¦   ¦           util.cpython-312.pyc
+    ¦       ¦   ¦           wsgi_examples.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---vendored
+    ¦       ¦   ¦   ¦   docscrape.py
+    ¦       ¦   ¦   ¦   version.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           docscrape.cpython-312.pyc
+    ¦       ¦   ¦           version.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           acero.cpython-312.pyc
+    ¦       ¦           benchmark.cpython-312.pyc
+    ¦       ¦           cffi.cpython-312.pyc
+    ¦       ¦           compute.cpython-312.pyc
+    ¦       ¦           conftest.cpython-312.pyc
+    ¦       ¦           csv.cpython-312.pyc
+    ¦       ¦           cuda.cpython-312.pyc
+    ¦       ¦           dataset.cpython-312.pyc
+    ¦       ¦           feather.cpython-312.pyc
+    ¦       ¦           flight.cpython-312.pyc
+    ¦       ¦           fs.cpython-312.pyc
+    ¦       ¦           ipc.cpython-312.pyc
+    ¦       ¦           json.cpython-312.pyc
+    ¦       ¦           jvm.cpython-312.pyc
+    ¦       ¦           orc.cpython-312.pyc
+    ¦       ¦           pandas_compat.cpython-312.pyc
+    ¦       ¦           substrait.cpython-312.pyc
+    ¦       ¦           types.cpython-312.pyc
+    ¦       ¦           util.cpython-312.pyc
+    ¦       ¦           _compute_docstrings.cpython-312.pyc
+    ¦       ¦           _generated_version.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---pyarrow-23.0.1.dist-info
+    ¦       ¦   ¦   DELVEWHEEL
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE.txt
+    ¦       ¦           NOTICE.txt
+    ¦       ¦           
+    ¦       +---pyarrow.libs
+    ¦       ¦       msvcp140-2a7008da6f9aae43c7a434835dcaf31e.dll
     ¦       ¦       
     ¦       +---pyasn1
     ¦       ¦   ¦   debug.py

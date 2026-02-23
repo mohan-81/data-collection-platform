@@ -3,6 +3,7 @@ from destinations.postgres_writer import push_postgres
 from destinations.bigquery_writer import push_bigquery
 from destinations.snowflake_writer import push_snowflake
 from destinations.clickhouse_writer import push_clickhouse
+from destinations.s3_writer import push_s3
 
 import sqlite3
 
@@ -38,6 +39,9 @@ def push_to_destination(dest_cfg, source, rows):
 
     elif dest_type == "clickhouse":
         return push_clickhouse(dest_cfg, source, rows)
+    
+    elif dest_type == "s3":
+        return push_s3(dest_cfg, source, rows)
 
     else:
 

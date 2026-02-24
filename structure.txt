@@ -4,8 +4,6 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
-¦   identity.db-shm
-¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
@@ -87,6 +85,8 @@ C:.
 ¦           peertube.cpython-312.pyc
 ¦           pinterest.cpython-312.pyc
 ¦           producthunt.cpython-312.pyc
+¦           stackoverflow.cpython-312.pyc
+¦           tumblr.cpython-312.pyc
 ¦           wikipedia.cpython-312.pyc
 ¦           
 +---destinations
@@ -109,11 +109,14 @@ C:.
 ¦           
 +---security
 ¦   ¦   crypto.py
+¦   ¦   secret.key
 ¦   ¦   secure_db.py
 ¦   ¦   secure_fetch.py
 ¦   ¦   
 ¦   +---__pycache__
 ¦           crypto.cpython-312.pyc
+¦           secure_db.cpython-312.pyc
+¦           secure_fetch.cpython-312.pyc
 ¦           
 +---static
 ¦   +---sdk

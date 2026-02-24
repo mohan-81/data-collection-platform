@@ -177,7 +177,6 @@
                     </div>
 
                     <div id="dbFields" class="hidden md:contents animate-in fade-in duration-500">
-                    <!-- SQL -->
                     <div id="sqlFields" class="contents">
                         <input id="dbHost" placeholder="Host (e.g. 127.0.0.1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                         <input id="dbPort" placeholder="Port" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
@@ -186,7 +185,6 @@
                         <input id="dbName" placeholder="Database Name" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                     </div>
 
-                    <!-- BIGQUERY -->
                     <div id="bigqueryFields" class="hidden contents">
                         <input id="bqProject" placeholder="Project ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                         <input id="bqDataset" placeholder="Dataset ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
@@ -197,12 +195,32 @@
                         </div>
                     </div>
 
-                    <!-- S3 -->
                     <div id="s3Fields" class="hidden contents">
                         <input id="s3Bucket" placeholder="Bucket Name (segmento-data)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                         <input id="s3Region" placeholder="Region (ap-south-1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                         <input id="s3AccessKey" placeholder="Access Key ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                         <input id="s3SecretKey" type="password" placeholder="Secret Access Key" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
+                    </div>
+
+                    <div id="formatField" class="hidden md:col-span-2">
+                        <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block">
+                            Data Format
+                        </label>
+                        <div class="flex gap-4">
+                          <button onclick="selectFormat('parquet')" id="format-parquet" class="format-option flex-1 flex items-center justify-between p-4 rounded-2xl bg-slate-900 border-2 border-white/5 text-slate-400 transition-all hover:bg-slate-800">
+                            <span class="font-bold">Parquet</span>
+                            <div class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center">
+                              <div class="dot w-2 h-2 rounded-full bg-red-500 scale-0 transition-transform"></div>
+                            </div>
+                          </button>
+                          <button onclick="selectFormat('json')" id="format-json" class="format-option flex-1 flex items-center justify-between p-4 rounded-2xl bg-slate-900 border-2 border-white/5 text-slate-400 transition-all hover:bg-slate-800">
+                            <span class="font-bold">JSON</span>
+                            <div class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center">
+                              <div class="dot w-2 h-2 rounded-full bg-red-500 scale-0 transition-transform"></div>
+                            </div>
+                          </button>
+                        </div>
+                        <input type="hidden" id="dataFormat" value="parquet">
                     </div>
 
                     <div class="md:col-span-2 pt-2">
@@ -283,6 +301,11 @@
 <style>
   .bg-slate-900 { background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0); background-size: 40px 40px; }
   select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+
+  /* Format Option Styling */
+  .format-option.selected { border-color: #ef4444; color: white; background-color: rgba(239, 68, 68, 0.05); }
+  .format-option.selected .radio-indicator { border-color: #ef4444; }
+  .format-option.selected .dot { transform: scale(1); }
 </style>
 
 <script>
@@ -290,7 +313,14 @@ document.addEventListener("DOMContentLoaded", () => {
     checkGmailStatus();
     loadDestinations();
     loadJob();
+    selectFormat('parquet'); // Default selection
 });
+
+function selectFormat(val) {
+    document.getElementById('dataFormat').value = val;
+    document.querySelectorAll('.format-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('format-' + val).classList.add('selected');
+}
 
 async function checkGmailStatus(){
     try {
@@ -414,6 +444,12 @@ function toggleDest(){
     document.getElementById("s3Fields")
         .classList.toggle("hidden",
             type !== "s3");
+
+    document.getElementById("formatField")
+        .classList.toggle(
+            "hidden",
+            !(type === "bigquery" || type === "s3")
+        );
 }
 
 async function saveDestination(){
@@ -425,6 +461,7 @@ async function saveDestination(){
         payload.host = document.getElementById("bqProject").value;
         payload.database = document.getElementById("bqDataset").value;
         payload.password = document.getElementById("bqKey").value;
+        payload.format = document.getElementById("dataFormat").value;
     } 
     else if(type === "s3"){
         payload.host = document.getElementById("s3Bucket").value;
@@ -432,6 +469,7 @@ async function saveDestination(){
         payload.username = document.getElementById("s3AccessKey").value;
         payload.password = document.getElementById("s3SecretKey").value;
         payload.database = "s3";
+        payload.format = document.getElementById("dataFormat").value;
     }
     else {
         payload.host = document.getElementById("dbHost").value;

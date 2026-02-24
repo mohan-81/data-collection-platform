@@ -265,7 +265,8 @@ def init_db():
         database_name TEXT,
 
         created_at TEXT,
-        is_active INTEGER DEFAULT 1
+        is_active INTEGER DEFAULT 1,
+        format TEXT DEFAULT 'parquet'
     )
     """)
 
@@ -4751,7 +4752,7 @@ def reddit_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -4863,7 +4864,7 @@ def telegram_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source='telegram' AND is_active=1
         LIMIT 1
@@ -5200,7 +5201,7 @@ def medium_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source='medium' AND is_active=1
         LIMIT 1
@@ -5793,7 +5794,7 @@ def discord_sync_universal():
             break
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -6691,7 +6692,8 @@ def devto_sync_universal():
             port,
             username,
             password,
-            database_name
+            database_name,
+            format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -7171,7 +7173,7 @@ def gitlab_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source='gitlab' AND is_active=1
         LIMIT 1
@@ -7398,7 +7400,7 @@ def stackoverflow_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -7532,7 +7534,7 @@ def hackernews_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -8274,7 +8276,7 @@ def mastodon_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -8800,7 +8802,7 @@ def lemmy_sync_universal():
 
     # Destination lookup
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source='lemmy' AND is_active=1
         LIMIT 1
@@ -9094,7 +9096,7 @@ def nvd_sync_universal():
     cur = con.cursor()
 
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=? AND is_active=1
         LIMIT 1
@@ -9365,7 +9367,7 @@ def pinterest_sync_universal():
 
     # Destination lookup
     cur.execute("""
-        SELECT dest_type, host, port, username, password, database_name
+        SELECT dest_type, host, port, username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source='pinterest' AND is_active=1
         LIMIT 1
@@ -10426,6 +10428,12 @@ def save_destination():
     username = data.get("username")
     password = data.get("password")
     database = data.get("database")
+    # -------- FORMAT CONTROL --------
+    format_value = data.get("format")
+
+    # allow format ONLY for s3 & bigquery
+    if dest_type not in ["s3", "bigquery"]:
+        format_value = None
 
     # ---------------- Validation ---------------- #
 
@@ -10482,9 +10490,10 @@ def save_destination():
                 username, password,
                 database_name,
                 is_active,
-                created_at
+                created_at,
+                format
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             uid,
             source,
@@ -10495,7 +10504,8 @@ def save_destination():
             password,
             database,
             1,   # active
-            datetime.datetime.utcnow().isoformat()
+            datetime.datetime.utcnow().isoformat(),
+            data.get("format")
         ))
 
 
@@ -10521,6 +10531,7 @@ def save_destination():
         "status": "ok",
         "message": "Destination saved and activated"
     })
+    
 @app.route("/destination/list/<source>")
 def list_destinations(source):
 
@@ -10538,7 +10549,8 @@ def list_destinations(source):
             username,
             database_name,
             is_active,
-            created_at
+            created_at,
+            format
         FROM destination_configs
         WHERE uid=? AND source=?
         ORDER BY created_at DESC
@@ -10688,7 +10700,7 @@ def get_destination(uid, source):
     cur = con.cursor()
     cur.execute("""
         SELECT dest_type, host, port,
-               username, password, database_name
+               username, password, database_name, format
         FROM destination_configs
         WHERE uid=? AND source=?
         ORDER BY id DESC

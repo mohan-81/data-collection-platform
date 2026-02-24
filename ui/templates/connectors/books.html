@@ -149,10 +149,12 @@
                             <option value="bigquery">BigQuery</option>
                             <option value="snowflake">SnowFlake</option>
                             <option value="clickhouse">ClickHouse</option>
+                            <option value="s3">AWS S3</option>
                         </select>
                     </div>
 
                     <div id="dbFields" class="hidden md:contents animate-in fade-in duration-500">
+                        <!-- SQL -->
                         <div id="sqlFields" class="contents">
                             <input id="dbHost" placeholder="Host" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
                             <input id="dbPort" placeholder="Port" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
@@ -160,6 +162,8 @@
                             <input id="dbPass" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
                             <input id="dbName" placeholder="Database Name" class="md:col-span-2 w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
                         </div>
+
+                        <!-- BIGQUERY -->
                         <div id="bigqueryFields" class="hidden contents">
                             <input id="bqProject" placeholder="Project ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
                             <input id="bqDataset" placeholder="Dataset ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
@@ -167,6 +171,15 @@
                                 <textarea id="bqKey" placeholder="Service Account JSON" rows="3" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all font-mono"></textarea>
                             </div>
                         </div>
+
+                        <!-- S3 -->
+                        <div id="s3Fields" class="hidden contents">
+                            <input id="s3Bucket" placeholder="Bucket Name (e.g. my-data-lake)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
+                            <input id="s3Region" placeholder="Region (e.g. ap-south-1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
+                            <input id="s3AccessKey" placeholder="Access Key ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
+                            <input id="s3SecretKey" type="password" placeholder="Secret Access Key" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5 focus:border-cyan-500 outline-none text-sm transition-all">
+                        </div>
+
                         <div class="md:col-span-2 pt-2">
                             <button onclick="saveDestination()" id="saveDestBtn" class="w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-cyan-600/30 text-xs uppercase tracking-widest">Authenticate & Save</button>
                         </div>
@@ -313,9 +326,22 @@ async function loadDestinations(){
 function toggleDest(){
     const type = document.getElementById("destType").value;
     const fields = document.getElementById("dbFields");
-    if(type){ fields.classList.remove("hidden"); } else { fields.classList.add("hidden"); return; }
-    document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery");
-    document.getElementById("bigqueryFields").classList.toggle("hidden", type !== "bigquery");
+
+    if(!type){
+        fields.classList.add("hidden");
+        return;
+    }
+
+    fields.classList.remove("hidden");
+
+    document.getElementById("sqlFields")
+        .classList.toggle("hidden", type === "bigquery" || type === "s3");
+
+    document.getElementById("bigqueryFields")
+        .classList.toggle("hidden", type !== "bigquery");
+
+    document.getElementById("s3Fields")
+        .classList.toggle("hidden", type !== "s3");
 }
 
 async function saveDestination(){
@@ -323,23 +349,39 @@ async function saveDestination(){
     btn.innerText = "CONNECTING...";
     const type = document.getElementById("destType").value;
     let payload = { source: "books", type };
+
     if(type === "bigquery"){
         payload.host = document.getElementById("bqProject").value;
         payload.database = document.getElementById("bqDataset").value;
         payload.password = document.getElementById("bqKey").value;
-    } else {
+    } 
+    else if(type === "s3"){
+        payload.host = document.getElementById("s3Bucket").value;
+        payload.port = document.getElementById("s3Region").value;
+        payload.username = document.getElementById("s3AccessKey").value;
+        payload.password = document.getElementById("s3SecretKey").value;
+        payload.database = "s3";
+    }
+    else {
         payload.host = document.getElementById("dbHost").value;
         payload.port = document.getElementById("dbPort").value;
         payload.username = document.getElementById("dbUser").value;
         payload.password = document.getElementById("dbPass").value;
         payload.database = document.getElementById("dbName").value;
     }
+
     const res = await fetch("/destination/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
-    if(res.ok) { btn.innerText = "SUCCESS ✓"; loadDestinations(); setTimeout(() => btn.innerText = "Authenticate & Save", 2000); }
+    if(res.ok) { 
+        btn.innerText = "SUCCESS ✓"; 
+        loadDestinations(); 
+        setTimeout(() => btn.innerText = "Authenticate & Save", 2000); 
+    } else {
+        btn.innerText = "Authenticate & Save";
+    }
 }
 
 async function loadJob(){

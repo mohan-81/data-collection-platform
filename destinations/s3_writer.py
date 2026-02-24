@@ -1,4 +1,4 @@
-print("### S3 PARQUET WRITER LOADED ###")
+print("### S3 FORMAT-AWARE WRITER LOADED ###")
 
 import json
 import tempfile
@@ -15,9 +15,11 @@ def push_s3(dest, source, rows):
     if not rows:
         return 0
 
-    print("[S3] Preparing parquet upload")
+    # ---------------- FORMAT ----------------
+    fmt = (dest.get("format") or "parquet").lower()
+    print(f"[S3] Upload format: {fmt}")
 
-    # AWS Credentials
+    # ---------------- AWS Credentials ----------------
     aws_access_key = dest["username"]
     aws_secret_key = dest["password"]
     bucket_name = dest["host"]
@@ -30,7 +32,7 @@ def push_s3(dest, source, rows):
         region_name=region
     )
 
-    # DataFrame → Parquet
+    # ---------------- DataFrame ----------------
     df = pd.DataFrame(rows)
 
     for col in df.columns:
@@ -38,21 +40,47 @@ def push_s3(dest, source, rows):
 
     df["fetched_at"] = pd.Timestamp.utcnow()
 
-    tmp = tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=".parquet"
-    )
+    # ---------------- FILE CREATION ----------------
+    if fmt == "parquet":
 
-    parquet_path = tmp.name
-    tmp.close()
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".parquet"
+        )
 
-    df.to_parquet(
-        parquet_path,
-        engine="pyarrow",
-        index=False
-    )
+        file_path = tmp.name
+        tmp.close()
 
-    # Partitioned Path
+        df.to_parquet(
+            file_path,
+            engine="pyarrow",
+            index=False
+        )
+
+        extension = "parquet"
+
+    elif fmt == "json":
+
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".json"
+        )
+
+        file_path = tmp.name
+        tmp.close()
+
+        df.to_json(
+            file_path,
+            orient="records",
+            lines=True
+        )
+
+        extension = "json"
+
+    else:
+        raise Exception(f"Unsupported S3 format: {fmt}")
+
+    # ---------------- Partition Path ----------------
     now = datetime.utcnow()
 
     key = (
@@ -60,20 +88,20 @@ def push_s3(dest, source, rows):
         f"year={now.year}/"
         f"month={now.month:02}/"
         f"day={now.day:02}/"
-        f"{source}_{int(time.time())}.parquet"
+        f"{source}_{int(time.time())}.{extension}"
     )
 
     print("[S3] Uploading:", key)
 
-    # Upload
+    # ---------------- Upload ----------------
     s3.upload_file(
-        parquet_path,
+        file_path,
         bucket_name,
         key
     )
 
-    os.unlink(parquet_path)
+    os.unlink(file_path)
 
-    print(f"[S3] Uploaded {len(rows)} rows")
+    print(f"[S3] Uploaded {len(rows)} rows ({fmt})")
 
     return len(rows)

@@ -1,4 +1,4 @@
-print("### BIGQUERY PARQUET WRITER LOADED ###")
+print("### BIGQUERY FORMAT-AWARE WRITER LOADED ###")
 
 import json
 import tempfile
@@ -9,14 +9,38 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 
 
+# ---------------------------------------------------
+# FORCE STRING NORMALIZATION (CRITICAL FIX)
+# ---------------------------------------------------
+def normalize_rows(rows):
+
+    normalized = []
+
+    for r in rows:
+        clean = {}
+
+        for k, v in r.items():
+
+            if v is None:
+                clean[k] = None
+            else:
+                clean[k] = str(v)
+
+        normalized.append(clean)
+
+    return normalized
+
+
 def push_bigquery(dest, source, rows):
 
     if not rows:
         return 0
 
-    print("[BIGQUERY] Using PARQUET loader")
+    # ---------------- FORMAT ----------------
+    fmt = (dest.get("format") or "parquet").lower()
+    print(f"[BIGQUERY] Upload format: {fmt}")
 
-    # Credentials
+    # ---------------- Credentials ----------------
     creds_dict = json.loads(dest["password"])
 
     credentials = service_account.Credentials.from_service_account_info(
@@ -32,53 +56,74 @@ def push_bigquery(dest, source, rows):
     dataset_id = dest["database_name"]
     table_id = f"{project_id}.{dataset_id}.{source}_data"
 
-    # Dataset (create if not exists)
-    dataset_ref = bigquery.Dataset(f"{project_id}.{dataset_id}")
+    # ---------------- Dataset ----------------
+    dataset_ref = bigquery.Dataset(
+        f"{project_id}.{dataset_id}"
+    )
 
     try:
         client.create_dataset(dataset_ref)
-        print("[BIGQUERY] Dataset created")
     except Exception:
         pass
 
-    # DataFrame Conversion
+    # ==================================================
+    # 🔥 NORMALIZE DATA BEFORE ANY FORMAT WRITING
+    # ==================================================
+    rows = normalize_rows(rows)
+
     df = pd.DataFrame(rows)
 
-    # Convert ONLY connector fields to STRING
-    for col in df.columns:
-        df[col] = df[col].astype(str)
+    df["fetched_at"] = str(pd.Timestamp.utcnow())
 
-    df["fetched_at"] = pd.Timestamp.utcnow()
+    # ---------------- FILE CREATION ----------------
+    if fmt == "parquet":
 
-    # Write TEMP PARQUET
-    tmp = tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=".parquet"
-    )
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".parquet"
+        )
 
-    parquet_path = tmp.name
-    tmp.close()
+        file_path = tmp.name
+        tmp.close()
 
-    df.to_parquet(
-        parquet_path,
-        engine="pyarrow",
-        index=False
-    )
+        df.to_parquet(
+            file_path,
+            engine="pyarrow",
+            index=False
+        )
 
-    print(
-        "[BIGQUERY] Parquet size:",
-        os.path.getsize(parquet_path),
-        "bytes"
-    )
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.PARQUET,
+            write_disposition="WRITE_APPEND",
+            autodetect=True
+        )
 
-    # Load into BigQuery
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.PARQUET,
-        write_disposition="WRITE_APPEND",
-        autodetect=True
-    )
+    elif fmt == "json":
 
-    with open(parquet_path, "rb") as f:
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".json"
+        )
+
+        file_path = tmp.name
+        tmp.close()
+
+        # IMPORTANT → ensures quoted JSON values
+        with open(file_path, "w", encoding="utf-8") as f:
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
+
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+            write_disposition="WRITE_APPEND",
+            autodetect=True
+        )
+
+    else:
+        raise Exception(f"Unsupported BigQuery format: {fmt}")
+
+    # ---------------- LOAD ----------------
+    with open(file_path, "rb") as f:
 
         job = client.load_table_from_file(
             f,
@@ -86,10 +131,37 @@ def push_bigquery(dest, source, rows):
             job_config=job_config
         )
 
-    job.result()
+    try:
+        job.result()
 
-    os.unlink(parquet_path)
+    except Exception as e:
 
-    print(f"[BIGQUERY] Loaded {len(rows)} rows via PARQUET")
+        err = str(e)
+
+        print("[BIGQUERY LOAD ERROR]", err)
+
+        # ---------------- SCHEMA CONFLICT FIX ----------------
+        if "has changed type" in err:
+
+            print("[BIGQUERY] Schema mismatch detected")
+            print("[BIGQUERY] Recreating table...")
+
+            client.delete_table(table_id, not_found_ok=True)
+
+            with open(file_path, "rb") as f:
+                job = client.load_table_from_file(
+                    f,
+                    table_id,
+                    job_config=job_config
+                )
+
+            job.result()
+
+        else:
+            raise e
+
+    os.unlink(file_path)
+
+    print(f"[BIGQUERY] Loaded {len(rows)} rows ({fmt})")
 
     return len(rows)

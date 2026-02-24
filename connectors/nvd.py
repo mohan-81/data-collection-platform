@@ -40,13 +40,16 @@ def load_config(uid):
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    from security.secure_fetch import fetchone_secure
+
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
         return {"error": "No NVD config"}
 
-    api_key = row[0]
+    api_key = row["api_key"]
+    config = json.loads(row["config_json"] or "{}")
 
     config = json.loads(row[1] or "{}")
     keywords = config.get("keywords", [])
@@ -186,6 +189,8 @@ def sync_nvd(uid, sync_type="incremental"):
         "User-Agent": "SegmentoCollector/1.0",
         "X-Api-Key": api_key
     }
+
+    print("NVD KEY:", api_key[:10])
 
     # ---------------- Time Window ----------------
 

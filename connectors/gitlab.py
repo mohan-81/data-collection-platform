@@ -18,9 +18,12 @@ API = "https://gitlab.com/api/v4"
 def db():
     return sqlite3.connect(DB, timeout=60, check_same_thread=False)
 
+from security.secure_fetch import fetchone_secure
+
 def get_gitlab_app(uid):
 
-    con = db()
+    con = sqlite3.connect("identity.db")
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
 
     cur.execute("""
@@ -30,16 +33,17 @@ def get_gitlab_app(uid):
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)   # AUTO DECRYPT
     con.close()
 
     if not row:
-        raise Exception("GitLab credentials not configured")
+        raise Exception("GitLab app not configured")
 
     return {
-        "client_id": row[0],
-        "client_secret": row[1]
+        "client_id": row["client_id"],
+        "client_secret": row["client_secret"]
     }
+
 # ---------------- STATE ---------------- #
 
 def get_project_state(uid, project_id):
@@ -114,7 +118,13 @@ def exchange_code(uid, code):
         timeout=20
     )
 
-    return r.json()
+    data = r.json()
+    print("GITLAB TOKEN:", data)
+
+    if "access_token" not in data:
+        raise Exception(f"GitLab OAuth failed: {data}")
+
+    return data
 
 def save_token(uid, data):
 
@@ -141,7 +151,6 @@ def save_token(uid, data):
 
     con.commit()
     con.close()
-
 
 def get_token(uid):
 

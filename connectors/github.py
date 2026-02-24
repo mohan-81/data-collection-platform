@@ -126,9 +126,13 @@ def get_active_destination(uid):
         "database_name": row[5]
     }
 
+from security.secure_fetch import fetchone_secure
+
+
 def get_github_app(uid):
 
-    con = get_db()
+    con = sqlite3.connect("identity.db")
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
 
     cur.execute("""
@@ -138,15 +142,15 @@ def get_github_app(uid):
         LIMIT 1
     """, (uid,))
 
-    row = cur.fetchone()
+    row = fetchone_secure(cur)
     con.close()
 
     if not row:
-        raise Exception("GitHub App credentials not configured")
+        raise Exception("GitHub app not configured")
 
     return {
-        "client_id": row[0],
-        "client_secret": row[1]
+        "client_id": row["client_id"],
+        "client_secret": row["client_secret"]
     }
 
 # ---------------- AUTH ---------------- #

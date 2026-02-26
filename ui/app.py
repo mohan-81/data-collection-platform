@@ -69,13 +69,45 @@ def get_google_status(source):
     except:
         return False
     
+def logged_in():
+    try:
+        if "segmento_session" not in request.cookies:
+            return False
+
+        r = requests.get(
+            "http://localhost:4000/auth/me",
+            cookies=request.cookies,
+            timeout=2
+        )
+
+        return r.status_code == 200
+
+    except:
+        return False
+    
 @app.route("/")
 def home():
     return render_template("index.html")
 
 @app.route("/signup")
 def signup_page():
+    if logged_in():
+        return redirect("/")
     return render_template("signup.html")
+
+@app.route("/login")
+def login_page():
+    if logged_in():
+        return redirect("/")
+    return render_template("login.html")
+
+@app.context_processor
+def inject_auth_status():
+    return dict(is_logged_in=logged_in())
+
+@app.route("/logout")
+def ui_logout():
+    return redirect("http://localhost:4000/auth/logout")
 
 @app.route("/tracking")
 def tracking():

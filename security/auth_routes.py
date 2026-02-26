@@ -151,6 +151,9 @@ def signup():
 
 # ================= LOGIN =================
 
+from security.crypto import decrypt_value
+
+
 @auth.route("/auth/login", methods=["POST"])
 def login():
 
@@ -160,9 +163,9 @@ def login():
     password = data.get("password")
 
     if not email or not password:
-        return jsonify({
-            "error": "Missing credentials"
-        }), 400
+        return redirect(
+            "http://localhost:3000/login?error=missing"
+        )
 
     con = get_db()
     cur = con.cursor()
@@ -182,17 +185,13 @@ def login():
         )
 
     user_id = row[0]
-    stored_hash = row[1]
+    encrypted_hash = row[1]
 
-    # password already encrypted earlier
-    decrypted = encrypt_payload({
-        "password": stored_hash
-    })
+    # DECRYPT STORED PASSWORD
+    stored_hash = decrypt_value(encrypted_hash)
 
-    if not check_password_hash(
-        decrypted["password"],
-        password
-    ):
+    # VERIFY PASSWORD
+    if not check_password_hash(stored_hash, password):
         con.close()
         return redirect(
             "http://localhost:3000/login?error=invalid"
@@ -226,7 +225,16 @@ def login():
         path="/"
     )
 
+    resp.set_cookie(
+        "uid",
+        user_id,
+        httponly=False,
+        samesite="Lax",
+        path="/"
+    )
+
     return resp
+
 
 @auth.route("/auth/logout")
 def logout():
@@ -245,9 +253,7 @@ def logout():
         con.commit()
         con.close()
 
-    resp = make_response(
-        redirect("http://localhost:3000/login")
-    )
+    resp = make_response(jsonify({"status": "logged_out"}))
 
     resp.delete_cookie("segmento_session")
 

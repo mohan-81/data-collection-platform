@@ -107,7 +107,17 @@ def inject_auth_status():
 
 @app.route("/logout")
 def ui_logout():
-    return redirect("http://localhost:4000/auth/logout")
+
+    requests.get(
+        "http://localhost:4000/auth/logout",
+        cookies=request.cookies
+    )
+
+    resp = redirect("/")
+
+    resp.delete_cookie("segmento_session")
+
+    return resp
 
 @app.route("/tracking")
 def tracking():

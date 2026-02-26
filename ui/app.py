@@ -25,6 +25,36 @@ app = Flask(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "..", "identity.db")
 
+# ================= AUTO COOKIE FORWARD =================
+
+_original_get = requests.get
+_original_post = requests.post
+
+
+def forwarded_get(url, *args, **kwargs):
+    if "localhost:4000" in url:
+        kwargs.setdefault("cookies", request.cookies)
+        kwargs.setdefault(
+            "headers",
+            {"Cookie": request.headers.get("Cookie", "")}
+        )
+    return _original_get(url, *args, **kwargs)
+
+
+def forwarded_post(url, *args, **kwargs):
+    if "localhost:4000" in url:
+        kwargs.setdefault("cookies", request.cookies)
+        kwargs.setdefault(
+            "headers",
+            {"Cookie": request.headers.get("Cookie", "")}
+        )
+    return _original_post(url, *args, **kwargs)
+
+
+# override requests globally
+requests.get = forwarded_get
+requests.post = forwarded_post
+
 # ================= BASIC =================
 def get_google_status(source):
 
@@ -56,6 +86,28 @@ def tracking():
 def connectors():
     return render_template("connectors.html")
 
+# ================= UNIVERSAL IDENTITY PROXY =================
+
+IDENTITY = "http://localhost:4000"
+
+
+def proxy_get(path, **kwargs):
+    return requests.get(
+        f"{IDENTITY}{path}",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+        **kwargs
+    )
+
+
+def proxy_post(path, **kwargs):
+    return requests.post(
+        f"{IDENTITY}{path}",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+        **kwargs
+    )
+    
 @app.route("/api/status/<source>")
 def generic_google_status(source):
 

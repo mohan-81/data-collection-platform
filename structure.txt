@@ -4,6 +4,8 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
+¦   identity.db-shm
+¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
@@ -106,12 +108,16 @@ C:.
 ¦           snowflake_writer.cpython-312.pyc
 ¦           
 +---security
+¦   ¦   auth_middleware.py
+¦   ¦   auth_routes.py
 ¦   ¦   crypto.py
 ¦   ¦   secret.key
 ¦   ¦   secure_db.py
 ¦   ¦   secure_fetch.py
 ¦   ¦   
 ¦   +---__pycache__
+¦           auth_middleware.cpython-312.pyc
+¦           auth_routes.cpython-312.pyc
 ¦           crypto.cpython-312.pyc
 ¦           secure_db.cpython-312.pyc
 ¦           secure_fetch.cpython-312.pyc
@@ -220,6 +226,7 @@ C:.
 ¦       ¦   connectors.html
 ¦       ¦   dashboard.html
 ¦       ¦   index.html
+¦       ¦   signup.html
 ¦       ¦   tracking.html
 ¦       ¦   
 ¦       +---connectors
@@ -305,14 +312,15 @@ C:.
 ¦               youtube.html
 ¦               
 +---uploads
-¦       .latest.json
-¦       AEDC.docx
-¦       fml_master_dataset.csv
-¦       Hospital_locations_of_TS.xlsx
-¦       main.dart.js
-¦       My Career + Project Context.pdf
-¦       styles.xml
-¦       
+¦   ¦   .latest.json
+¦   ¦   AEDC.docx
+¦   ¦   fml_master_dataset.csv
+¦   ¦   Hospital_locations_of_TS.xlsx
+¦   ¦   main.dart.js
+¦   ¦   My Career + Project Context.pdf
+¦   ¦   styles.xml
+¦   ¦   
+¦   +---company_logos
 +---venv
     ¦   pyvenv.cfg
     ¦   

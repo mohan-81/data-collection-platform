@@ -74,8 +74,6 @@ CORS(
     origins=["http://localhost:3000"]
 )
 
-app.register_blueprint(auth)
-
 from flask import g
 
 @app.before_request
@@ -106,6 +104,20 @@ def load_logged_user():
 @app.route("/__ping")
 def ping():
     return "IDENTITY OK"
+
+@auth.route("/auth/me")
+def me():
+
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    return jsonify({
+        "user_id": uid
+    })
+
+app.register_blueprint(auth)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

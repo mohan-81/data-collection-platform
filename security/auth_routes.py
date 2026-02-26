@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, request, jsonify, make_response, redirect
 import sqlite3
 import uuid
 import datetime
@@ -6,6 +6,7 @@ import os
 
 from werkzeug.security import generate_password_hash
 from security.secure_db import encrypt_payload
+from werkzeug.security import check_password_hash
 
 auth = Blueprint("auth", __name__)
 
@@ -18,7 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def get_db():
     return sqlite3.connect(DB)
 
-# SIGNUP
+# ================= Signup =================
 @auth.route("/auth/signup", methods=["POST"])
 def signup():
 
@@ -127,7 +128,7 @@ def signup():
 
     resp = make_response(jsonify({
         "success": True,
-        "redirect": "http://localhost:3000/connectors"
+        "redirect": "http://localhost:3000/"
     }))
 
     resp.set_cookie(
@@ -145,5 +146,109 @@ def signup():
         samesite="Lax",
         path="/"
     )
+
+    return resp
+
+# ================= LOGIN =================
+
+@auth.route("/auth/login", methods=["POST"])
+def login():
+
+    data = request.form
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({
+            "error": "Missing credentials"
+        }), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT id, password
+        FROM users
+        WHERE email=?
+    """, (email,))
+
+    row = cur.fetchone()
+
+    if not row:
+        con.close()
+        return redirect(
+            "http://localhost:3000/login?error=invalid"
+        )
+
+    user_id = row[0]
+    stored_hash = row[1]
+
+    # password already encrypted earlier
+    decrypted = encrypt_payload({
+        "password": stored_hash
+    })
+
+    if not check_password_hash(
+        decrypted["password"],
+        password
+    ):
+        con.close()
+        return redirect(
+            "http://localhost:3000/login?error=invalid"
+        )
+
+    # ---------- CREATE SESSION ----------
+    session_id = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO user_sessions
+        VALUES(?,?,?,?)
+    """, (
+        session_id,
+        user_id,
+        datetime.datetime.utcnow().isoformat(),
+        None
+    ))
+
+    con.commit()
+    con.close()
+
+    resp = make_response(
+        redirect("http://localhost:3000/")
+    )
+
+    resp.set_cookie(
+        "segmento_session",
+        session_id,
+        httponly=True,
+        samesite="Lax",
+        path="/"
+    )
+
+    return resp
+
+@auth.route("/auth/logout")
+def logout():
+
+    session_id = request.cookies.get("segmento_session")
+
+    if session_id:
+        con = get_db()
+        cur = con.cursor()
+
+        cur.execute("""
+            DELETE FROM user_sessions
+            WHERE session_id=?
+        """, (session_id,))
+
+        con.commit()
+        con.close()
+
+    resp = make_response(
+        redirect("http://localhost:3000/login")
+    )
+
+    resp.delete_cookie("segmento_session")
 
     return resp

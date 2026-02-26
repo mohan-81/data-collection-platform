@@ -10528,7 +10528,11 @@ def save_destination():
 
     data = encrypt_payload(request.json)
 
-    uid = data.get("uid", "demo_user")
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     source = data.get("source")
 
     dest_type = data.get("type")
@@ -10646,7 +10650,10 @@ def save_destination():
 @app.route("/destination/list/<source>")
 def list_destinations(source):
 
-    uid = request.args.get("uid", "demo_user")
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10694,7 +10701,11 @@ def activate_destination():
 
     data = request.get_json()
 
-    uid = data.get("uid", "demo_user")
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     source = data.get("source")
     dest_id = data.get("dest_id")
 
@@ -10753,7 +10764,10 @@ def delete_destination():
 
     dest_id = data.get("id")
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     if not dest_id:
         return jsonify({"error": "Missing id"}), 400

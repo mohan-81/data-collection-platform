@@ -85,8 +85,6 @@ C:.
 ¦           peertube.cpython-312.pyc
 ¦           pinterest.cpython-312.pyc
 ¦           producthunt.cpython-312.pyc
-¦           stackoverflow.cpython-312.pyc
-¦           tumblr.cpython-312.pyc
 ¦           wikipedia.cpython-312.pyc
 ¦           
 +---destinations
@@ -202,6 +200,7 @@ C:.
 ¦   ¦   ¦           pinterest.png
 ¦   ¦   ¦           producthunt.png
 ¦   ¦   ¦           reddit.png
+¦   ¦   ¦           s3.png
 ¦   ¦   ¦           searchconsole.png
 ¦   ¦   ¦           sheets.png
 ¦   ¦   ¦           stackoverflow.png

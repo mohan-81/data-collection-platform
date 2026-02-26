@@ -76,9 +76,32 @@ CORS(
 
 app.register_blueprint(auth)
 
+from flask import g
+
 @app.before_request
-def resolve_user():
-    load_logged_user()
+def load_logged_user():
+
+    g.user_id = None
+
+    session_id = request.cookies.get("segmento_session")
+
+    if not session_id:
+        return
+
+    con = sqlite3.connect("identity.db")
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT user_id
+        FROM user_sessions
+        WHERE session_id=?
+    """, (session_id,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if row:
+        g.user_id = row[0]
 
 @app.route("/__ping")
 def ping():
@@ -2533,7 +2556,10 @@ def form():
 @app.route("/api/status/<source>")
 def connector_status(source):
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     conn = sqlite3.connect("identity.db")
     cur = conn.cursor()
@@ -2587,7 +2613,10 @@ def connector_status(source):
 @app.route("/google/connect")
 def google_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     source = request.args.get("source")
 
     if not source:
@@ -2691,7 +2720,10 @@ def google_callback():
         return "No code", 400
 
     source = request.args.get("state") or "gmail"
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     # Fetch Google App Credentials from DB
     con = get_db()
@@ -2831,7 +2863,10 @@ def sync_drive():
 @app.route("/connectors/drive/save_app", methods=["POST"])
 def drive_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -2871,7 +2906,10 @@ def sync_sheets():
 @app.route("/connectors/sheets/save_app", methods=["POST"])
 def sheets_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -2905,7 +2943,10 @@ def sheets_save_app():
 @app.route("/google/disconnect/sheets")
 def disconnect_sheets():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -2926,7 +2967,10 @@ def disconnect_sheets():
 @app.route("/connectors/sheets/job/get")
 def sheets_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -2955,7 +2999,11 @@ def sheets_job_get():
 @app.route("/connectors/sheets/job/save", methods=["POST"])
 def sheets_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -3003,7 +3051,10 @@ def google_ga4_sync():
 @app.route("/connectors/ga4/save_app", methods=["POST"])
 def ga4_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3043,7 +3094,10 @@ def ga4_save_app():
 @app.route("/connectors/ga4/job/get")
 def ga4_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3072,7 +3126,11 @@ def ga4_job_get():
 @app.route("/connectors/ga4/job/save", methods=["POST"])
 def ga4_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -3111,7 +3169,10 @@ def gsc_sync():
 @app.route("/connectors/search-console/save_app", methods=["POST"])
 def search_console_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3145,7 +3206,10 @@ def search_console_save_app():
 @app.route("/connectors/search-console/job/get")
 def gsc_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3174,7 +3238,11 @@ def gsc_job_get():
 @app.route("/connectors/search-console/job/save", methods=["POST"])
 def gsc_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -3197,7 +3265,10 @@ def gsc_job_save():
 @app.route("/api/status/search-console")
 def search_console_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3218,7 +3289,10 @@ def search_console_status():
 @app.route("/google/disconnect/search-console")
 def disconnect_search_console():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3262,7 +3336,10 @@ def pagespeed_sync():
 @app.route("/connectors/pagespeed/connect")
 def pagespeed_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3299,7 +3376,10 @@ def pagespeed_connect():
 @app.route("/connectors/pagespeed/disconnect")
 def pagespeed_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3318,7 +3398,10 @@ def pagespeed_disconnect():
 @app.route("/connectors/pagespeed/save_config", methods=["POST"])
 def pagespeed_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -3343,7 +3426,10 @@ def pagespeed_save_config():
 @app.route("/api/status/pagespeed")
 def pagespeed_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3380,7 +3466,10 @@ def pagespeed_status():
 @app.route("/connectors/pagespeed/job/get")
 def pagespeed_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3406,7 +3495,11 @@ def pagespeed_job_get():
 @app.route("/connectors/pagespeed/job/save", methods=["POST"])
 def pagespeed_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.get_json()
 
     con = get_db()
@@ -3444,7 +3537,10 @@ def sync_forms_api():
 @app.route("/connectors/forms/save_app", methods=["POST"])
 def forms_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3478,7 +3574,10 @@ def forms_save_app():
 @app.route("/google/disconnect/forms")
 def disconnect_forms():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3499,7 +3598,10 @@ def disconnect_forms():
 @app.route("/connectors/forms/job/get")
 def forms_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3528,7 +3630,11 @@ def forms_job_get():
 @app.route("/connectors/forms/job/save", methods=["POST"])
 def forms_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -3581,7 +3687,10 @@ def sync_gmail_route():
 @app.route("/connectors/calendar/save_app", methods=["POST"])
 def calendar_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3613,9 +3722,9 @@ def calendar_save_app():
 @app.route("/google/disconnect/gmail")
 def google_disconnect_gmail():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
     source = "gmail"
-
+    print("DISCONNECT USER:", g.user_id)
     con = get_db()
     cur = con.cursor()
 
@@ -3654,11 +3763,9 @@ def google_disconnect_gmail():
             "status": "error",
             "message": str(e)
         }), 500
-
-
+ 
     finally:
         con.close()
-
 
     return jsonify({
         "status": "ok",
@@ -3670,7 +3777,10 @@ def google_disconnect_gmail():
 @app.route("/connectors/gmail/save_app", methods=["POST"])
 def gmail_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3702,7 +3812,10 @@ def gmail_save_app():
 @app.route("/google/disconnect/drive")
 def disconnect_drive():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3724,7 +3837,10 @@ def disconnect_drive():
 @app.route("/google/disconnect/ga4")
 def google_disconnect_ga4():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3759,7 +3875,10 @@ def google_disconnect_ga4():
 @app.route("/google/disconnect/calendar")
 def disconnect_calendar():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3780,7 +3899,10 @@ def disconnect_calendar():
 @app.route("/google/disconnect/tasks")
 def disconnect_tasks():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3828,7 +3950,10 @@ def classroom_sync():
 @app.route("/connectors/classroom/save_app", methods=["POST"])
 def classroom_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3860,7 +3985,10 @@ def classroom_save_app():
 @app.route("/google/disconnect/classroom")
 def disconnect_classroom():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3890,7 +4018,10 @@ def disconnect_classroom():
 @app.route("/connectors/classroom/job/get")
 def classroom_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -3916,7 +4047,10 @@ def classroom_job_get():
 @app.route("/connectors/classroom/job/save", methods=["POST"])
 def classroom_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     con = get_db()
@@ -3956,7 +4090,10 @@ def google_sync_tasks():
 @app.route("/connectors/tasks/save_app", methods=["POST"])
 def tasks_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -3990,7 +4127,10 @@ def tasks_save_app():
 @app.route("/connectors/tasks/job/get")
 def tasks_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4019,7 +4159,10 @@ def tasks_job_get():
 @app.route("/connectors/tasks/job/save", methods=["POST"])
 def tasks_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -4049,7 +4192,10 @@ def sync_contacts_api():
 @app.route("/connectors/contacts/save_app", methods=["POST"])
 def contacts_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -4083,7 +4229,10 @@ def contacts_save_app():
 @app.route("/google/disconnect/contacts")
 def disconnect_contacts():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4104,7 +4253,10 @@ def disconnect_contacts():
 @app.route("/connectors/contacts/job/get")
 def contacts_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4133,7 +4285,10 @@ def contacts_job_get():
 @app.route("/connectors/contacts/job/save", methods=["POST"])
 def contacts_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -4176,7 +4331,10 @@ def google_sync_gcs():
 @app.route("/google/disconnect/gcs")
 def disconnect_gcs():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4206,7 +4364,10 @@ def disconnect_gcs():
 @app.route("/connectors/gcs/job/get")
 def gcs_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4232,7 +4393,10 @@ def gcs_job_get():
 @app.route("/connectors/gcs/job/save", methods=["POST"])
 def gcs_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -4256,7 +4420,10 @@ def gcs_job_save():
 @app.route("/connectors/gcs/save_app", methods=["POST"])
 def gcs_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -4310,7 +4477,10 @@ from connectors.google_webfonts import sync_webfonts
 @app.route("/connectors/webfonts/sync")
 def webfonts_sync_route():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4336,7 +4506,10 @@ def webfonts_sync_route():
 @app.route("/connectors/webfonts/connect")
 def webfonts_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4356,7 +4529,10 @@ def webfonts_connect():
 @app.route("/connectors/webfonts/disconnect")
 def webfonts_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4375,7 +4551,10 @@ def webfonts_disconnect():
 @app.route("/api/status/webfonts")
 def webfonts_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4415,7 +4594,10 @@ def webfonts_status():
 @app.route("/connectors/webfonts/job/get")
 def webfonts_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4441,7 +4623,10 @@ def webfonts_job_get():
 @app.route("/connectors/webfonts/job/save", methods=["POST"])
 def webfonts_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -4466,7 +4651,10 @@ def webfonts_job_save():
 @app.route("/connectors/webfonts/save_config", methods=["POST"])
 def webfonts_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -4502,7 +4690,10 @@ def youtube_sync():
 @app.route("/connectors/youtube/save_app", methods=["POST"])
 def youtube_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -4534,7 +4725,10 @@ def youtube_save_app():
 @app.route("/google/disconnect/youtube")
 def disconnect_youtube():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4566,7 +4760,10 @@ def disconnect_youtube():
 @app.route("/connectors/youtube/job/get")
 def youtube_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4595,7 +4792,10 @@ def youtube_job_get():
 @app.route("/connectors/youtube/job/save", methods=["POST"])
 def youtube_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -4619,7 +4819,10 @@ def youtube_job_save():
 @app.route("/connectors/reddit/connect")
 def reddit_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4663,7 +4866,10 @@ def reddit_connect():
 @app.route("/connectors/reddit/disconnect")
 def reddit_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4713,7 +4919,10 @@ def reddit_status():
 @app.route("/connectors/reddit/save_config", methods=["POST"])
 def reddit_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -4749,7 +4958,10 @@ def reddit_save_config():
 @app.route("/connectors/reddit/job/get")
 def reddit_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4775,7 +4987,10 @@ def reddit_job_get():
 @app.route("/connectors/reddit/job/save", methods=["POST"])
 def reddit_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     con = get_db()
@@ -4799,7 +5014,10 @@ def reddit_job_save():
 @app.route("/connectors/reddit/sync")
 def reddit_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -4935,7 +5153,10 @@ def reddit_messages():
 @app.route("/connectors/telegram/sync")
 def telegram_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5011,7 +5232,10 @@ def telegram_sync_universal():
 @app.route("/connectors/telegram/connect")
 def telegram_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5057,7 +5281,10 @@ def telegram_connect():
 @app.route("/connectors/telegram/disconnect")
 def telegram_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5078,7 +5305,10 @@ def telegram_disconnect():
 @app.route("/api/status/telegram")
 def telegram_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5111,7 +5341,10 @@ def telegram_status():
 @app.route("/connectors/telegram/save_config", methods=["POST"])
 def telegram_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     bot_token = data.get("bot_token")
@@ -5137,7 +5370,7 @@ def telegram_save_config():
 @app.route("/medium/sync")
 def medium_sync():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
     username = request.args.get("username")
 
     from connectors.medium import sync_user
@@ -5147,7 +5380,10 @@ def medium_sync():
 @app.route("/connectors/medium/connect")
 def medium_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5176,7 +5412,10 @@ def medium_connect():
 @app.route("/connectors/medium/save_config", methods=["POST"])
 def medium_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     username = data.get("username")
@@ -5227,7 +5466,10 @@ def medium_save_config():
 @app.route("/connectors/medium/disconnect")
 def medium_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5249,7 +5491,10 @@ def medium_disconnect():
 @app.route("/api/status/medium")
 def medium_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5280,7 +5525,10 @@ def medium_status():
 @app.route("/connectors/medium/sync")
 def medium_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5395,7 +5643,10 @@ def tumblr_sync_posts():
 @app.route("/connectors/twitch/connect")
 def twitch_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5424,7 +5675,10 @@ def twitch_connect():
 @app.route("/api/status/twitch")
 def twitch_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5457,7 +5711,10 @@ def twitch_status():
 @app.route("/connectors/twitch/disconnect")
 def twitch_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5477,7 +5734,10 @@ def twitch_disconnect():
 @app.route("/connectors/twitch/sync")
 def twitch_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5574,7 +5834,10 @@ def twitch_sync():
 @app.route("/connectors/twitch/save_config", methods=["POST"])
 def twitch_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json()) or {}
 
     username = data.get("username")
@@ -5605,7 +5868,10 @@ def twitch_save_config():
 @app.route("/connectors/tumblr/save_config", methods=["POST"])
 def tumblr_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -5630,7 +5896,10 @@ def tumblr_save_config():
 @app.route("/connectors/tumblr/connect")
 def tumblr_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5722,7 +5991,10 @@ def tumblr_sync_universal():
 @app.route("/api/status/tumblr")
 def tumblr_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5761,7 +6033,10 @@ def tumblr_status():
 @app.route("/connectors/discord/connect")
 def discord_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5804,7 +6079,10 @@ def discord_connect():
 @app.route("/connectors/discord/disconnect")
 def discord_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5825,7 +6103,10 @@ def discord_disconnect():
 @app.route("/connectors/discord/sync")
 def discord_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     print("SYNC UID:", uid)
 
     con = get_db()
@@ -5946,7 +6227,10 @@ def discord_sync_universal():
 @app.route("/api/status/discord")
 def discord_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -5979,7 +6263,10 @@ def discord_status():
 @app.route("/connectors/discord/save_config", methods=["POST"])
 def discord_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     bot_token = data.get("bot_token")
@@ -6009,7 +6296,10 @@ from connectors.googlebooks import sync_books
 @app.route("/connectors/books/connect")
 def connect_books():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6028,7 +6318,10 @@ def connect_books():
 @app.route("/connectors/books/disconnect")
 def disconnect_books():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6054,7 +6347,10 @@ def disconnect_books():
 @app.route("/connectors/books/sync")
 def books_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     query = request.args.get("query")
     sync_type = request.args.get("sync_type", "incremental")
 
@@ -6067,7 +6363,10 @@ def books_sync():
 @app.route("/connectors/books/job/get")
 def get_books_job():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6096,7 +6395,10 @@ def get_books_job():
 @app.route("/connectors/books/job/save", methods=["POST"])
 def save_books_job():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     sync_type = data.get("sync_type")
@@ -6120,7 +6422,10 @@ def save_books_job():
 @app.route("/api/status/books")
 def books_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6146,7 +6451,10 @@ from connectors.googlefactcheck import sync_factcheck
 @app.route("/connectors/factcheck/sync")
 def factcheck_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     query = request.args.get("query")
     sync_type = request.args.get("sync_type", "incremental")
 
@@ -6163,7 +6471,10 @@ def factcheck_sync():
 @app.route("/connectors/factcheck/save_config", methods=["POST"])
 def factcheck_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -6188,7 +6499,10 @@ def factcheck_save_config():
 @app.route("/connectors/factcheck/connect")
 def factcheck_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6207,7 +6521,10 @@ def factcheck_connect():
 @app.route("/connectors/factcheck/disconnect")
 def factcheck_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6226,7 +6543,10 @@ def factcheck_disconnect():
 @app.route("/api/status/factcheck")
 def factcheck_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6261,7 +6581,10 @@ def factcheck_status():
 @app.route("/connectors/factcheck/job/get")
 def factcheck_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6288,7 +6611,10 @@ def factcheck_job_get():
 @app.route("/connectors/factcheck/job/save", methods=["POST"])
 def factcheck_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -6317,7 +6643,10 @@ def factcheck_job_save():
 @app.route("/googlenews/sync/articles")
 def googlenews_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     query = request.args.get("q")
     limit = int(request.args.get("limit", 100))
 
@@ -6345,7 +6674,10 @@ def news_sync():
 @app.route("/connectors/news/connect", methods=["POST"])
 def connect_news():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6367,7 +6699,10 @@ def connect_news():
 @app.route("/connectors/news/disconnect", methods=["POST"])
 def disconnect_news():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6389,7 +6724,10 @@ def disconnect_news():
 @app.route("/api/status/news")
 def news_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6413,7 +6751,10 @@ def news_status():
 @app.route("/connectors/news/job/get")
 def news_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6446,7 +6787,10 @@ def news_job_get():
 @app.route("/connectors/news/job/save", methods=["POST"])
 def news_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -6471,7 +6815,10 @@ def news_job_save():
 @app.route("/googletrends/sync/interest")
 def googletrends_sync_interest():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     keyword = request.args.get("q")
 
     from connectors.googletrends import sync_interest
@@ -6482,7 +6829,10 @@ def googletrends_sync_interest():
 @app.route("/googletrends/sync/related")
 def googletrends_sync_related():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     keyword = request.args.get("q")
 
     from connectors.googletrends import sync_related
@@ -6495,7 +6845,10 @@ from connectors.googletrends import sync_trends
 @app.route("/connectors/trends/sync", methods=["GET"])
 def trends_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     keyword = request.args.get("keyword")
     sync_type = request.args.get("sync_type", "incremental")
 
@@ -6510,7 +6863,10 @@ def trends_sync():
 @app.route("/connectors/trends/connect", methods=["POST"])
 def trends_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6530,7 +6886,10 @@ def trends_connect():
 @app.route("/api/status/trends")
 def trends_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6554,7 +6913,10 @@ def trends_status():
 @app.route("/google/disconnect/trends")
 def disconnect_trends():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6579,7 +6941,10 @@ def disconnect_trends():
 @app.route("/connectors/trends/job/get")
 def trends_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6605,7 +6970,10 @@ def trends_job_get():
 @app.route("/connectors/trends/job/save", methods=["POST"])
 def trends_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -6630,7 +6998,10 @@ def trends_job_save():
 @app.route("/connectors/devto/connect")
 def devto_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6651,7 +7022,10 @@ def devto_connect():
 @app.route("/api/status/devto")
 def devto_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6677,7 +7051,10 @@ def devto_status():
 @app.route("/connectors/devto/disconnect")
 def devto_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6697,7 +7074,10 @@ def devto_disconnect():
 @app.route("/connectors/devto/job/get")
 def devto_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6723,7 +7103,10 @@ def devto_job_get():
 @app.route("/connectors/devto/job/save", methods=["POST"])
 def devto_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     con = get_db()
@@ -6748,7 +7131,10 @@ def devto_job_save():
 @app.route("/connectors/devto/sync")
 def devto_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6862,7 +7248,10 @@ from connectors.github import (
 
 @app.route("/github/connect")
 def github_connect():
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     return redirect(get_auth_url(uid))
 
 @app.route("/github/callback")
@@ -6872,7 +7261,10 @@ def github_callback():
     if not code:
         return "Authorization failed", 400
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     token = exchange_code(uid, code)
 
@@ -6887,7 +7279,10 @@ def github_callback():
 @app.route("/connectors/github/disconnect")
 def github_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -6912,13 +7307,19 @@ def github_disconnect():
 
 @app.route("/connectors/github/sync")
 def github_sync():
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     return jsonify(sync_github(uid))
 
 @app.route("/connectors/github/save_app", methods=["POST"])
 def github_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -6949,7 +7350,7 @@ def github_save_app():
 @app.route("/api/status/github")
 def github_status():
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -6982,7 +7383,10 @@ def github_status():
 @app.route("/connectors/github/job/get")
 def github_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7008,7 +7412,10 @@ def github_job_get():
 @app.route("/connectors/github/job/save", methods=["POST"])
 def github_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -7035,7 +7442,10 @@ def gitlab_connect():
 
     from connectors.gitlab import get_auth_url
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     return redirect(get_auth_url(uid))
 
 # ---------------- GITLAB SAVE CONFIG ----------------
@@ -7043,7 +7453,10 @@ def gitlab_connect():
 @app.route("/connectors/gitlab/save_app", methods=["POST"])
 def gitlab_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     client_id = data.get("client_id")
@@ -7076,7 +7489,10 @@ def gitlab_save_app():
 @app.route("/connectors/gitlab/disconnect")
 def gitlab_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7102,7 +7518,10 @@ def gitlab_disconnect():
 @app.route("/gitlab/callback")
 def gitlab_callback():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     code = request.args.get("code")
 
     from connectors.gitlab import exchange_code, save_token
@@ -7128,7 +7547,10 @@ def gitlab_callback():
 @app.route("/api/status/gitlab")
 def gitlab_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7161,7 +7583,10 @@ def gitlab_status():
 @app.route("/connectors/gitlab/job/get")
 def gitlab_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7187,7 +7612,10 @@ def gitlab_job_get():
 @app.route("/connectors/gitlab/job/save", methods=["POST"])
 def gitlab_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -7214,7 +7642,10 @@ def gitlab_job_save():
 @app.route("/connectors/gitlab/sync")
 def gitlab_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7330,7 +7761,10 @@ def gitlab_sync_universal():
 @app.route("/connectors/stackoverflow/connect")
 def stackoverflow_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7349,7 +7783,10 @@ def stackoverflow_connect():
 @app.route("/api/status/stackoverflow")
 def stackoverflow_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7387,7 +7824,10 @@ def stackoverflow_status():
 @app.route("/connectors/stackoverflow/disconnect")
 def stackoverflow_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7407,7 +7847,10 @@ def stackoverflow_disconnect():
 @app.route("/connectors/stackoverflow/job/get")
 def stackoverflow_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7434,7 +7877,10 @@ def stackoverflow_job_get():
 @app.route("/connectors/stackoverflow/job/save", methods=["POST"])
 def stackoverflow_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     con = get_db()
@@ -7459,7 +7905,10 @@ def stackoverflow_job_save():
 @app.route("/connectors/stackoverflow/sync")
 def stackoverflow_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7565,7 +8014,10 @@ def stackoverflow_sync_universal():
 @app.route("/connectors/stackoverflow/save_config", methods=["POST"])
 def stackoverflow_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -7592,7 +8044,10 @@ def stackoverflow_save_config():
 @app.route("/hackernews/sync")
 def hackernews_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     result = sync_hackernews(uid)
 
@@ -7601,7 +8056,10 @@ def hackernews_sync():
 @app.route("/connectors/hackernews/sync")
 def hackernews_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7689,7 +8147,10 @@ def hackernews_sync_universal():
 @app.route("/connectors/hackernews/connect")
 def hackernews_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7708,7 +8169,10 @@ def hackernews_connect():
 @app.route("/connectors/hackernews/disconnect")
 def hackernews_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7727,7 +8191,10 @@ def hackernews_disconnect():
 @app.route("/connectors/hackernews/job/get")
 def hackernews_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7753,7 +8220,10 @@ def hackernews_job_get():
 @app.route("/connectors/hackernews/job/save", methods=["POST"])
 def hackernews_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     con = get_db()
@@ -7806,7 +8276,10 @@ def producthunt_connect():
 @app.route("/connectors/producthunt/save_config", methods=["POST"])
 def producthunt_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json()) or {}
 
     token = data.get("api_token")
@@ -7835,7 +8308,10 @@ def producthunt_save_config():
 @app.route("/connectors/producthunt/disconnect")
 def producthunt_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7885,7 +8361,10 @@ def producthunt_status():
 @app.route("/connectors/producthunt/sync")
 def producthunt_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -7966,7 +8445,10 @@ def producthunt_sync():
 @app.route("/producthunt/data/posts")
 def producthunt_data_posts():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
@@ -7989,7 +8471,10 @@ def producthunt_data_posts():
 @app.route("/producthunt/data/topics")
 def producthunt_data_topics():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
@@ -8013,7 +8498,10 @@ def producthunt_data_topics():
 @app.route("/connectors/wikipedia/connect")
 def wikipedia_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8032,7 +8520,10 @@ def wikipedia_connect():
 @app.route("/connectors/wikipedia/disconnect")
 def wikipedia_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8076,7 +8567,10 @@ def wikipedia_status():
 @app.route("/connectors/wikipedia/sync")
 def wikipedia_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8158,7 +8652,10 @@ def wikipedia_sync():
 @app.route("/connectors/peertube/sync")
 def peertube_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8248,7 +8745,10 @@ def peertube_connect():
 @app.route("/connectors/peertube/disconnect")
 def peertube_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8267,7 +8767,10 @@ def peertube_disconnect():
 @app.route("/connectors/peertube/save_config", methods=["POST"])
 def peertube_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
@@ -8331,7 +8834,10 @@ def peertube_status():
 @app.route("/connectors/mastodon/sync")
 def mastodon_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8464,7 +8970,10 @@ def mastodon_connect():
 @app.route("/api/status/mastodon")
 def mastodon_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8501,7 +9010,10 @@ def mastodon_status():
 @app.route("/connectors/mastodon/disconnect")
 def mastodon_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8522,7 +9034,10 @@ def mastodon_disconnect():
 @app.route("/connectors/mastodon/save_config", methods=["POST"])
 def mastodon_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
@@ -8613,7 +9128,10 @@ def discourse_save():
 @app.route("/connectors/discourse/disconnect")
 def discourse_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8664,7 +9182,10 @@ def discourse_status():
 @app.route("/connectors/discourse/sync")
 def discourse_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8746,7 +9267,10 @@ def discourse_sync():
 @app.route("/discourse/data/topics")
 def discourse_topics():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = sqlite3.connect("identity.db")
     con.row_factory = sqlite3.Row
@@ -8770,7 +9294,10 @@ def discourse_topics():
 @app.route("/discourse/data/categories")
 def discourse_categories():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = sqlite3.connect("identity.db")
     con.row_factory = sqlite3.Row
@@ -8838,7 +9365,10 @@ def lemmy_connect():
 @app.route("/connectors/lemmy/disconnect")
 def lemmy_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8857,7 +9387,10 @@ def lemmy_disconnect():
 @app.route("/connectors/lemmy/sync")
 def lemmy_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -8953,7 +9486,10 @@ def lemmy_sync_universal():
 @app.route("/connectors/lemmy/save_config", methods=["POST"])
 def lemmy_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json()) or {}
 
     instance = data.get("instance")
@@ -9039,7 +9575,10 @@ def osm_connect():
 @app.route("/connectors/openstreetmap/disconnect")
 def osm_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9058,7 +9597,10 @@ def osm_disconnect():
 @app.route("/connectors/openstreetmap/sync")
 def osm_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9163,7 +9705,10 @@ def osm_status():
 @app.route("/connectors/nvd/sync")
 def nvd_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9250,7 +9795,10 @@ def nvd_sync_universal():
 @app.route("/connectors/nvd/connect")
 def nvd_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9269,7 +9817,10 @@ def nvd_connect():
 @app.route("/connectors/nvd/disconnect")
 def nvd_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9288,7 +9839,10 @@ def nvd_disconnect():
 @app.route("/api/status/nvd")
 def nvd_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9321,7 +9875,10 @@ def nvd_status():
 @app.route("/connectors/nvd/job/save", methods=["POST"])
 def nvd_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
 
     con = get_db()
@@ -9347,7 +9904,10 @@ def nvd_job_save():
 @app.route("/connectors/nvd/save_config", methods=["POST"])
 def nvd_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json())
 
     api_key = data.get("api_key")
@@ -9387,7 +9947,10 @@ def nvd_save_config():
 @app.route("/connectors/pinterest/connect")
 def pinterest_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     auth_url = pinterest_get_auth_url(uid)
 
@@ -9399,7 +9962,10 @@ def pinterest_connect():
 @app.route("/connectors/pinterest/disconnect")
 def pinterest_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9422,7 +9988,10 @@ def pinterest_disconnect():
 @app.route("/pinterest/callback")
 def pinterest_callback():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     code = request.args.get("code")
 
     token_data = pinterest_exchange_code(uid, code)
@@ -9433,7 +10002,10 @@ def pinterest_callback():
 @app.route("/connectors/pinterest/sync")
 def pinterest_sync_universal():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9516,7 +10088,10 @@ def pinterest_sync_universal():
 @app.route("/connectors/pinterest/save_config", methods=["POST"])
 def pinterest_save_config():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = encrypt_payload(request.get_json) or {}
 
     client_id = data.get("client_id")
@@ -9549,7 +10124,10 @@ def pinterest_save_config():
 @app.route("/api/status/pinterest")
 def pinterest_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9584,7 +10162,10 @@ def pinterest_status():
 @app.route("/connectors/facebook/save_app", methods=["POST"])
 def facebook_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     print("SAVE UID:", uid)
     data = request.get_json()
 
@@ -9621,7 +10202,10 @@ def facebook_save_app():
 @app.route("/connectors/facebook/test_save", methods=["GET"])
 def facebook_test_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9648,7 +10232,10 @@ def facebook_test_save():
 @app.route("/connectors/facebook/connect", methods=["GET"])
 def facebook_connect():
     print("CONNECT UID:", uid)
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9683,7 +10270,10 @@ def facebook_connect():
 @app.route("/connectors/facebook/callback", methods=["GET"])
 def facebook_callback():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     code = request.args.get("code")
 
     if not code:
@@ -9776,7 +10366,10 @@ def facebook_callback():
 @app.route("/connectors/facebook/disconnect", methods=["GET"])
 def facebook_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9801,7 +10394,10 @@ def facebook_disconnect():
 @app.route("/connectors/facebook/sync")
 def facebook_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     # Check enabled
     con = get_db()
@@ -9862,7 +10458,10 @@ def facebook_sync():
 @app.route("/connectors/facebook/job/get")
 def facebook_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9890,7 +10489,10 @@ def facebook_job_get():
 @app.route("/api/status/facebook")
 def facebook_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -9942,7 +10544,10 @@ def connector_disconnect(source):
 @app.route("/connectors/facebook_ads/connect", methods=["GET"])
 def facebook_ads_connect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     print("ADS CONNECT UID:", uid)
 
     con = get_db()
@@ -9979,7 +10584,10 @@ def facebook_ads_connect():
 @app.route("/connectors/facebook_ads/callback", methods=["GET"])
 def facebook_ads_callback():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     code = request.args.get("code")
 
     if not code:
@@ -10073,7 +10681,10 @@ def facebook_ads_callback():
 @app.route("/api/status/facebook_ads")
 def facebook_ads_status():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10106,7 +10717,10 @@ def facebook_ads_status():
 @app.route("/connectors/facebook_ads/disconnect", methods=["GET"])
 def facebook_ads_disconnect():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10131,7 +10745,10 @@ def facebook_ads_disconnect():
 @app.route("/connectors/facebook_ads/job/get")
 def facebook_ads_job_get():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10159,7 +10776,10 @@ def facebook_ads_job_get():
 @app.route("/connectors/facebook_ads/job/save", methods=["POST"])
 def facebook_ads_job_save():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     sync_type = data.get("sync_type", "incremental")
@@ -10186,7 +10806,10 @@ from connectors.facebook_ads import sync_facebook_ads
 @app.route("/connectors/facebook_ads/sync")
 def facebook_ads_sync():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     # Check enabled
     con = get_db()
@@ -10251,7 +10874,10 @@ def facebook_ads_sync():
 @app.route("/connectors/facebook_ads/save_app", methods=["POST"])
 def facebook_ads_save_app():
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
 
     app_id = data.get("app_id")
@@ -10286,7 +10912,10 @@ def facebook_ads_save_app():
 @app.route("/connectors/<source>/connect")
 def connector_connect(source):
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10304,7 +10933,10 @@ def connector_connect(source):
 @app.route("/connectors/<source>/disconnect")
 def disconnect_connector(source):
 
-    uid = get_uid()
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
 
     con = get_db()
     cur = con.cursor()
@@ -10443,7 +11075,7 @@ def save_connector_job(source):
     sync_type = data.get("sync_type")
     schedule_time = data.get("schedule_time")
 
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
 
     if not sync_type or not schedule_time:
         return jsonify({
@@ -10488,7 +11120,7 @@ def save_connector_job(source):
 
 @app.route("/google/job/get/<source>")
 def get_connector_job(source):
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
     con = get_db()
     cur = con.cursor()
     cur.execute("""
@@ -10864,7 +11496,7 @@ def get_active_destination(uid, source):
 
 @app.route("/api/status/ga4")
 def ga4_status():
-    uid = request.cookies.get("uid") or "demo_user"
+    uid = getattr(g, "user_id", None)
     con = get_db()
     cur = con.cursor()
     cur.execute("""

@@ -81,8 +81,14 @@ def load_logged_user():
 
     g.user_id = None
 
-    session_id = request.cookies.get("segmento_session")
+    # Scheduler / internal UID
+    internal_uid = request.headers.get("X-Internal-UID")
+    if internal_uid:
+        g.user_id = internal_uid
+        return
 
+    # Normal logged-in user via session
+    session_id = request.cookies.get("segmento_session")
     if not session_id:
         return
 
@@ -11720,6 +11726,77 @@ def ga4_status():
     con.close()
     return jsonify({
         "connected": bool(row and row["enabled"] == 1)  # Use key
+    })
+
+@app.route("/connectors/<source>/job/save", methods=["POST"])
+def universal_job_save(source):
+
+    uid = get_uid()
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+
+    schedule_time = data.get("schedule_time")
+    sync_type = data.get("sync_type", "incremental")
+
+    if not schedule_time:
+        return jsonify({"error": "Schedule time required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled)
+        VALUES (?, ?, ?, ?, 1)
+    """, (
+        uid,
+        source,
+        sync_type,
+        schedule_time
+    ))
+
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "saved"})
+
+@app.route("/connectors/<source>/job/get", methods=["GET"])
+def universal_job_get(source):
+
+    uid = get_uid()
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT sync_type,
+               schedule_time,
+               enabled
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (uid, source))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        return jsonify({
+            "status": "not_configured"
+        })
+
+    return jsonify({
+        "status": "configured",
+        "sync_type": row[0],
+        "schedule_time": row[1],
+        "enabled": bool(row[2])
     })
 
 # ---------------- UNIVERSAL SYNC ENGINE ----------------

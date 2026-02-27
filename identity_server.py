@@ -11732,11 +11732,16 @@ def universal_sync(source):
     if not uid:
         return jsonify({"error": "Unauthorized"}), 401
 
-    sync_type = request.args.get("type", "manual")
+    # execution mode (manual / scheduled)
+    mode = request.args.get("mode", "manual")
 
-    run_id = log_sync_start(uid, source, sync_type)
+    if mode not in ["manual", "scheduled"]:
+        mode = "manual"
+
+    run_id = log_sync_start(uid, source, mode)
 
     try:
+
         # Try dynamic function resolution
         possible_names = [
             f"sync_{source}",
@@ -11754,9 +11759,10 @@ def universal_sync(source):
         if not sync_func:
             raise Exception(f"No sync function found for source: {source}")
 
-        print(f"[UNIVERSAL SYNC] Running {source}")
+        print(f"[UNIVERSAL SYNC] Running {source} ({mode})")
 
-        result = sync_func(uid)
+        # CALL WITHOUT ARGUMENTS
+        result = sync_func()
 
         rows_synced = result if isinstance(result, int) else 0
 
@@ -11777,7 +11783,7 @@ def universal_sync(source):
             "status": "failed",
             "error": str(e)
         }), 500
-
+    
 # UNIVERSAL SYNC LOGGER (SAFE VERSION)
 # NOTE:
 # Logging is handled centrally via Flask middleware.

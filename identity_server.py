@@ -101,6 +101,102 @@ def load_logged_user():
     if row:
         g.user_id = row[0]
 
+# ---------------- USAGE AUTO SYNC DETECTOR ----------------
+@app.before_request
+def usage_sync_start():
+
+    path = request.path
+
+    # detect sync endpoints automatically
+    if "/sync/" not in path:
+        return
+
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return
+
+    try:
+        source = path.split("/sync/")[-1]
+
+        g.sync_run_id = log_sync_start(
+            uid,
+            source,
+            "auto"
+        )
+
+        print(f"[USAGE] Sync START → {source}")
+
+    except Exception as e:
+        print("[USAGE START ERROR]", e)
+
+# ---------------- API USAGE LOGGER ----------------
+
+@app.before_request
+def log_api_usage():
+
+    path = request.path
+
+    # ignore static + health endpoints
+    if (
+        path.startswith("/static")
+        or path.startswith("/__")
+        or "favicon" in path
+    ):
+        return
+
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return
+
+    try:
+
+        con = get_db()
+        cur = con.cursor()
+
+        cur.execute("""
+            INSERT INTO api_usage_logs
+            (uid, endpoint, method, created_at)
+            VALUES (?, ?, ?, ?)
+        """, (
+            uid,
+            path,
+            request.method,
+            datetime.datetime.now(
+                datetime.UTC
+            ).isoformat()
+        ))
+
+        con.commit()
+        con.close()
+
+    except Exception as e:
+        print("[API LOG ERROR]", e)
+
+@app.after_request
+def usage_sync_finish(response):
+
+    if not hasattr(g, "sync_run_id"):
+        return response
+
+    try:
+
+        status = "success" if response.status_code == 200 else "failed"
+
+        log_sync_finish(
+            g.sync_run_id,
+            0,
+            status
+        )
+
+        print("[USAGE] Sync FINISHED")
+
+    except Exception as e:
+        print("[USAGE FINISH ERROR]", e)
+
+    return response
+
 @app.route("/__ping")
 def ping():
     return "IDENTITY OK"
@@ -218,6 +314,53 @@ def ensure_connector_initialized(uid, source):
         (uid, source, enabled)
         VALUES (?, ?, 0)
     """, (uid, source))
+
+    con.commit()
+    con.close()
+
+# ---------------- USAGE: SYNC RUN LOGGER ----------------
+
+def log_sync_start(uid, source, sync_type):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT INTO sync_runs
+        (uid, source, sync_type, started_at, status)
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        uid,
+        source,
+        sync_type,
+        datetime.datetime.now(datetime.UTC).isoformat(),
+        "running"
+    ))
+
+    run_id = cur.lastrowid
+    con.commit()
+    con.close()
+
+    return run_id
+
+
+def log_sync_finish(run_id, rows_synced, status, error=None):
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        UPDATE sync_runs
+        SET rows_synced=?,
+            finished_at=?,
+            status=?,
+            error=?
+        WHERE id=?
+    """, (
+        rows_synced,
+        datetime.datetime.now(datetime.UTC).isoformat(),
+        status,
+        error,
+        run_id
+    ))
 
     con.commit()
     con.close()
@@ -2304,6 +2447,45 @@ def init_db():
     )
     """)
 
+    # ---------------- USAGE : SYNC RUN HISTORY ----------------
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS sync_runs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        source TEXT,
+        sync_type TEXT,
+        rows_synced INTEGER DEFAULT 0,
+        started_at TEXT,
+        finished_at TEXT,
+        status TEXT,
+        error TEXT
+    )
+    """)
+
+    # ---------------- USAGE : DESTINATION PUSH LOGS ----------------
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS destination_push_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        source TEXT,
+        destination_type TEXT,
+        rows_pushed INTEGER,
+        pushed_at TEXT,
+        status TEXT,
+        error TEXT
+    )
+    """)
+
+    # ---------------- USAGE : API CALL TRACKING ----------------
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS api_usage_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        endpoint TEXT,
+        method TEXT,
+        created_at TEXT
+    )
+    """)
 
     con.commit()
     con.close()
@@ -2841,7 +3023,7 @@ def google_callback():
             creds.token,
             creds.refresh_token,
             ",".join(creds.scopes),
-            datetime.datetime.utcnow().isoformat()
+            datetime.datetime.now(datetime.UTC).isoformat()
         ))
 
         # Enable connector
@@ -2898,7 +3080,7 @@ def drive_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -2941,7 +3123,7 @@ def sheets_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3092,7 +3274,7 @@ def ga4_save_app():
         client_id,
         client_secret,
         json.dumps(config),
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3204,7 +3386,7 @@ def search_console_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3572,7 +3754,7 @@ def forms_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3722,7 +3904,7 @@ def calendar_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3812,7 +3994,7 @@ def gmail_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -3985,7 +4167,7 @@ def classroom_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -4125,7 +4307,7 @@ def tasks_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -4227,7 +4409,7 @@ def contacts_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -4456,7 +4638,7 @@ def gcs_save_app():
         "gcs",
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -4725,7 +4907,7 @@ def youtube_save_app():
         uid,
         client_id,
         client_secret,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -5275,7 +5457,7 @@ def telegram_connect():
     """,(
         uid,
         bot_token,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     # enable connector
@@ -6074,7 +6256,7 @@ def discord_connect():
     """, (
         uid,
         bot_token,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     cur.execute("""
@@ -8965,7 +9147,7 @@ def mastodon_connect():
         uid,
         "mastodon",
         json.dumps({"instance":instance}),
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     cur.execute("""
@@ -9360,7 +9542,7 @@ def lemmy_connect():
         uid,
         "lemmy",
         json.dumps(state),
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     cur.execute("""
@@ -10201,7 +10383,7 @@ def facebook_save_app():
         app_id,
         app_secret,
         redirect_uri,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -10231,7 +10413,7 @@ def facebook_test_save():
         "TEST_APP_ID",
         "TEST_SECRET",
         request.host_url.rstrip("/") + "/connectors/facebook/callback",
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -10358,7 +10540,7 @@ def facebook_callback():
         page.get("id"),
         page.get("name"),
         page.get("access_token"),
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     # Enable connector
@@ -10673,7 +10855,7 @@ def facebook_ads_callback():
         account.get("id"),
         account.get("name"),
         user_token,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     # Enable connector
@@ -10912,7 +11094,7 @@ def facebook_ads_save_app():
         app_id,
         app_secret,
         redirect_uri,
-        datetime.datetime.utcnow().isoformat()
+        datetime.datetime.now(datetime.UTC).isoformat()
     ))
 
     con.commit()
@@ -11263,7 +11445,7 @@ def save_destination():
             password,
             database,
             1,   # active
-            datetime.datetime.utcnow().isoformat(),
+            datetime.datetime.now(datetime.UTC).isoformat(),
             data.get("format")
         ))
 
@@ -11521,6 +11703,360 @@ def ga4_status():
     con.close()
     return jsonify({
         "connected": bool(row and row["enabled"] == 1)  # Use key
+    })
+
+# ---------------- UNIVERSAL SYNC ENGINE ----------------
+
+@app.route("/connectors/<source>/sync")
+def universal_sync(source):
+
+    uid = get_uid()
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    sync_type = request.args.get("type", "manual")
+
+    run_id = log_sync_start(uid, source, sync_type)
+
+    try:
+        # Try dynamic function resolution
+        possible_names = [
+            f"sync_{source}",
+            f"sync_{source}_files",
+            f"sync_{source}_data"
+        ]
+
+        sync_func = None
+
+        for name in possible_names:
+            if name in globals():
+                sync_func = globals()[name]
+                break
+
+        if not sync_func:
+            raise Exception(f"No sync function found for source: {source}")
+
+        print(f"[UNIVERSAL SYNC] Running {source}")
+
+        result = sync_func(uid)
+
+        rows_synced = result if isinstance(result, int) else 0
+
+        log_sync_finish(run_id, rows_synced, "success")
+
+        return jsonify({
+            "status": "success",
+            "rows_synced": rows_synced
+        })
+
+    except Exception as e:
+
+        print("[SYNC ERROR]", str(e))
+
+        log_sync_finish(run_id, 0, "failed", str(e))
+
+        return jsonify({
+            "status": "failed",
+            "error": str(e)
+        }), 500
+    
+# UNIVERSAL SYNC AUTO LOGGER (ZERO CONNECTOR MODIFICATION)
+
+def wrap_sync_function(func_name, func):
+
+    def wrapper(*args, **kwargs):
+
+        uid = None
+
+        try:
+            uid = get_uid()
+        except:
+            pass
+
+        source = func_name.replace("sync_", "")
+
+        run_id = None
+
+        if uid:
+            run_id = log_sync_start(uid, source, "auto")
+
+        try:
+            print(f"[USAGE] Sync started → {source}")
+
+            result = func(*args, **kwargs)
+
+            rows = result if isinstance(result, int) else 0
+
+            if run_id:
+                log_sync_finish(run_id, rows, "success")
+
+            print(f"[USAGE] Sync success → {source}")
+
+            return result
+
+        except Exception as e:
+
+            if run_id:
+                log_sync_finish(run_id, 0, "failed", str(e))
+
+            print(f"[USAGE] Sync failed → {source}", str(e))
+
+            raise e
+
+    return wrapper
+
+
+def auto_wrap_all_syncs():
+
+    for name, obj in list(globals().items()):
+
+        if callable(obj) and name.startswith("sync_"):
+
+            print("[USAGE WRAP]", name)
+
+            globals()[name] = wrap_sync_function(name, obj)
+
+
+# RUN AUTO WRAP ON STARTUP
+auto_wrap_all_syncs()
+
+# USAGE ANALYTICS API
+@app.route("/api/usage")
+def usage_analytics():
+
+    uid = get_uid()
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    # ---------------- ACCOUNT OVERVIEW ----------------
+
+    cur.execute("""
+        SELECT created_at,
+               company_name,
+               is_individual
+        FROM users
+        WHERE id=?
+    """, (uid,))
+    user_row = cur.fetchone()
+
+    account_created = user_row[0] if user_row else None
+    company_name = user_row[1] if user_row else None
+    is_individual = bool(user_row[2]) if user_row else True
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM user_sessions
+        WHERE user_id=?
+    """, (uid,))
+    total_sessions = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM api_usage_logs
+        WHERE uid=?
+    """, (uid,))
+    total_api_calls = cur.fetchone()[0]
+
+    # ---------------- CONNECTOR METRICS ----------------
+
+    TOTAL_CONNECTORS = 40
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM google_connections
+        WHERE uid=? AND enabled=1
+    """, (uid,))
+    connected_connectors = cur.fetchone()[0]
+
+    disconnected_connectors = (
+        TOTAL_CONNECTORS - connected_connectors
+    )
+
+    cur.execute("""
+        SELECT MIN(started_at)
+        FROM sync_runs
+        WHERE uid=?
+    """, (uid,))
+    first_connected_date = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT MAX(finished_at)
+        FROM sync_runs
+        WHERE uid=? AND status='success'
+    """, (uid,))
+    last_sync_time = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM sync_runs
+        WHERE uid=?
+    """, (uid,))
+    total_sync_runs = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM sync_runs
+        WHERE uid=? AND status='failed'
+    """, (uid,))
+    failed_sync_runs = cur.fetchone()[0]
+
+    # Full vs incremental
+    cur.execute("""
+        SELECT sync_type, COUNT(*)
+        FROM sync_runs
+        WHERE uid=?
+        GROUP BY sync_type
+    """, (uid,))
+    sync_type_breakdown = dict(cur.fetchall())
+
+    # ---------------- DATA VOLUME METRICS ----------------
+
+    cur.execute("""
+        SELECT COALESCE(SUM(rows_synced),0)
+        FROM sync_runs
+        WHERE uid=?
+    """, (uid,))
+    total_records_synced = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COALESCE(SUM(rows_synced),0)
+        FROM sync_runs
+        WHERE uid=?
+        AND date(started_at)=date('now')
+    """, (uid,))
+    records_today = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COALESCE(SUM(rows_synced),0)
+        FROM sync_runs
+        WHERE uid=?
+        AND strftime('%Y-%m', started_at)=strftime('%Y-%m','now')
+    """, (uid,))
+    records_this_month = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT source,
+               SUM(rows_synced)
+        FROM sync_runs
+        WHERE uid=?
+        GROUP BY source
+    """, (uid,))
+    records_per_connector = cur.fetchall()
+
+    largest_connector = None
+    if records_per_connector:
+        largest_connector = max(
+            records_per_connector,
+            key=lambda x: x[1]
+        )
+
+    # ---------------- DESTINATION METRICS ----------------
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM destination_configs
+        WHERE uid=?
+    """, (uid,))
+    total_destinations = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM destination_configs
+        WHERE uid=? AND is_active=1
+    """, (uid,))
+    active_destinations = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT destination_type,
+               SUM(rows_pushed)
+        FROM destination_push_logs
+        WHERE uid=?
+        GROUP BY destination_type
+    """, (uid,))
+    rows_per_destination = cur.fetchall()
+
+    cur.execute("""
+        SELECT MAX(pushed_at)
+        FROM destination_push_logs
+        WHERE uid=?
+    """, (uid,))
+    last_push_time = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM destination_push_logs
+        WHERE uid=? AND status='failed'
+    """, (uid,))
+    push_failures = cur.fetchone()[0]
+
+    # ---------------- SCHEDULER INSIGHTS ----------------
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM connector_jobs
+        WHERE uid=? AND enabled=1
+    """, (uid,))
+    scheduled_jobs = cur.fetchone()[0]
+
+    con.close()
+
+    success_rate = 0
+    if total_sync_runs > 0:
+        success_rate = round(
+            ((total_sync_runs - failed_sync_runs)
+             / total_sync_runs) * 100,
+            2
+        )
+
+    return jsonify({
+
+        "account": {
+            "created_at": account_created,
+            "company_name": company_name,
+            "is_individual": is_individual,
+            "total_sessions": total_sessions,
+            "total_api_calls": total_api_calls
+        },
+
+        "connectors": {
+            "total_available": TOTAL_CONNECTORS,
+            "connected": connected_connectors,
+            "disconnected": disconnected_connectors,
+            "first_connected": first_connected_date,
+            "last_sync": last_sync_time,
+            "total_sync_runs": total_sync_runs,
+            "failed_sync_runs": failed_sync_runs,
+            "sync_type_breakdown": sync_type_breakdown
+        },
+
+        "data_volume": {
+            "total_records_synced": total_records_synced,
+            "records_today": records_today,
+            "records_this_month": records_this_month,
+            "records_per_connector": records_per_connector,
+            "largest_connector": largest_connector
+        },
+
+        "destinations": {
+            "total": total_destinations,
+            "active": active_destinations,
+            "rows_per_destination": rows_per_destination,
+            "last_push_time": last_push_time,
+            "push_failures": push_failures
+        },
+
+        "scheduler": {
+            "scheduled_jobs": scheduled_jobs
+        },
+
+        "health": {
+            "sync_success_rate": success_rate
+        }
     })
 
 # ---------------- RUN ----------------

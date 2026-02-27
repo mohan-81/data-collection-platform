@@ -162,7 +162,13 @@ def generic_google_status(source):
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    try:
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({
+            "error": r.text,
+            "status_code": r.status_code
+        }), r.status_code
 
 @app.route("/connectors/<source>/job/save", methods=["POST"])
 def ui_save_job(source):

@@ -5,7 +5,7 @@ from destinations.snowflake_writer import push_snowflake
 from destinations.clickhouse_writer import push_clickhouse
 from destinations.s3_writer import push_s3
 from security.secure_db import decrypt_payload
-from flask import g
+from flask import g, has_request_context
 
 import sqlite3
 import datetime
@@ -60,7 +60,10 @@ def push_to_destination(dest_cfg, source, rows):
     dest_type = dest_cfg["type"]
 
     # Extract uid for logging
-    uid = getattr(g, "user_id", None)
+    uid = None
+
+    if has_request_context():
+        uid = getattr(g, "user_id", None)
 
     # ---------------- FORMAT ISOLATION ----------------
     if dest_type in ["bigquery", "s3"]:

@@ -7,8 +7,38 @@ from destinations.s3_writer import push_s3
 from security.secure_db import decrypt_payload
 
 import sqlite3
+import datetime
 
 DB = "identity.db"
+
+# ---------------- USAGE DESTINATION LOGGER ----------------
+
+def log_destination_push(uid, source, dest_type,
+                         rows, status, error=None):
+
+    con = sqlite3.connect(DB)
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT INTO destination_push_logs
+        (uid, source, destination_type,
+         rows_pushed, pushed_at,
+         status, error)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        uid,
+        source,
+        dest_type,
+        rows,
+        datetime.datetime.now(
+            datetime.UTC
+        ).isoformat(),
+        status,
+        error
+    ))
+
+    con.commit()
+    con.close()
 
 def resolve_destination_format(dest_cfg, source):
 
@@ -57,6 +87,9 @@ def push_to_destination(dest_cfg, source, rows):
 
     dest_type = dest_cfg["type"]
 
+    # Extract uid for logging
+    uid = dest_cfg.get("uid")
+
     # ---------------- FORMAT ISOLATION ----------------
     if dest_type in ["bigquery", "s3"]:
         dest_cfg["format"] = (
@@ -65,28 +98,52 @@ def push_to_destination(dest_cfg, source, rows):
     else:
         dest_cfg.pop("format", None)
 
-    if dest_type == "mysql":
+    try:
 
-        return push_to_mysql(dest_cfg, source, rows)
+        if dest_type == "mysql":
+            count = push_to_mysql(dest_cfg, source, rows)
 
-    elif dest_type == "postgres":
+        elif dest_type == "postgres":
+            count = push_postgres(dest_cfg, source, rows)
 
-        return push_postgres(dest_cfg, source, rows)
+        elif dest_type == "bigquery":
+            count = push_bigquery(dest_cfg, source, rows)
 
-    elif dest_type == "bigquery":
+        elif dest_type == "snowflake":
+            count = push_snowflake(dest_cfg, source, rows)
 
-        return push_bigquery(dest_cfg, source, rows)
+        elif dest_type == "clickhouse":
+            count = push_clickhouse(dest_cfg, source, rows)
 
-    elif dest_type == "snowflake":
+        elif dest_type == "s3":
+            count = push_s3(dest_cfg, source, rows)
 
-        return push_snowflake(dest_cfg, source, rows)
+        else:
+            raise Exception(
+                f"Unsupported destination: {dest_type}"
+            )
 
-    elif dest_type == "clickhouse":
-        return push_clickhouse(dest_cfg, source, rows)
-    
-    elif dest_type == "s3":
-        return push_s3(dest_cfg, source, rows)
+        # SUCCESS LOG
+        log_destination_push(
+            uid,
+            source,
+            dest_type,
+            count,
+            "success"
+        )
 
-    else:
+        return count
 
-        raise Exception(f"Unsupported destination: {dest_type}")
+    except Exception as e:
+
+        # FAILURE LOG
+        log_destination_push(
+            uid,
+            source,
+            dest_type,
+            0,
+            "failed",
+            str(e)
+        )
+
+        raise e

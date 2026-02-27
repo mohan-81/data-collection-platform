@@ -226,6 +226,7 @@ C:.
 ¦       ¦   connectors.html
 ¦       ¦   dashboard.html
 ¦       ¦   index.html
+¦       ¦   login.html
 ¦       ¦   signup.html
 ¦       ¦   tracking.html
 ¦       ¦   

@@ -4,6 +4,7 @@ from destinations.bigquery_writer import push_bigquery
 from destinations.snowflake_writer import push_snowflake
 from destinations.clickhouse_writer import push_clickhouse
 from destinations.s3_writer import push_s3
+from destinations.azure_datalake_writer import push_azure_datalake
 from security.secure_db import decrypt_payload
 from flask import g, has_request_context
 
@@ -17,7 +18,7 @@ def resolve_destination_format(dest_cfg, source):
     dest_type = dest_cfg.get("type")
 
     # only needed for supported destinations
-    if dest_type not in ["s3", "bigquery"]:
+    if dest_type not in ["s3", "bigquery", "azure_datalake"]:
         return dest_cfg
 
     try:
@@ -66,7 +67,7 @@ def push_to_destination(dest_cfg, source, rows):
         uid = getattr(g, "user_id", None)
 
     # ---------------- FORMAT ISOLATION ----------------
-    if dest_type in ["bigquery", "s3"]:
+    if dest_type in ["bigquery", "s3", "azure_datalake"]:
         dest_cfg["format"] = (
             dest_cfg.get("format") or "parquet"
         ).lower()
@@ -92,6 +93,9 @@ def push_to_destination(dest_cfg, source, rows):
 
         elif dest_type == "s3":
             count = push_s3(dest_cfg, source, rows)
+
+        elif dest_type == "azure_datalake":
+            count = push_azure_datalake(dest_cfg, source, rows)
 
         else:
             raise Exception(

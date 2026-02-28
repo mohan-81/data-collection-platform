@@ -11395,8 +11395,8 @@ def save_destination():
     # -------- FORMAT CONTROL --------
     format_value = data.get("format")
 
-    # allow format ONLY for s3 & bigquery
-    if dest_type not in ["s3", "bigquery"]:
+    # allow format ONLY for object-storage destinations
+    if dest_type not in ["s3", "bigquery", "azure_datalake"]:
         format_value = None
 
     # ---------------- Validation ---------------- #
@@ -11427,6 +11427,16 @@ def save_destination():
             return jsonify({
                 "status": "error",
                 "msg": "Missing BigQuery credentials"
+            }), 400
+
+    # ---------- Azure Data Lake Validation ----------
+
+    if dest_type == "azure_datalake":
+
+        if not host or not port or not password:
+            return jsonify({
+                "status": "error",
+                "msg": "Missing Azure Data Lake credentials"
             }), 400
 
 
@@ -11469,7 +11479,7 @@ def save_destination():
             database,
             1,   # active
             datetime.datetime.now(datetime.UTC).isoformat(),
-            data.get("format")
+            format_value
         ))
 
 

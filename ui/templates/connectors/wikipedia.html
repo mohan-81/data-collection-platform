@@ -211,6 +211,10 @@
                       <img src="{{ url_for('static', filename='images/logos/s3.png') }}" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">AWS S3</span>
                     </div>
+                    <div onclick="selectDestination('azure_datalake', 'Azure Data Lake', '/static/images/logos/adls.png')" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-500/10 rounded-xl cursor-pointer transition-colors group">
+                      <img src="/static/images/logos/adls.png" class="w-6 h-6 object-contain">
+                      <span class="text-slate-200 group-hover:text-white font-medium">Azure Data Lake</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -235,6 +239,13 @@
                   <input id="s3Region" placeholder="Region (ap-south-1)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                   <input id="s3AccessKey" placeholder="Access Key ID" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                   <input id="s3SecretKey" type="password" placeholder="Secret Access Key" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
+                </div>
+
+                <div id="adlsFields" class="hidden contents">
+                  <input id="adlsAccount" placeholder="Storage Account (mystorageacct)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
+                  <input id="adlsFilesystem" placeholder="File System / Container (segmento-data)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
+                  <input id="adlsPath" placeholder="Base Path (optional, e.g. raw/events)" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
+                  <input id="adlsKey" type="password" placeholder="Account Key" class="w-full p-4 rounded-xl bg-slate-900/50 text-white border border-white/5">
                 </div>
                 <div id="formatField" class="hidden md:col-span-2">
                   <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block">Data Format</label>
@@ -498,6 +509,14 @@ async function saveDestination(){
     payload.database = "s3";
     payload.format = document.getElementById("dataFormat").value;
   }
+    else if(type === "azure_datalake"){
+        payload.host = document.getElementById("adlsAccount").value;
+        payload.port = document.getElementById("adlsFilesystem").value;
+        payload.username = document.getElementById("adlsPath").value;
+        payload.password = document.getElementById("adlsKey").value;
+        payload.database = "adls";
+        payload.format = document.getElementById("dataFormat").value;
+    }
   else {
     payload.host = document.getElementById("dbHost").value;
     payload.port = document.getElementById("dbPort").value;
@@ -613,10 +632,11 @@ function toggleDestFields(type) {
     return;
   }
   fields.classList.remove("hidden");
-  document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery" || type === "s3");
+  document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery" || type === "s3" || type === "azure_datalake");
   document.getElementById("bigqueryFields").classList.toggle("hidden", type !== "bigquery");
   document.getElementById("s3Fields").classList.toggle("hidden", type !== "s3");
-  document.getElementById("formatField").classList.toggle("hidden", !(type === "bigquery" || type === "s3"));
+    document.getElementById("adlsFields").classList.toggle("hidden", type !== "azure_datalake");
+  document.getElementById("formatField").classList.toggle("hidden", !(type === "bigquery" || type === "s3" || type === "azure_datalake"));
 }
 
 window.onclick = function(event) {

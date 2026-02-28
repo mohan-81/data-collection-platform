@@ -31,3 +31,4 @@ google-cloud-bigquery
 clickhouse-connect
 pyarrow
 cryptography
+azure-storage-file-datalake

@@ -12175,6 +12175,53 @@ def usage_analytics():
 
 # ---------------- RUN ----------------
 
-if __name__=="__main__":
+def seed_test_user():
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT id FROM users WHERE email='test@example.com'")
+        if cur.fetchone():
+            return
+            
+        import uuid
+        from werkzeug.security import generate_password_hash
+        import datetime
+        
+        user_id = str(uuid.uuid4())
+        password_hash = generate_password_hash("testpassword")
+        secured = encrypt_payload({"password": password_hash})
+        
+        cur.execute("""
+            INSERT INTO users(
+                id,email,password,
+                first_name,last_name,
+                company_name,company_size,
+                country,phone,
+                is_individual,
+                created_at
+            )
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            user_id,
+            "test@example.com",
+            secured["password"],
+            "Test",
+            "User",
+            "Segmento Test",
+            "1-50",
+            "Testland",
+            "1234567890",
+            1,
+            datetime.datetime.utcnow().isoformat()
+        ))
+        con.commit()
+        print("Seeded test user: test@example.com / testpassword")
+    except Exception as e:
+        print("Failed to seed test user:", e)
+    finally:
+        con.close()
 
+if __name__=="__main__":
+    init_db() # Ensure DB is initialized
+    seed_test_user()
     app.run(port=4000,debug=True,host="0.0.0.0",use_reloader=False)

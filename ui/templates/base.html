@@ -65,6 +65,30 @@
             transform: translateY(-1px);
             box-shadow: 0 10px 20px -5px rgba(6, 182, 212, 0.3);
         }
+
+        .issue-center-panel {
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .issue-item {
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            background: rgba(15, 23, 42, 0.55);
+        }
+
+        .issue-dot-error {
+            background: #ef4444;
+        }
+
+        .issue-dot-warning {
+            background: #f59e0b;
+        }
+
+        .issue-dot-info {
+            background: #38bdf8;
+        }
     </style>
 </head>
 
@@ -136,6 +160,26 @@
         </svg>
     </button>
 
+    <div id="issueToastStack" class="fixed top-24 right-6 z-[90] space-y-3 w-[min(92vw,26rem)] pointer-events-none"></div>
+
+    <button id="issueCenterToggle"
+        class="fixed bottom-8 right-8 z-[90] px-4 py-3 rounded-xl bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-cyan-400/50 shadow-xl text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        Issue Center
+    </button>
+
+    <div id="issueCenterPanel"
+        class="issue-center-panel fixed right-6 bottom-24 z-[95] w-[min(94vw,30rem)] max-h-[70vh] rounded-2xl shadow-2xl hidden overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-700/60 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-white tracking-wide">Runtime Issues</h3>
+                <p class="text-xs text-slate-400">Connector sync, auth, and API errors</p>
+            </div>
+            <button id="issueCenterClear" class="text-xs text-slate-300 hover:text-white font-semibold">Clear</button>
+        </div>
+        <div id="issueCenterList" class="p-4 space-y-3 overflow-y-auto max-h-[58vh]"></div>
+    </div>
+
     <div class="h-24"></div>
 
     <main class="relative z-10 w-full">
@@ -186,6 +230,265 @@
             }
         });
 
+    </script>
+
+    <script>
+        (function () {
+            const toastStack = document.getElementById('issueToastStack');
+            const panel = document.getElementById('issueCenterPanel');
+            const list = document.getElementById('issueCenterList');
+            const toggleBtn = document.getElementById('issueCenterToggle');
+            const clearBtn = document.getElementById('issueCenterClear');
+            const events = [];
+            const seen = new Map();
+            const maxEvents = 80;
+            const dedupeMs = 15000;
+
+            function classify(level) {
+                if (level === 'error') return { dot: 'issue-dot-error', badge: 'Error', text: 'text-red-300' };
+                if (level === 'warning') return { dot: 'issue-dot-warning', badge: 'Warning', text: 'text-amber-300' };
+                return { dot: 'issue-dot-info', badge: 'Info', text: 'text-cyan-300' };
+            }
+
+            function nowLabel() {
+                return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+
+            function normalizeMessage(message) {
+                const text = (message || '').toString();
+                const low = text.toLowerCase();
+
+                if (low.includes('invalid_client') || low.includes('oauth') || low.includes('token expired')) {
+                    return {
+                        title: 'Connector authorization expired',
+                        message: 'This connector requires re-authorization. Disconnect and connect it again.',
+                        level: 'warning'
+                    };
+                }
+
+                if (low.includes('unauthorized') || low.includes('session') || low.includes('401')) {
+                    return {
+                        title: 'Session expired',
+                        message: 'Please log in again to continue connector operations.',
+                        level: 'warning'
+                    };
+                }
+
+                if (low.includes('networkerror') || low.includes('failed to fetch')) {
+                    return {
+                        title: 'Network request failed',
+                        message: 'Unable to reach the server. Check connection and retry.',
+                        level: 'error'
+                    };
+                }
+
+                return null;
+            }
+
+            function pushIssue(payload) {
+                const level = payload.level || 'error';
+                const title = payload.title || 'Operation failed';
+                const message = payload.message || 'An unexpected issue occurred.';
+                const source = payload.source || 'client';
+                const status = payload.status || '';
+                const normalized = normalizeMessage([title, message, status].join(' '));
+                const finalLevel = normalized?.level || level;
+                const finalTitle = normalized?.title || title;
+                const finalMessage = normalized?.message || message;
+                const fingerprint = [finalLevel, finalTitle, finalMessage, source].join('|');
+                const ts = Date.now();
+
+                if (seen.has(fingerprint) && (ts - seen.get(fingerprint)) < dedupeMs) return;
+                seen.set(fingerprint, ts);
+
+                const evt = {
+                    level: finalLevel,
+                    title: finalTitle,
+                    message: finalMessage,
+                    source: source,
+                    status: status,
+                    at: nowLabel()
+                };
+
+                events.unshift(evt);
+                if (events.length > maxEvents) events.pop();
+                renderList();
+                showToast(evt);
+            }
+
+            function showToast(evt) {
+                if (!toastStack) return;
+                const cls = classify(evt.level);
+                const toast = document.createElement('div');
+                toast.className = 'pointer-events-auto rounded-xl border border-slate-700/70 bg-slate-900/95 p-4 shadow-2xl';
+                toast.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <span class="w-2.5 h-2.5 rounded-full mt-1 ${cls.dot}"></span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold ${cls.text}">${evt.title}</p>
+                            <p class="text-xs text-slate-300 mt-1 break-words">${evt.message}</p>
+                            <p class="text-[10px] text-slate-500 mt-2 uppercase tracking-wider">${evt.source} • ${evt.at}</p>
+                        </div>
+                    </div>`;
+                toastStack.prepend(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-6px)';
+                    toast.style.transition = 'all 0.25s ease';
+                    setTimeout(() => toast.remove(), 260);
+                }, 5200);
+            }
+
+            function renderList() {
+                if (!list) return;
+                if (!events.length) {
+                    list.innerHTML = `<div class="issue-item rounded-xl p-4">
+                        <p class="text-xs text-slate-400">No issues captured in this session.</p>
+                    </div>`;
+                    return;
+                }
+
+                list.innerHTML = events.map(evt => {
+                    const cls = classify(evt.level);
+                    const statusLine = evt.status ? `<p class="text-[10px] text-slate-500 mt-1">HTTP ${evt.status}</p>` : '';
+                    return `<div class="issue-item rounded-xl p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full ${cls.dot}"></span>
+                                <p class="text-xs font-bold ${cls.text}">${evt.title}</p>
+                            </div>
+                            <p class="text-[10px] text-slate-500">${evt.at}</p>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-2 break-words">${evt.message}</p>
+                        <p class="text-[10px] text-slate-500 mt-2 uppercase tracking-wider">${evt.source}</p>
+                        ${statusLine}
+                    </div>`;
+                }).join('');
+            }
+
+            function safeUrl(arg) {
+                if (typeof arg === 'string') return arg;
+                if (arg && typeof arg.url === 'string') return arg.url;
+                return 'unknown';
+            }
+
+            function extractMessage(json, fallback) {
+                if (!json || typeof json !== 'object') return fallback;
+                return json.message || json.error || json.detail || fallback;
+            }
+
+            const originalFetch = window.fetch.bind(window);
+            const originalAlert = window.alert ? window.alert.bind(window) : null;
+            window.fetch = async function (...args) {
+                const url = safeUrl(args[0]);
+                try {
+                    const response = await originalFetch(...args);
+                    const contentType = response.headers.get('content-type') || '';
+                    let payload = null;
+
+                    if (contentType.includes('application/json')) {
+                        try {
+                            payload = await response.clone().json();
+                        } catch (_) { }
+                    }
+
+                    if (!response.ok) {
+                        let message = extractMessage(payload, `Request failed for ${url}`);
+                        pushIssue({
+                            level: response.status === 401 || response.status === 403 ? 'warning' : 'error',
+                            title: 'Request failed',
+                            message,
+                            source: url,
+                            status: response.status
+                        });
+                    } else if (payload && (payload.error || payload.status === 'error')) {
+                        pushIssue({
+                            level: 'error',
+                            title: 'Connector operation failed',
+                            message: extractMessage(payload, `Operation failed for ${url}`),
+                            source: url
+                        });
+                    }
+
+                    return response;
+                } catch (err) {
+                    pushIssue({
+                        level: 'error',
+                        title: 'Network error',
+                        message: err?.message || 'Unable to complete request.',
+                        source: url
+                    });
+                    throw err;
+                }
+            };
+
+            window.addEventListener('unhandledrejection', (event) => {
+                const reason = event?.reason;
+                pushIssue({
+                    level: 'error',
+                    title: 'Unhandled async error',
+                    message: reason?.message || String(reason || 'Unknown promise rejection'),
+                    source: 'javascript'
+                });
+            });
+
+            window.addEventListener('error', (event) => {
+                pushIssue({
+                    level: 'error',
+                    title: 'JavaScript runtime error',
+                    message: event?.message || 'Unknown runtime error',
+                    source: 'javascript'
+                });
+            });
+
+            function inferAlertLevel(message) {
+                const text = (message || '').toString().toLowerCase();
+                if (text.includes('error') || text.includes('failed') || text.includes('invalid')) return 'error';
+                if (text.includes('required') || text.includes('missing') || text.includes('warning')) return 'warning';
+                if (text.includes('success') || text.includes('updated') || text.includes('connected') || text.includes('revoked')) return 'info';
+                return 'info';
+            }
+
+            function inferAlertTitle(message, level) {
+                if (level === 'error') return 'Connector action failed';
+                if (level === 'warning') return 'Action required';
+                return 'Connector update';
+            }
+
+            window.alert = function (message) {
+                const level = inferAlertLevel(message);
+                pushIssue({
+                    level,
+                    title: inferAlertTitle(message, level),
+                    message: message || 'Notification',
+                    source: 'connector-ui'
+                });
+            };
+
+            window.SegmentoIssues = {
+                info: (message, title = 'Notice', source = 'ui') => pushIssue({ level: 'info', title, message, source }),
+                warn: (message, title = 'Action needed', source = 'ui') => pushIssue({ level: 'warning', title, message, source }),
+                error: (message, title = 'Operation failed', source = 'ui') => pushIssue({ level: 'error', title, message, source }),
+                push: pushIssue,
+                nativeAlert: (message) => {
+                    if (originalAlert) originalAlert(message);
+                }
+            };
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => panel.classList.toggle('hidden'));
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    events.length = 0;
+                    seen.clear();
+                    renderList();
+                });
+            }
+
+            renderList();
+        })();
     </script>
 
     <script>

@@ -666,15 +666,23 @@
     const clientId = document.getElementById("clientId").value.trim();
     const clientSecret = document.getElementById("clientSecret").value.trim();
     const site = document.getElementById("siteInput").value.trim();
-    if (!clientId || !clientSecret || !site) { alert("All fields required"); return; }
+    if (!clientId || !clientSecret || !site) {
+      window.SegmentoIssues?.warn("Please fill Client ID, Client Secret, and Verified Website URL.", "Missing required fields", "search-console");
+      return;
+    }
     try {
       const res = await fetch("/connectors/search-console/save_app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, site_url: site })
       });
-      if (res.ok) { checkSCStatus(); }
-    } catch (e) { alert("Save failed"); }
+      if (res.ok) {
+        window.SegmentoIssues?.info("Credentials saved. You can now authorize this connector.", "Credentials saved", "search-console");
+        checkSCStatus();
+      }
+    } catch (e) {
+      window.SegmentoIssues?.error("Could not save credentials. Please verify inputs and try again.", "Credential save failed", "search-console");
+    }
   }
 
   async function disconnectSC() {
@@ -687,14 +695,14 @@
     try {
       const res = await fetch("/connectors/search-console/disconnect");
       if (res.ok) {
-        alert("Connection revoked.");
+        window.SegmentoIssues?.info("Connector access has been revoked.", "Disconnected", "search-console");
         location.reload();
       }
       else {
-        alert("Failed to disconnect.");
+        window.SegmentoIssues?.error("Unable to disconnect connector. Please retry.", "Disconnect failed", "search-console");
       }
     } catch (e) {
-      alert("Disconnect error.");
+      window.SegmentoIssues?.error("Network error while disconnecting connector.", "Disconnect failed", "search-console");
     } finally {
       btn.disabled = false;
       btn.innerText = "Disconnect this account";
@@ -827,13 +835,13 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sync_type: document.getElementById("syncType").value, schedule_time: time })
     });
-    alert("Sync Job Updated");
+    window.SegmentoIssues?.info(`Sync schedule updated to ${time}.`, "Schedule updated", "search-console");
   }
 
   async function runSync() {
     const site = document.getElementById("siteInput").value.trim();
     if (!site) {
-      alert("Please enter a verified Website URL first.");
+      window.SegmentoIssues?.warn("Please enter a verified website URL before running sync.", "Website URL required", "search-console");
       return;
     }
 
@@ -845,13 +853,15 @@
       const res = await fetch("/connectors/search-console/sync?site=" + encodeURIComponent(site) + "&sync_type=" + document.getElementById("syncType").value);
       const d = await res.json();
       if (d.status === "error") {
-        alert("Error: " + d.message);
+        window.SegmentoIssues?.error(d.message || "Search Console sync failed.", "Sync failed", "search-console");
         btn.innerText = "FAILED";
       } else {
         btn.innerText = `SYNCED (${d.count || 0})`;
+        window.SegmentoIssues?.info(`Manual sync completed with ${d.count || 0} rows.`, "Sync completed", "search-console");
       }
     } catch (e) {
       console.error(e);
+      window.SegmentoIssues?.error("Unexpected error while running sync.", "Sync failed", "search-console");
       btn.innerText = "ERROR";
     } finally {
       setTimeout(() => {

@@ -880,6 +880,47 @@ and integrated ad reports with secure OAuth token management.
   ]
 },
 
+{
+  id:"x",
+  name:"X (Twitter)",
+  category:"social",
+  logo:"/static/images/logos/x.png",
+
+  auth_type:"oauth",
+
+  connect_url:"http://localhost:4000/connectors/x/connect",
+  sync_url:"http://localhost:4000/connectors/x/sync",
+  dashboard:"/dashboard/x",
+
+  long_description:`
+Connect your X account using OAuth 2.0 and ingest profile, follower,
+and recent tweet data with secure token refresh support.
+  `,
+
+  steps:[
+    {title:"Provide App Credentials",desc:"Enter X client ID and client secret."},
+    {title:"Authorize Access",desc:"Complete OAuth 2.0 authorization."},
+    {title:"Run Sync",desc:"Profile, followers and recent tweets are ingested."}
+  ],
+
+  tables:[
+    "x_users",
+    "x_tweets"
+  ],
+
+  erd:"/static/images/logos/x.png",
+
+  description:"Collects X user profiles, followers and recent tweets.",
+
+  data:[
+    "User profile fields",
+    "Follower accounts",
+    "Recent tweets",
+    "Engagement metrics",
+    "Incremental sync state"
+  ]
+},
+
 /* ================= META ADS ================= */
 {
   id:"facebook_ads",

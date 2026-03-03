@@ -68,6 +68,12 @@ from connectors.tiktok import (
     sync_tiktok,
     disconnect_tiktok
 )
+from connectors.x import (
+    get_x_auth_url,
+    handle_x_oauth_callback,
+    sync_x,
+    disconnect_x
+)
 
 # ---------------- CONFIG ----------------
 load_dotenv()
@@ -2550,6 +2556,58 @@ def init_db():
         raw_json TEXT,
         fetched_at TEXT,
         UNIQUE(uid, ad_id, stat_time_day)
+    )
+    """)
+
+    # ---------------- X (TWITTER) ----------------
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS x_connections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT UNIQUE,
+        x_user_id TEXT,
+        username TEXT,
+        access_token TEXT,
+        refresh_token TEXT,
+        expires_at TEXT,
+        connected_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS x_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        user_id TEXT,
+        username TEXT,
+        display_name TEXT,
+        bio TEXT,
+        location TEXT,
+        followers_count INTEGER,
+        following_count INTEGER,
+        tweet_count INTEGER,
+        profile_image_url TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, user_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS x_tweets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        tweet_id TEXT,
+        author_id TEXT,
+        text TEXT,
+        like_count INTEGER,
+        retweet_count INTEGER,
+        reply_count INTEGER,
+        media_ids TEXT,
+        created_at TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, tweet_id)
     )
     """)
 
@@ -8133,6 +8191,197 @@ def tiktok_job_save():
         INSERT OR REPLACE INTO connector_jobs
         (uid, source, sync_type, schedule_time)
         VALUES (?, 'tiktok', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+    return jsonify({"status": "job_saved"})
+
+# ---------------- X (TWITTER) ----------------
+
+@app.route("/connectors/x/save_app", methods=["POST"])
+def x_save_app():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+    redirect_uri = data.get("redirect_uri") or (request.host_url.rstrip("/") + "/connectors/x/callback")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "client_id and client_secret are required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, scopes, status, created_at)
+        VALUES (?, 'x', ?, ?, ?, 'configured', datetime('now'))
+    """, (
+        uid,
+        encrypt_value(client_id),
+        encrypt_value(client_secret),
+        encrypt_value(redirect_uri)
+    ))
+
+    con.commit()
+    con.close()
+
+    ensure_connector_initialized(uid, "x")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/x/connect")
+def x_connect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        return redirect(get_x_auth_url(uid))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/connectors/x/callback")
+def x_callback():
+    uid = getattr(g, "user_id", None)
+    code = request.args.get("code")
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    if not code:
+        return "Authorization failed", 400
+
+    result = handle_x_oauth_callback(uid, code)
+    if result.get("status") != "success":
+        return jsonify(result), 400
+
+    return redirect("http://localhost:3000/connectors/x")
+
+
+@app.route("/connectors/x/disconnect")
+def x_disconnect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    disconnect_x(uid)
+    return jsonify({"status": "disconnected"})
+
+
+@app.route("/connectors/x/sync")
+def x_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='x'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_x(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/x")
+def x_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='x'
+        LIMIT 1
+    """, (uid,))
+    creds = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='x'
+        LIMIT 1
+    """, (uid,))
+    conn = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT username, x_user_id, expires_at
+        FROM x_connections
+        WHERE uid=?
+        LIMIT 1
+    """, (uid,))
+    xr = fetchone_secure(cur)
+    con.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected": bool(conn and conn["enabled"] == 1),
+        "username": xr["username"] if xr else None,
+        "x_user_id": xr["x_user_id"] if xr else None,
+        "expires_at": xr["expires_at"] if xr else None
+    })
+
+
+@app.route("/connectors/x/job/get")
+def x_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute("""
+            SELECT sync_type, schedule_time
+            FROM connector_jobs
+            WHERE uid=? AND source='x'
+        """, (uid,))
+        row = fetchone_secure(cur)
+    finally:
+        con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row["sync_type"],
+        "schedule_time": row["schedule_time"]
+    })
+
+
+@app.route("/connectors/x/job/save", methods=["POST"])
+def x_job_save():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'x', ?, ?)
     """, (uid, sync_type, schedule_time))
 
     con.commit()

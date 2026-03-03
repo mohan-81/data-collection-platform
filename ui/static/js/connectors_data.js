@@ -921,6 +921,49 @@ and recent tweet data with secure token refresh support.
   ]
 },
 
+{
+  id:"linkedin",
+  name:"LinkedIn Marketing",
+  category:"social",
+  logo:"/static/images/logos/linkedin.png",
+
+  auth_type:"oauth",
+
+  connect_url:"http://localhost:4000/connectors/linkedin/connect",
+  sync_url:"http://localhost:4000/connectors/linkedin/sync",
+  dashboard:"/dashboard/linkedin",
+
+  long_description:`
+Connect your LinkedIn Marketing account using OAuth 2.0 and ingest
+ad accounts, campaigns, creatives, and ad analytics with refresh-token support.
+  `,
+
+  steps:[
+    {title:"Provide App Credentials",desc:"Enter LinkedIn client ID and client secret."},
+    {title:"Authorize Access",desc:"Complete LinkedIn OAuth 2.0 authorization."},
+    {title:"Run Sync",desc:"Ad accounts, campaigns, creatives, and analytics are ingested."}
+  ],
+
+  tables:[
+    "linkedin_ad_accounts",
+    "linkedin_campaigns",
+    "linkedin_creatives",
+    "linkedin_ad_analytics"
+  ],
+
+  erd:"/static/images/logos/linkedin.png",
+
+  description:"Collects LinkedIn ad accounts, campaigns, creatives and performance analytics.",
+
+  data:[
+    "Ad account metadata",
+    "Campaign configuration",
+    "Creative metadata",
+    "Impressions and clicks",
+    "Cost metrics by pivot"
+  ]
+},
+
 /* ================= META ADS ================= */
 {
   id:"facebook_ads",

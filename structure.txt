@@ -4,8 +4,6 @@ C:.
 ¦   .env
 ¦   .gitignore
 ¦   identity.db
-¦   identity.db-shm
-¦   identity.db-wal
 ¦   identity_server.py
 ¦   requirements.txt
 ¦   scheduler.py
@@ -14,114 +12,67 @@ C:.
 ¦   structure.txt
 ¦   
 +---connectors
-¦   ¦   classroom.py
-¦   ¦   devto.py
-¦   ¦   discord.py
-¦   ¦   discourse.py
-¦   ¦   facebook_ads.py
-¦   ¦   facebook_pages.py
-¦   ¦   github.py
-¦   ¦   gitlab.py
-¦   ¦   googlebooks.py
-¦   ¦   googlefactcheck.py
-¦   ¦   googlenews.py
-¦   ¦   googletrends.py
-¦   ¦   google_calendar.py
-¦   ¦   google_contacts.py
-¦   ¦   google_drive.py
-¦   ¦   google_forms.py
-¦   ¦   google_ga4.py
-¦   ¦   google_gcs.py
-¦   ¦   google_gmail.py
-¦   ¦   google_pagespeed.py
-¦   ¦   google_search_console.py
-¦   ¦   google_sheets.py
-¦   ¦   google_tasks.py
-¦   ¦   google_webfonts.py
-¦   ¦   google_youtube.py
-¦   ¦   hackernews.py
-¦   ¦   lemmy.py
-¦   ¦   mastodon.py
-¦   ¦   medium.py
-¦   ¦   nvd.py
-¦   ¦   openstreetmap.py
-¦   ¦   peertube.py
-¦   ¦   pinterest.py
-¦   ¦   producthunt.py
-¦   ¦   reddit.py
-¦   ¦   stackoverflow.py
-¦   ¦   telegram.py
-¦   ¦   tumblr.py
-¦   ¦   twitch.py
-¦   ¦   wikipedia.py
-¦   ¦   
-¦   +---__pycache__
-¦           classroom.cpython-312.pyc
-¦           discourse.cpython-312.pyc
-¦           facebook_ads.cpython-312.pyc
-¦           facebook_pages.cpython-312.pyc
-¦           github.cpython-312.pyc
-¦           gitlab.cpython-312.pyc
-¦           googlebooks.cpython-312.pyc
-¦           googlefactcheck.cpython-312.pyc
-¦           googlenews.cpython-312.pyc
-¦           googletrends.cpython-312.pyc
-¦           google_calendar.cpython-312.pyc
-¦           google_contacts.cpython-312.pyc
-¦           google_drive.cpython-312.pyc
-¦           google_forms.cpython-312.pyc
-¦           google_ga4.cpython-312.pyc
-¦           google_gcs.cpython-312.pyc
-¦           google_gmail.cpython-312.pyc
-¦           google_pagespeed.cpython-312.pyc
-¦           google_search_console.cpython-312.pyc
-¦           google_sheets.cpython-312.pyc
-¦           google_tasks.cpython-312.pyc
-¦           google_webfonts.cpython-312.pyc
-¦           google_youtube.cpython-312.pyc
-¦           hackernews.cpython-312.pyc
-¦           lemmy.cpython-312.pyc
-¦           mastodon.cpython-312.pyc
-¦           nvd.cpython-312.pyc
-¦           openstreetmap.cpython-312.pyc
-¦           peertube.cpython-312.pyc
-¦           pinterest.cpython-312.pyc
-¦           producthunt.cpython-312.pyc
-¦           wikipedia.cpython-312.pyc
-¦           
+¦       classroom.py
+¦       devto.py
+¦       discord.py
+¦       discourse.py
+¦       facebook_ads.py
+¦       facebook_pages.py
+¦       github.py
+¦       gitlab.py
+¦       googlebooks.py
+¦       googlefactcheck.py
+¦       googlenews.py
+¦       googletrends.py
+¦       google_calendar.py
+¦       google_contacts.py
+¦       google_drive.py
+¦       google_forms.py
+¦       google_ga4.py
+¦       google_gcs.py
+¦       google_gmail.py
+¦       google_pagespeed.py
+¦       google_search_console.py
+¦       google_sheets.py
+¦       google_tasks.py
+¦       google_webfonts.py
+¦       google_youtube.py
+¦       hackernews.py
+¦       lemmy.py
+¦       mastodon.py
+¦       medium.py
+¦       nvd.py
+¦       openstreetmap.py
+¦       peertube.py
+¦       pinterest.py
+¦       producthunt.py
+¦       reddit.py
+¦       stackoverflow.py
+¦       telegram.py
+¦       tumblr.py
+¦       twitch.py
+¦       wikipedia.py
+¦       
 +---destinations
-¦   ¦   bigquery_writer.py
-¦   ¦   clickhouse_writer.py
-¦   ¦   destination_router.py
-¦   ¦   mysql_writer.py
-¦   ¦   postgres_writer.py
-¦   ¦   s3_writer.py
-¦   ¦   snowflake_writer.py
-¦   ¦   
-¦   +---__pycache__
-¦           bigquery_writer.cpython-312.pyc
-¦           clickhouse_writer.cpython-312.pyc
-¦           destination_router.cpython-312.pyc
-¦           mysql_writer.cpython-312.pyc
-¦           postgres_writer.cpython-312.pyc
-¦           s3_writer.cpython-312.pyc
-¦           snowflake_writer.cpython-312.pyc
-¦           
+¦       azure_datalake_writer.py
+¦       bigquery_writer.py
+¦       clickhouse_writer.py
+¦       databricks_writer.py
+¦       destination_router.py
+¦       mysql_writer.py
+¦       postgres_writer.py
+¦       redshift_writer.py
+¦       s3_writer.py
+¦       snowflake_writer.py
+¦       
 +---security
-¦   ¦   auth_middleware.py
-¦   ¦   auth_routes.py
-¦   ¦   crypto.py
-¦   ¦   secret.key
-¦   ¦   secure_db.py
-¦   ¦   secure_fetch.py
-¦   ¦   
-¦   +---__pycache__
-¦           auth_middleware.cpython-312.pyc
-¦           auth_routes.cpython-312.pyc
-¦           crypto.cpython-312.pyc
-¦           secure_db.cpython-312.pyc
-¦           secure_fetch.cpython-312.pyc
-¦           
+¦       auth_middleware.py
+¦       auth_routes.py
+¦       crypto.py
+¦       secret.key
+¦       secure_db.py
+¦       secure_fetch.py
+¦       
 +---static
 ¦   +---sdk
 ¦           segmento.js
@@ -130,6 +81,8 @@ C:.
 ¦   ¦   app.py
 ¦   ¦   
 ¦   +---static
+¦   ¦   ¦   logo.png
+¦   ¦   ¦   
 ¦   ¦   +---css
 ¦   ¦   +---images
 ¦   ¦   ¦   ¦   web_tracking_erd.png
@@ -177,6 +130,7 @@ C:.
 ¦   ¦   ¦   ¦       youtube_erd.png
 ¦   ¦   ¦   ¦       
 ¦   ¦   ¦   +---logos
+¦   ¦   ¦           adls.png
 ¦   ¦   ¦           calendar.png
 ¦   ¦   ¦           classroom.png
 ¦   ¦   ¦           contacts.png
@@ -206,6 +160,7 @@ C:.
 ¦   ¦   ¦           pinterest.png
 ¦   ¦   ¦           producthunt.png
 ¦   ¦   ¦           reddit.png
+¦   ¦   ¦           redshift.png
 ¦   ¦   ¦           s3.png
 ¦   ¦   ¦           searchconsole.png
 ¦   ¦   ¦           sheets.png
@@ -220,6 +175,7 @@ C:.
 ¦   ¦   ¦           
 ¦   ¦   +---js
 ¦   ¦           connectors_data.js
+¦   ¦           usage.js
 ¦   ¦           
 ¦   +---templates
 ¦       ¦   base.html
@@ -229,50 +185,9 @@ C:.
 ¦       ¦   login.html
 ¦       ¦   signup.html
 ¦       ¦   tracking.html
+¦       ¦   usage.html
 ¦       ¦   
 ¦       +---connectors
-¦       ¦       books.html
-¦       ¦       calendar.html
-¦       ¦       classroom.html
-¦       ¦       contacts.html
-¦       ¦       devto.html
-¦       ¦       discord.html
-¦       ¦       discourse.html
-¦       ¦       drive.html
-¦       ¦       facebookpages.html
-¦       ¦       facebook_ads.html
-¦       ¦       factcheck.html
-¦       ¦       forms.html
-¦       ¦       ga4.html
-¦       ¦       gcs.html
-¦       ¦       github.html
-¦       ¦       gitlab.html
-¦       ¦       gmail.html
-¦       ¦       hackernews.html
-¦       ¦       lemmy.html
-¦       ¦       mastodon.html
-¦       ¦       medium.html
-¦       ¦       news.html
-¦       ¦       nvd.html
-¦       ¦       openstreetmap.html
-¦       ¦       pagespeed.html
-¦       ¦       peertube.html
-¦       ¦       pinterest.html
-¦       ¦       producthunt.html
-¦       ¦       reddit.html
-¦       ¦       search_console.html
-¦       ¦       sheets.html
-¦       ¦       stackoverflow.html
-¦       ¦       tasks.html
-¦       ¦       telegram.html
-¦       ¦       trends.html
-¦       ¦       tumblr.html
-¦       ¦       twitch.html
-¦       ¦       webfonts.html
-¦       ¦       wikipedia.html
-¦       ¦       youtube.html
-¦       ¦       
-¦       +---dashboards
 ¦               books.html
 ¦               calendar.html
 ¦               classroom.html
@@ -281,6 +196,8 @@ C:.
 ¦               discord.html
 ¦               discourse.html
 ¦               drive.html
+¦               facebookpages.html
+¦               facebook_ads.html
 ¦               factcheck.html
 ¦               forms.html
 ¦               ga4.html
@@ -354,6 +271,253 @@ C:.
     ¦       ¦   _cffi_backend.cp312-win_amd64.pyd
     ¦       ¦   _mysql_connector.cp312-win_amd64.pyd
     ¦       ¦   
+    ¦       +---alembic
+    ¦       ¦   ¦   command.py
+    ¦       ¦   ¦   config.py
+    ¦       ¦   ¦   context.py
+    ¦       ¦   ¦   context.pyi
+    ¦       ¦   ¦   environment.py
+    ¦       ¦   ¦   migration.py
+    ¦       ¦   ¦   op.py
+    ¦       ¦   ¦   op.pyi
+    ¦       ¦   ¦   py.typed
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   __main__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---autogenerate
+    ¦       ¦   ¦   ¦   api.py
+    ¦       ¦   ¦   ¦   render.py
+    ¦       ¦   ¦   ¦   rewriter.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---compare
+    ¦       ¦   ¦   ¦   ¦   comments.py
+    ¦       ¦   ¦   ¦   ¦   constraints.py
+    ¦       ¦   ¦   ¦   ¦   schema.py
+    ¦       ¦   ¦   ¦   ¦   server_defaults.py
+    ¦       ¦   ¦   ¦   ¦   tables.py
+    ¦       ¦   ¦   ¦   ¦   types.py
+    ¦       ¦   ¦   ¦   ¦   util.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           comments.cpython-312.pyc
+    ¦       ¦   ¦   ¦           constraints.cpython-312.pyc
+    ¦       ¦   ¦   ¦           schema.cpython-312.pyc
+    ¦       ¦   ¦   ¦           server_defaults.cpython-312.pyc
+    ¦       ¦   ¦   ¦           tables.cpython-312.pyc
+    ¦       ¦   ¦   ¦           types.cpython-312.pyc
+    ¦       ¦   ¦   ¦           util.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           api.cpython-312.pyc
+    ¦       ¦   ¦           render.cpython-312.pyc
+    ¦       ¦   ¦           rewriter.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---ddl
+    ¦       ¦   ¦   ¦   base.py
+    ¦       ¦   ¦   ¦   impl.py
+    ¦       ¦   ¦   ¦   mssql.py
+    ¦       ¦   ¦   ¦   mysql.py
+    ¦       ¦   ¦   ¦   oracle.py
+    ¦       ¦   ¦   ¦   postgresql.py
+    ¦       ¦   ¦   ¦   sqlite.py
+    ¦       ¦   ¦   ¦   _autogen.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           base.cpython-312.pyc
+    ¦       ¦   ¦           impl.cpython-312.pyc
+    ¦       ¦   ¦           mssql.cpython-312.pyc
+    ¦       ¦   ¦           mysql.cpython-312.pyc
+    ¦       ¦   ¦           oracle.cpython-312.pyc
+    ¦       ¦   ¦           postgresql.cpython-312.pyc
+    ¦       ¦   ¦           sqlite.cpython-312.pyc
+    ¦       ¦   ¦           _autogen.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---operations
+    ¦       ¦   ¦   ¦   base.py
+    ¦       ¦   ¦   ¦   batch.py
+    ¦       ¦   ¦   ¦   ops.py
+    ¦       ¦   ¦   ¦   schemaobj.py
+    ¦       ¦   ¦   ¦   toimpl.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           base.cpython-312.pyc
+    ¦       ¦   ¦           batch.cpython-312.pyc
+    ¦       ¦   ¦           ops.cpython-312.pyc
+    ¦       ¦   ¦           schemaobj.cpython-312.pyc
+    ¦       ¦   ¦           toimpl.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---runtime
+    ¦       ¦   ¦   ¦   environment.py
+    ¦       ¦   ¦   ¦   migration.py
+    ¦       ¦   ¦   ¦   plugins.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           environment.cpython-312.pyc
+    ¦       ¦   ¦           migration.cpython-312.pyc
+    ¦       ¦   ¦           plugins.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---script
+    ¦       ¦   ¦   ¦   base.py
+    ¦       ¦   ¦   ¦   revision.py
+    ¦       ¦   ¦   ¦   write_hooks.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           base.cpython-312.pyc
+    ¦       ¦   ¦           revision.cpython-312.pyc
+    ¦       ¦   ¦           write_hooks.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---templates
+    ¦       ¦   ¦   +---async
+    ¦       ¦   ¦   ¦   ¦   alembic.ini.mako
+    ¦       ¦   ¦   ¦   ¦   env.py
+    ¦       ¦   ¦   ¦   ¦   README
+    ¦       ¦   ¦   ¦   ¦   script.py.mako
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           env.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---generic
+    ¦       ¦   ¦   ¦   ¦   alembic.ini.mako
+    ¦       ¦   ¦   ¦   ¦   env.py
+    ¦       ¦   ¦   ¦   ¦   README
+    ¦       ¦   ¦   ¦   ¦   script.py.mako
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           env.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---multidb
+    ¦       ¦   ¦   ¦   ¦   alembic.ini.mako
+    ¦       ¦   ¦   ¦   ¦   env.py
+    ¦       ¦   ¦   ¦   ¦   README
+    ¦       ¦   ¦   ¦   ¦   script.py.mako
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           env.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---pyproject
+    ¦       ¦   ¦   ¦   ¦   alembic.ini.mako
+    ¦       ¦   ¦   ¦   ¦   env.py
+    ¦       ¦   ¦   ¦   ¦   pyproject.toml.mako
+    ¦       ¦   ¦   ¦   ¦   README
+    ¦       ¦   ¦   ¦   ¦   script.py.mako
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           env.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---pyproject_async
+    ¦       ¦   ¦       ¦   alembic.ini.mako
+    ¦       ¦   ¦       ¦   env.py
+    ¦       ¦   ¦       ¦   pyproject.toml.mako
+    ¦       ¦   ¦       ¦   README
+    ¦       ¦   ¦       ¦   script.py.mako
+    ¦       ¦   ¦       ¦   
+    ¦       ¦   ¦       +---__pycache__
+    ¦       ¦   ¦               env.cpython-312.pyc
+    ¦       ¦   ¦               
+    ¦       ¦   +---testing
+    ¦       ¦   ¦   ¦   assertions.py
+    ¦       ¦   ¦   ¦   env.py
+    ¦       ¦   ¦   ¦   fixtures.py
+    ¦       ¦   ¦   ¦   requirements.py
+    ¦       ¦   ¦   ¦   schemacompare.py
+    ¦       ¦   ¦   ¦   util.py
+    ¦       ¦   ¦   ¦   warnings.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---plugin
+    ¦       ¦   ¦   ¦   ¦   bootstrap.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           bootstrap.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---suite
+    ¦       ¦   ¦   ¦   ¦   test_autogen_comments.py
+    ¦       ¦   ¦   ¦   ¦   test_autogen_computed.py
+    ¦       ¦   ¦   ¦   ¦   test_autogen_diffs.py
+    ¦       ¦   ¦   ¦   ¦   test_autogen_fks.py
+    ¦       ¦   ¦   ¦   ¦   test_autogen_identity.py
+    ¦       ¦   ¦   ¦   ¦   test_environment.py
+    ¦       ¦   ¦   ¦   ¦   test_op.py
+    ¦       ¦   ¦   ¦   ¦   _autogen_fixtures.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           test_autogen_comments.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_autogen_computed.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_autogen_diffs.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_autogen_fks.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_autogen_identity.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_environment.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_op.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _autogen_fixtures.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           assertions.cpython-312.pyc
+    ¦       ¦   ¦           env.cpython-312.pyc
+    ¦       ¦   ¦           fixtures.cpython-312.pyc
+    ¦       ¦   ¦           requirements.cpython-312.pyc
+    ¦       ¦   ¦           schemacompare.cpython-312.pyc
+    ¦       ¦   ¦           util.cpython-312.pyc
+    ¦       ¦   ¦           warnings.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---util
+    ¦       ¦   ¦   ¦   compat.py
+    ¦       ¦   ¦   ¦   editor.py
+    ¦       ¦   ¦   ¦   exc.py
+    ¦       ¦   ¦   ¦   langhelpers.py
+    ¦       ¦   ¦   ¦   messaging.py
+    ¦       ¦   ¦   ¦   pyfiles.py
+    ¦       ¦   ¦   ¦   sqla_compat.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           compat.cpython-312.pyc
+    ¦       ¦   ¦           editor.cpython-312.pyc
+    ¦       ¦   ¦           exc.cpython-312.pyc
+    ¦       ¦   ¦           langhelpers.cpython-312.pyc
+    ¦       ¦   ¦           messaging.cpython-312.pyc
+    ¦       ¦   ¦           pyfiles.cpython-312.pyc
+    ¦       ¦   ¦           sqla_compat.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           command.cpython-312.pyc
+    ¦       ¦           config.cpython-312.pyc
+    ¦       ¦           context.cpython-312.pyc
+    ¦       ¦           environment.cpython-312.pyc
+    ¦       ¦           migration.cpython-312.pyc
+    ¦       ¦           op.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           __main__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---alembic-1.18.4.dist-info
+    ¦       ¦   ¦   entry_points.txt
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
     ¦       +---apiclient
     ¦       ¦   ¦   __init__.py
     ¦       ¦   ¦   
@@ -532,6 +696,620 @@ C:.
     ¦       ¦       top_level.txt
     ¦       ¦       WHEEL
     ¦       ¦       
+    ¦       +---azure
+    ¦       ¦   +---core
+    ¦       ¦   ¦   ¦   async_paging.py
+    ¦       ¦   ¦   ¦   configuration.py
+    ¦       ¦   ¦   ¦   credentials.py
+    ¦       ¦   ¦   ¦   credentials_async.py
+    ¦       ¦   ¦   ¦   exceptions.py
+    ¦       ¦   ¦   ¦   instrumentation.py
+    ¦       ¦   ¦   ¦   messaging.py
+    ¦       ¦   ¦   ¦   paging.py
+    ¦       ¦   ¦   ¦   py.typed
+    ¦       ¦   ¦   ¦   serialization.py
+    ¦       ¦   ¦   ¦   settings.py
+    ¦       ¦   ¦   ¦   _azure_clouds.py
+    ¦       ¦   ¦   ¦   _enum_meta.py
+    ¦       ¦   ¦   ¦   _match_conditions.py
+    ¦       ¦   ¦   ¦   _pipeline_client.py
+    ¦       ¦   ¦   ¦   _pipeline_client_async.py
+    ¦       ¦   ¦   ¦   _version.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---pipeline
+    ¦       ¦   ¦   ¦   ¦   _base.py
+    ¦       ¦   ¦   ¦   ¦   _base_async.py
+    ¦       ¦   ¦   ¦   ¦   _tools.py
+    ¦       ¦   ¦   ¦   ¦   _tools_async.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---policies
+    ¦       ¦   ¦   ¦   ¦   ¦   _authentication.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _authentication_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _base.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _base_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _custom_hook.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _distributed_tracing.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _redirect.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _redirect_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _retry.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _retry_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _sensitive_header_cleanup_policy.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _universal.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _utils.py
+    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           _authentication.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _authentication_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _base.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _base_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _custom_hook.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _distributed_tracing.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _redirect.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _redirect_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _retry.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _retry_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _sensitive_header_cleanup_policy.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _universal.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---transport
+    ¦       ¦   ¦   ¦   ¦   ¦   _aiohttp.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _base.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _base_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _base_requests_async.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _bigger_block_size_http_adapters.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _requests_asyncio.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _requests_basic.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _requests_trio.py
+    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           _aiohttp.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _base.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _base_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _base_requests_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _bigger_block_size_http_adapters.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _requests_asyncio.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _requests_basic.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _requests_trio.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           _base.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _base_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _tools.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _tools_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---polling
+    ¦       ¦   ¦   ¦   ¦   async_base_polling.py
+    ¦       ¦   ¦   ¦   ¦   base_polling.py
+    ¦       ¦   ¦   ¦   ¦   _async_poller.py
+    ¦       ¦   ¦   ¦   ¦   _poller.py
+    ¦       ¦   ¦   ¦   ¦   _utils.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           async_base_polling.cpython-312.pyc
+    ¦       ¦   ¦   ¦           base_polling.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _async_poller.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _poller.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---rest
+    ¦       ¦   ¦   ¦   ¦   _aiohttp.py
+    ¦       ¦   ¦   ¦   ¦   _helpers.py
+    ¦       ¦   ¦   ¦   ¦   _http_response_impl.py
+    ¦       ¦   ¦   ¦   ¦   _http_response_impl_async.py
+    ¦       ¦   ¦   ¦   ¦   _requests_asyncio.py
+    ¦       ¦   ¦   ¦   ¦   _requests_basic.py
+    ¦       ¦   ¦   ¦   ¦   _requests_trio.py
+    ¦       ¦   ¦   ¦   ¦   _rest_py3.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           _aiohttp.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _helpers.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _http_response_impl.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _http_response_impl_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _requests_asyncio.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _requests_basic.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _requests_trio.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _rest_py3.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---tracing
+    ¦       ¦   ¦   ¦   ¦   common.py
+    ¦       ¦   ¦   ¦   ¦   decorator.py
+    ¦       ¦   ¦   ¦   ¦   decorator_async.py
+    ¦       ¦   ¦   ¦   ¦   opentelemetry.py
+    ¦       ¦   ¦   ¦   ¦   _abstract_span.py
+    ¦       ¦   ¦   ¦   ¦   _models.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---ext
+    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           common.cpython-312.pyc
+    ¦       ¦   ¦   ¦           decorator.cpython-312.pyc
+    ¦       ¦   ¦   ¦           decorator_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦           opentelemetry.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _abstract_span.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _models.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---utils
+    ¦       ¦   ¦   ¦   ¦   _connection_string_parser.py
+    ¦       ¦   ¦   ¦   ¦   _messaging_shared.py
+    ¦       ¦   ¦   ¦   ¦   _pipeline_transport_rest_shared.py
+    ¦       ¦   ¦   ¦   ¦   _pipeline_transport_rest_shared_async.py
+    ¦       ¦   ¦   ¦   ¦   _utils.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           _connection_string_parser.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _messaging_shared.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _pipeline_transport_rest_shared.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _pipeline_transport_rest_shared_async.cpython-312.pyc
+    ¦       ¦   ¦   ¦           _utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           async_paging.cpython-312.pyc
+    ¦       ¦   ¦           configuration.cpython-312.pyc
+    ¦       ¦   ¦           credentials.cpython-312.pyc
+    ¦       ¦   ¦           credentials_async.cpython-312.pyc
+    ¦       ¦   ¦           exceptions.cpython-312.pyc
+    ¦       ¦   ¦           instrumentation.cpython-312.pyc
+    ¦       ¦   ¦           messaging.cpython-312.pyc
+    ¦       ¦   ¦           paging.cpython-312.pyc
+    ¦       ¦   ¦           serialization.cpython-312.pyc
+    ¦       ¦   ¦           settings.cpython-312.pyc
+    ¦       ¦   ¦           _azure_clouds.cpython-312.pyc
+    ¦       ¦   ¦           _enum_meta.cpython-312.pyc
+    ¦       ¦   ¦           _match_conditions.cpython-312.pyc
+    ¦       ¦   ¦           _pipeline_client.cpython-312.pyc
+    ¦       ¦   ¦           _pipeline_client_async.cpython-312.pyc
+    ¦       ¦   ¦           _version.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---storage
+    ¦       ¦       +---blob
+    ¦       ¦       ¦   ¦   py.typed
+    ¦       ¦       ¦   ¦   _blob_client.py
+    ¦       ¦       ¦   ¦   _blob_client.pyi
+    ¦       ¦       ¦   ¦   _blob_client_helpers.py
+    ¦       ¦       ¦   ¦   _blob_service_client.py
+    ¦       ¦       ¦   ¦   _blob_service_client.pyi
+    ¦       ¦       ¦   ¦   _blob_service_client_helpers.py
+    ¦       ¦       ¦   ¦   _container_client.py
+    ¦       ¦       ¦   ¦   _container_client.pyi
+    ¦       ¦       ¦   ¦   _container_client_helpers.py
+    ¦       ¦       ¦   ¦   _deserialize.py
+    ¦       ¦       ¦   ¦   _download.py
+    ¦       ¦       ¦   ¦   _encryption.py
+    ¦       ¦       ¦   ¦   _lease.py
+    ¦       ¦       ¦   ¦   _lease.pyi
+    ¦       ¦       ¦   ¦   _list_blobs_helper.py
+    ¦       ¦       ¦   ¦   _models.py
+    ¦       ¦       ¦   ¦   _quick_query_helper.py
+    ¦       ¦       ¦   ¦   _serialize.py
+    ¦       ¦       ¦   ¦   _shared_access_signature.py
+    ¦       ¦       ¦   ¦   _upload_helpers.py
+    ¦       ¦       ¦   ¦   _version.py
+    ¦       ¦       ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   
+    ¦       ¦       ¦   +---aio
+    ¦       ¦       ¦   ¦   ¦   _blob_client_async.py
+    ¦       ¦       ¦   ¦   ¦   _blob_client_async.pyi
+    ¦       ¦       ¦   ¦   ¦   _blob_service_client_async.py
+    ¦       ¦       ¦   ¦   ¦   _blob_service_client_async.pyi
+    ¦       ¦       ¦   ¦   ¦   _container_client_async.py
+    ¦       ¦       ¦   ¦   ¦   _container_client_async.pyi
+    ¦       ¦       ¦   ¦   ¦   _download_async.py
+    ¦       ¦       ¦   ¦   ¦   _encryption_async.py
+    ¦       ¦       ¦   ¦   ¦   _lease_async.py
+    ¦       ¦       ¦   ¦   ¦   _lease_async.pyi
+    ¦       ¦       ¦   ¦   ¦   _list_blobs_helper.py
+    ¦       ¦       ¦   ¦   ¦   _models.py
+    ¦       ¦       ¦   ¦   ¦   _quick_query_helper_async.py
+    ¦       ¦       ¦   ¦   ¦   _upload_helpers.py
+    ¦       ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦           _blob_client_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _blob_service_client_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _container_client_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _download_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _encryption_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _lease_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _list_blobs_helper.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _models.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _quick_query_helper_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _upload_helpers.cpython-312.pyc
+    ¦       ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦           
+    ¦       ¦       ¦   +---_generated
+    ¦       ¦       ¦   ¦   ¦   py.typed
+    ¦       ¦       ¦   ¦   ¦   _azure_blob_storage.py
+    ¦       ¦       ¦   ¦   ¦   _configuration.py
+    ¦       ¦       ¦   ¦   ¦   _patch.py
+    ¦       ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   +---aio
+    ¦       ¦       ¦   ¦   ¦   ¦   _azure_blob_storage.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _configuration.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _patch.py
+    ¦       ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   +---operations
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _append_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _block_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _container_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _page_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _patch.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   _service_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦   ¦           _append_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _block_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _container_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _page_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           _service_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦           _azure_blob_storage.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _configuration.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   +---models
+    ¦       ¦       ¦   ¦   ¦   ¦   _azure_blob_storage_enums.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _models_py3.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _patch.py
+    ¦       ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦           _azure_blob_storage_enums.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _models_py3.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   +---operations
+    ¦       ¦       ¦   ¦   ¦   ¦   _append_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _block_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _container_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _page_blob_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _patch.py
+    ¦       ¦       ¦   ¦   ¦   ¦   _service_operations.py
+    ¦       ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦           _append_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _block_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _container_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _page_blob_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           _service_operations.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   +---_utils
+    ¦       ¦       ¦   ¦   ¦   ¦   serialization.py
+    ¦       ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦           serialization.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦           _azure_blob_storage.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _configuration.cpython-312.pyc
+    ¦       ¦       ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦           
+    ¦       ¦       ¦   +---_shared
+    ¦       ¦       ¦   ¦   ¦   authentication.py
+    ¦       ¦       ¦   ¦   ¦   base_client.py
+    ¦       ¦       ¦   ¦   ¦   base_client_async.py
+    ¦       ¦       ¦   ¦   ¦   constants.py
+    ¦       ¦       ¦   ¦   ¦   models.py
+    ¦       ¦       ¦   ¦   ¦   parser.py
+    ¦       ¦       ¦   ¦   ¦   policies.py
+    ¦       ¦       ¦   ¦   ¦   policies_async.py
+    ¦       ¦       ¦   ¦   ¦   request_handlers.py
+    ¦       ¦       ¦   ¦   ¦   response_handlers.py
+    ¦       ¦       ¦   ¦   ¦   shared_access_signature.py
+    ¦       ¦       ¦   ¦   ¦   uploads.py
+    ¦       ¦       ¦   ¦   ¦   uploads_async.py
+    ¦       ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   +---avro
+    ¦       ¦       ¦   ¦   ¦   ¦   avro_io.py
+    ¦       ¦       ¦   ¦   ¦   ¦   avro_io_async.py
+    ¦       ¦       ¦   ¦   ¦   ¦   datafile.py
+    ¦       ¦       ¦   ¦   ¦   ¦   datafile_async.py
+    ¦       ¦       ¦   ¦   ¦   ¦   schema.py
+    ¦       ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦   ¦           avro_io.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           avro_io_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           datafile.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           datafile_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           schema.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦   ¦           
+    ¦       ¦       ¦   ¦   +---__pycache__
+    ¦       ¦       ¦   ¦           authentication.cpython-312.pyc
+    ¦       ¦       ¦   ¦           base_client.cpython-312.pyc
+    ¦       ¦       ¦   ¦           base_client_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           constants.cpython-312.pyc
+    ¦       ¦       ¦   ¦           models.cpython-312.pyc
+    ¦       ¦       ¦   ¦           parser.cpython-312.pyc
+    ¦       ¦       ¦   ¦           policies.cpython-312.pyc
+    ¦       ¦       ¦   ¦           policies_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           request_handlers.cpython-312.pyc
+    ¦       ¦       ¦   ¦           response_handlers.cpython-312.pyc
+    ¦       ¦       ¦   ¦           shared_access_signature.cpython-312.pyc
+    ¦       ¦       ¦   ¦           uploads.cpython-312.pyc
+    ¦       ¦       ¦   ¦           uploads_async.cpython-312.pyc
+    ¦       ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦   ¦           
+    ¦       ¦       ¦   +---__pycache__
+    ¦       ¦       ¦           _blob_client.cpython-312.pyc
+    ¦       ¦       ¦           _blob_client_helpers.cpython-312.pyc
+    ¦       ¦       ¦           _blob_service_client.cpython-312.pyc
+    ¦       ¦       ¦           _blob_service_client_helpers.cpython-312.pyc
+    ¦       ¦       ¦           _container_client.cpython-312.pyc
+    ¦       ¦       ¦           _container_client_helpers.cpython-312.pyc
+    ¦       ¦       ¦           _deserialize.cpython-312.pyc
+    ¦       ¦       ¦           _download.cpython-312.pyc
+    ¦       ¦       ¦           _encryption.cpython-312.pyc
+    ¦       ¦       ¦           _lease.cpython-312.pyc
+    ¦       ¦       ¦           _list_blobs_helper.cpython-312.pyc
+    ¦       ¦       ¦           _models.cpython-312.pyc
+    ¦       ¦       ¦           _quick_query_helper.cpython-312.pyc
+    ¦       ¦       ¦           _serialize.cpython-312.pyc
+    ¦       ¦       ¦           _shared_access_signature.cpython-312.pyc
+    ¦       ¦       ¦           _upload_helpers.cpython-312.pyc
+    ¦       ¦       ¦           _version.cpython-312.pyc
+    ¦       ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦       ¦           
+    ¦       ¦       +---filedatalake
+    ¦       ¦           ¦   py.typed
+    ¦       ¦           ¦   _data_lake_directory_client.py
+    ¦       ¦           ¦   _data_lake_directory_client.pyi
+    ¦       ¦           ¦   _data_lake_file_client.py
+    ¦       ¦           ¦   _data_lake_file_client.pyi
+    ¦       ¦           ¦   _data_lake_file_client_helpers.py
+    ¦       ¦           ¦   _data_lake_lease.py
+    ¦       ¦           ¦   _data_lake_lease.pyi
+    ¦       ¦           ¦   _data_lake_service_client.py
+    ¦       ¦           ¦   _data_lake_service_client.pyi
+    ¦       ¦           ¦   _data_lake_service_client_helpers.py
+    ¦       ¦           ¦   _deserialize.py
+    ¦       ¦           ¦   _download.py
+    ¦       ¦           ¦   _file_system_client.py
+    ¦       ¦           ¦   _file_system_client.pyi
+    ¦       ¦           ¦   _file_system_client_helpers.py
+    ¦       ¦           ¦   _list_paths_helper.py
+    ¦       ¦           ¦   _models.py
+    ¦       ¦           ¦   _path_client.py
+    ¦       ¦           ¦   _path_client.pyi
+    ¦       ¦           ¦   _path_client_helpers.py
+    ¦       ¦           ¦   _quick_query_helper.py
+    ¦       ¦           ¦   _serialize.py
+    ¦       ¦           ¦   _shared_access_signature.py
+    ¦       ¦           ¦   _upload_helper.py
+    ¦       ¦           ¦   _version.py
+    ¦       ¦           ¦   __init__.py
+    ¦       ¦           ¦   
+    ¦       ¦           +---aio
+    ¦       ¦           ¦   ¦   _data_lake_directory_client_async.py
+    ¦       ¦           ¦   ¦   _data_lake_directory_client_async.pyi
+    ¦       ¦           ¦   ¦   _data_lake_file_client_async.py
+    ¦       ¦           ¦   ¦   _data_lake_file_client_async.pyi
+    ¦       ¦           ¦   ¦   _data_lake_lease_async.py
+    ¦       ¦           ¦   ¦   _data_lake_lease_async.pyi
+    ¦       ¦           ¦   ¦   _data_lake_service_client_async.py
+    ¦       ¦           ¦   ¦   _data_lake_service_client_async.pyi
+    ¦       ¦           ¦   ¦   _download_async.py
+    ¦       ¦           ¦   ¦   _file_system_client_async.py
+    ¦       ¦           ¦   ¦   _file_system_client_async.pyi
+    ¦       ¦           ¦   ¦   _list_paths_helper.py
+    ¦       ¦           ¦   ¦   _models.py
+    ¦       ¦           ¦   ¦   _path_client_async.py
+    ¦       ¦           ¦   ¦   _path_client_async.pyi
+    ¦       ¦           ¦   ¦   _upload_helper.py
+    ¦       ¦           ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   
+    ¦       ¦           ¦   +---__pycache__
+    ¦       ¦           ¦           _data_lake_directory_client_async.cpython-312.pyc
+    ¦       ¦           ¦           _data_lake_file_client_async.cpython-312.pyc
+    ¦       ¦           ¦           _data_lake_lease_async.cpython-312.pyc
+    ¦       ¦           ¦           _data_lake_service_client_async.cpython-312.pyc
+    ¦       ¦           ¦           _download_async.cpython-312.pyc
+    ¦       ¦           ¦           _file_system_client_async.cpython-312.pyc
+    ¦       ¦           ¦           _list_paths_helper.cpython-312.pyc
+    ¦       ¦           ¦           _models.cpython-312.pyc
+    ¦       ¦           ¦           _path_client_async.cpython-312.pyc
+    ¦       ¦           ¦           _upload_helper.cpython-312.pyc
+    ¦       ¦           ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦           
+    ¦       ¦           +---_generated
+    ¦       ¦           ¦   ¦   py.typed
+    ¦       ¦           ¦   ¦   _azure_data_lake_storage_restapi.py
+    ¦       ¦           ¦   ¦   _configuration.py
+    ¦       ¦           ¦   ¦   _patch.py
+    ¦       ¦           ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   
+    ¦       ¦           ¦   +---aio
+    ¦       ¦           ¦   ¦   ¦   _azure_data_lake_storage_restapi.py
+    ¦       ¦           ¦   ¦   ¦   _configuration.py
+    ¦       ¦           ¦   ¦   ¦   _patch.py
+    ¦       ¦           ¦   ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   ¦   
+    ¦       ¦           ¦   ¦   +---operations
+    ¦       ¦           ¦   ¦   ¦   ¦   _file_system_operations.py
+    ¦       ¦           ¦   ¦   ¦   ¦   _patch.py
+    ¦       ¦           ¦   ¦   ¦   ¦   _path_operations.py
+    ¦       ¦           ¦   ¦   ¦   ¦   _service_operations.py
+    ¦       ¦           ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   ¦   ¦   
+    ¦       ¦           ¦   ¦   ¦   +---__pycache__
+    ¦       ¦           ¦   ¦   ¦           _file_system_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦           ¦   ¦   ¦           _path_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦   ¦           _service_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦   ¦   ¦           
+    ¦       ¦           ¦   ¦   +---__pycache__
+    ¦       ¦           ¦   ¦           _azure_data_lake_storage_restapi.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _configuration.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦           ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦   ¦           
+    ¦       ¦           ¦   +---models
+    ¦       ¦           ¦   ¦   ¦   _azure_data_lake_storage_restapi_enums.py
+    ¦       ¦           ¦   ¦   ¦   _models_py3.py
+    ¦       ¦           ¦   ¦   ¦   _patch.py
+    ¦       ¦           ¦   ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   ¦   
+    ¦       ¦           ¦   ¦   +---__pycache__
+    ¦       ¦           ¦   ¦           _azure_data_lake_storage_restapi_enums.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _models_py3.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦           ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦   ¦           
+    ¦       ¦           ¦   +---operations
+    ¦       ¦           ¦   ¦   ¦   _file_system_operations.py
+    ¦       ¦           ¦   ¦   ¦   _patch.py
+    ¦       ¦           ¦   ¦   ¦   _path_operations.py
+    ¦       ¦           ¦   ¦   ¦   _service_operations.py
+    ¦       ¦           ¦   ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   ¦   
+    ¦       ¦           ¦   ¦   +---__pycache__
+    ¦       ¦           ¦   ¦           _file_system_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _patch.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _path_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦           _service_operations.cpython-312.pyc
+    ¦       ¦           ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦   ¦           
+    ¦       ¦           ¦   +---_utils
+    ¦       ¦           ¦   ¦   ¦   serialization.py
+    ¦       ¦           ¦   ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   ¦   
+    ¦       ¦           ¦   ¦   +---__pycache__
+    ¦       ¦           ¦   ¦           serialization.cpython-312.pyc
+    ¦       ¦           ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦   ¦           
+    ¦       ¦           ¦   +---__pycache__
+    ¦       ¦           ¦           _azure_data_lake_storage_restapi.cpython-312.pyc
+    ¦       ¦           ¦           _configuration.cpython-312.pyc
+    ¦       ¦           ¦           _patch.cpython-312.pyc
+    ¦       ¦           ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦           
+    ¦       ¦           +---_shared
+    ¦       ¦           ¦   ¦   authentication.py
+    ¦       ¦           ¦   ¦   base_client.py
+    ¦       ¦           ¦   ¦   base_client_async.py
+    ¦       ¦           ¦   ¦   constants.py
+    ¦       ¦           ¦   ¦   models.py
+    ¦       ¦           ¦   ¦   parser.py
+    ¦       ¦           ¦   ¦   policies.py
+    ¦       ¦           ¦   ¦   policies_async.py
+    ¦       ¦           ¦   ¦   request_handlers.py
+    ¦       ¦           ¦   ¦   response_handlers.py
+    ¦       ¦           ¦   ¦   shared_access_signature.py
+    ¦       ¦           ¦   ¦   uploads.py
+    ¦       ¦           ¦   ¦   uploads_async.py
+    ¦       ¦           ¦   ¦   __init__.py
+    ¦       ¦           ¦   ¦   
+    ¦       ¦           ¦   +---__pycache__
+    ¦       ¦           ¦           authentication.cpython-312.pyc
+    ¦       ¦           ¦           base_client.cpython-312.pyc
+    ¦       ¦           ¦           base_client_async.cpython-312.pyc
+    ¦       ¦           ¦           constants.cpython-312.pyc
+    ¦       ¦           ¦           models.cpython-312.pyc
+    ¦       ¦           ¦           parser.cpython-312.pyc
+    ¦       ¦           ¦           policies.cpython-312.pyc
+    ¦       ¦           ¦           policies_async.cpython-312.pyc
+    ¦       ¦           ¦           request_handlers.cpython-312.pyc
+    ¦       ¦           ¦           response_handlers.cpython-312.pyc
+    ¦       ¦           ¦           shared_access_signature.cpython-312.pyc
+    ¦       ¦           ¦           uploads.cpython-312.pyc
+    ¦       ¦           ¦           uploads_async.cpython-312.pyc
+    ¦       ¦           ¦           __init__.cpython-312.pyc
+    ¦       ¦           ¦           
+    ¦       ¦           +---__pycache__
+    ¦       ¦                   _data_lake_directory_client.cpython-312.pyc
+    ¦       ¦                   _data_lake_file_client.cpython-312.pyc
+    ¦       ¦                   _data_lake_file_client_helpers.cpython-312.pyc
+    ¦       ¦                   _data_lake_lease.cpython-312.pyc
+    ¦       ¦                   _data_lake_service_client.cpython-312.pyc
+    ¦       ¦                   _data_lake_service_client_helpers.cpython-312.pyc
+    ¦       ¦                   _deserialize.cpython-312.pyc
+    ¦       ¦                   _download.cpython-312.pyc
+    ¦       ¦                   _file_system_client.cpython-312.pyc
+    ¦       ¦                   _file_system_client_helpers.cpython-312.pyc
+    ¦       ¦                   _list_paths_helper.cpython-312.pyc
+    ¦       ¦                   _models.cpython-312.pyc
+    ¦       ¦                   _path_client.cpython-312.pyc
+    ¦       ¦                   _path_client_helpers.cpython-312.pyc
+    ¦       ¦                   _quick_query_helper.cpython-312.pyc
+    ¦       ¦                   _serialize.cpython-312.pyc
+    ¦       ¦                   _shared_access_signature.cpython-312.pyc
+    ¦       ¦                   _upload_helper.cpython-312.pyc
+    ¦       ¦                   _version.cpython-312.pyc
+    ¦       ¦                   __init__.cpython-312.pyc
+    ¦       ¦                   
+    ¦       +---azure_core-1.38.2.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
+    ¦       +---azure_storage_blob-12.28.0.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
+    ¦       +---azure_storage_file_datalake-12.23.0.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
     ¦       +---beautifulsoup4-4.14.3.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -4796,6 +5574,205 @@ C:.
     ¦       ¦           LICENSE.APACHE
     ¦       ¦           LICENSE.BSD
     ¦       ¦           
+    ¦       +---databricks
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---sql
+    ¦       ¦   ¦   ¦   client.py
+    ¦       ¦   ¦   ¦   exc.py
+    ¦       ¦   ¦   ¦   py.typed
+    ¦       ¦   ¦   ¦   result_set.py
+    ¦       ¦   ¦   ¦   session.py
+    ¦       ¦   ¦   ¦   types.py
+    ¦       ¦   ¦   ¦   utils.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---auth
+    ¦       ¦   ¦   ¦   ¦   auth.py
+    ¦       ¦   ¦   ¦   ¦   authenticators.py
+    ¦       ¦   ¦   ¦   ¦   auth_utils.py
+    ¦       ¦   ¦   ¦   ¦   common.py
+    ¦       ¦   ¦   ¦   ¦   endpoint.py
+    ¦       ¦   ¦   ¦   ¦   oauth.py
+    ¦       ¦   ¦   ¦   ¦   oauth_http_handler.py
+    ¦       ¦   ¦   ¦   ¦   retry.py
+    ¦       ¦   ¦   ¦   ¦   thrift_http_client.py
+    ¦       ¦   ¦   ¦   ¦   token_federation.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           auth.cpython-312.pyc
+    ¦       ¦   ¦   ¦           authenticators.cpython-312.pyc
+    ¦       ¦   ¦   ¦           auth_utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           common.cpython-312.pyc
+    ¦       ¦   ¦   ¦           endpoint.cpython-312.pyc
+    ¦       ¦   ¦   ¦           oauth.cpython-312.pyc
+    ¦       ¦   ¦   ¦           oauth_http_handler.cpython-312.pyc
+    ¦       ¦   ¦   ¦           retry.cpython-312.pyc
+    ¦       ¦   ¦   ¦           thrift_http_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦           token_federation.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---backend
+    ¦       ¦   ¦   ¦   ¦   databricks_client.py
+    ¦       ¦   ¦   ¦   ¦   thrift_backend.py
+    ¦       ¦   ¦   ¦   ¦   types.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---sea
+    ¦       ¦   ¦   ¦   ¦   ¦   backend.py
+    ¦       ¦   ¦   ¦   ¦   ¦   queue.py
+    ¦       ¦   ¦   ¦   ¦   ¦   result_set.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---models
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   base.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   requests.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   responses.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦   ¦           base.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           requests.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           responses.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   ¦   +---utils
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   constants.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   conversion.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   filters.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   http_client.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   normalize.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦   ¦           constants.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           conversion.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           filters.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           http_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           normalize.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           backend.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           queue.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           result_set.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---utils
+    ¦       ¦   ¦   ¦   ¦   ¦   guid_utils.py
+    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           guid_utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           databricks_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦           thrift_backend.cpython-312.pyc
+    ¦       ¦   ¦   ¦           types.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---cloudfetch
+    ¦       ¦   ¦   ¦   ¦   downloader.py
+    ¦       ¦   ¦   ¦   ¦   download_manager.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           downloader.cpython-312.pyc
+    ¦       ¦   ¦   ¦           download_manager.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---common
+    ¦       ¦   ¦   ¦   ¦   feature_flag.py
+    ¦       ¦   ¦   ¦   ¦   http.py
+    ¦       ¦   ¦   ¦   ¦   http_utils.py
+    ¦       ¦   ¦   ¦   ¦   unified_http_client.py
+    ¦       ¦   ¦   ¦   ¦   url_utils.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           feature_flag.cpython-312.pyc
+    ¦       ¦   ¦   ¦           http.cpython-312.pyc
+    ¦       ¦   ¦   ¦           http_utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           unified_http_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦           url_utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---experimental
+    ¦       ¦   ¦   ¦   ¦   oauth_persistence.py
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           oauth_persistence.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---parameters
+    ¦       ¦   ¦   ¦   ¦   native.py
+    ¦       ¦   ¦   ¦   ¦   py.typed
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           native.cpython-312.pyc
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---telemetry
+    ¦       ¦   ¦   ¦   ¦   circuit_breaker_manager.py
+    ¦       ¦   ¦   ¦   ¦   latency_logger.py
+    ¦       ¦   ¦   ¦   ¦   telemetry_client.py
+    ¦       ¦   ¦   ¦   ¦   telemetry_push_client.py
+    ¦       ¦   ¦   ¦   ¦   utils.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---models
+    ¦       ¦   ¦   ¦   ¦   ¦   endpoint_models.py
+    ¦       ¦   ¦   ¦   ¦   ¦   enums.py
+    ¦       ¦   ¦   ¦   ¦   ¦   event.py
+    ¦       ¦   ¦   ¦   ¦   ¦   frontend_logs.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           endpoint_models.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           enums.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           event.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           frontend_logs.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           circuit_breaker_manager.cpython-312.pyc
+    ¦       ¦   ¦   ¦           latency_logger.cpython-312.pyc
+    ¦       ¦   ¦   ¦           telemetry_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦           telemetry_push_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦           utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---thrift_api
+    ¦       ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---TCLIService
+    ¦       ¦   ¦   ¦   ¦   ¦   constants.py
+    ¦       ¦   ¦   ¦   ¦   ¦   TCLIService-remote
+    ¦       ¦   ¦   ¦   ¦   ¦   TCLIService.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ttypes.py
+    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           constants.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           TCLIService.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           ttypes.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦   ¦           
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           client.cpython-312.pyc
+    ¦       ¦   ¦           exc.cpython-312.pyc
+    ¦       ¦   ¦           result_set.cpython-312.pyc
+    ¦       ¦   ¦           session.cpython-312.pyc
+    ¦       ¦   ¦           types.cpython-312.pyc
+    ¦       ¦   ¦           utils.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---databricks_sql_connector-4.2.5.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
     ¦       +---dateutil
     ¦       ¦   ¦   easter.py
     ¦       ¦   ¦   relativedelta.py
@@ -7567,6 +8544,40 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE.md
     ¦       ¦           
+    ¦       +---isodate
+    ¦       ¦   ¦   duration.py
+    ¦       ¦   ¦   isodates.py
+    ¦       ¦   ¦   isodatetime.py
+    ¦       ¦   ¦   isoduration.py
+    ¦       ¦   ¦   isoerror.py
+    ¦       ¦   ¦   isostrf.py
+    ¦       ¦   ¦   isotime.py
+    ¦       ¦   ¦   isotzinfo.py
+    ¦       ¦   ¦   tzinfo.py
+    ¦       ¦   ¦   version.py
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---__pycache__
+    ¦       ¦           duration.cpython-312.pyc
+    ¦       ¦           isodates.cpython-312.pyc
+    ¦       ¦           isodatetime.cpython-312.pyc
+    ¦       ¦           isoduration.cpython-312.pyc
+    ¦       ¦           isoerror.cpython-312.pyc
+    ¦       ¦           isostrf.cpython-312.pyc
+    ¦       ¦           isotime.cpython-312.pyc
+    ¦       ¦           isotzinfo.cpython-312.pyc
+    ¦       ¦           tzinfo.cpython-312.pyc
+    ¦       ¦           version.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---isodate-0.7.2.dist-info
+    ¦       ¦       INSTALLER
+    ¦       ¦       LICENSE
+    ¦       ¦       METADATA
+    ¦       ¦       RECORD
+    ¦       ¦       top_level.txt
+    ¦       ¦       WHEEL
+    ¦       ¦       
     ¦       +---itsdangerous
     ¦       ¦   ¦   encoding.py
     ¦       ¦   ¦   exc.py
@@ -7991,6 +9002,95 @@ C:.
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
     ¦       +---lz4-4.4.5.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
+    ¦       +---mako
+    ¦       ¦   ¦   ast.py
+    ¦       ¦   ¦   cache.py
+    ¦       ¦   ¦   cmd.py
+    ¦       ¦   ¦   codegen.py
+    ¦       ¦   ¦   compat.py
+    ¦       ¦   ¦   exceptions.py
+    ¦       ¦   ¦   filters.py
+    ¦       ¦   ¦   lexer.py
+    ¦       ¦   ¦   lookup.py
+    ¦       ¦   ¦   parsetree.py
+    ¦       ¦   ¦   pygen.py
+    ¦       ¦   ¦   pyparser.py
+    ¦       ¦   ¦   runtime.py
+    ¦       ¦   ¦   template.py
+    ¦       ¦   ¦   util.py
+    ¦       ¦   ¦   _ast_util.py
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---ext
+    ¦       ¦   ¦   ¦   autohandler.py
+    ¦       ¦   ¦   ¦   babelplugin.py
+    ¦       ¦   ¦   ¦   beaker_cache.py
+    ¦       ¦   ¦   ¦   extract.py
+    ¦       ¦   ¦   ¦   linguaplugin.py
+    ¦       ¦   ¦   ¦   preprocessors.py
+    ¦       ¦   ¦   ¦   pygmentplugin.py
+    ¦       ¦   ¦   ¦   turbogears.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           autohandler.cpython-312.pyc
+    ¦       ¦   ¦           babelplugin.cpython-312.pyc
+    ¦       ¦   ¦           beaker_cache.cpython-312.pyc
+    ¦       ¦   ¦           extract.cpython-312.pyc
+    ¦       ¦   ¦           linguaplugin.cpython-312.pyc
+    ¦       ¦   ¦           preprocessors.cpython-312.pyc
+    ¦       ¦   ¦           pygmentplugin.cpython-312.pyc
+    ¦       ¦   ¦           turbogears.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---testing
+    ¦       ¦   ¦   ¦   assertions.py
+    ¦       ¦   ¦   ¦   config.py
+    ¦       ¦   ¦   ¦   exclusions.py
+    ¦       ¦   ¦   ¦   fixtures.py
+    ¦       ¦   ¦   ¦   helpers.py
+    ¦       ¦   ¦   ¦   _config.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           assertions.cpython-312.pyc
+    ¦       ¦   ¦           config.cpython-312.pyc
+    ¦       ¦   ¦           exclusions.cpython-312.pyc
+    ¦       ¦   ¦           fixtures.cpython-312.pyc
+    ¦       ¦   ¦           helpers.cpython-312.pyc
+    ¦       ¦   ¦           _config.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           ast.cpython-312.pyc
+    ¦       ¦           cache.cpython-312.pyc
+    ¦       ¦           cmd.cpython-312.pyc
+    ¦       ¦           codegen.cpython-312.pyc
+    ¦       ¦           compat.cpython-312.pyc
+    ¦       ¦           exceptions.cpython-312.pyc
+    ¦       ¦           filters.cpython-312.pyc
+    ¦       ¦           lexer.cpython-312.pyc
+    ¦       ¦           lookup.cpython-312.pyc
+    ¦       ¦           parsetree.cpython-312.pyc
+    ¦       ¦           pygen.cpython-312.pyc
+    ¦       ¦           pyparser.cpython-312.pyc
+    ¦       ¦           runtime.cpython-312.pyc
+    ¦       ¦           template.cpython-312.pyc
+    ¦       ¦           util.cpython-312.pyc
+    ¦       ¦           _ast_util.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---mako-1.3.10.dist-info
+    ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -10710,15 +11810,8 @@ C:.
     ¦       ¦   ¦   __init__.py
     ¦       ¦   ¦   
     ¦       ¦   +---api
-    ¦       ¦   ¦   ¦   internals.py
     ¦       ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---executors
-    ¦       ¦   ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---extensions
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
@@ -10744,15 +11837,12 @@ C:.
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---typing
-    ¦       ¦   ¦   ¦   ¦   aliases.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           aliases.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           internals.cpython-312.pyc
     ¦       ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦           
     ¦       ¦   +---arrays
@@ -10762,6 +11852,7 @@ C:.
     ¦       ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦           
     ¦       ¦   +---compat
+    ¦       ¦   ¦   ¦   compressors.py
     ¦       ¦   ¦   ¦   pickle_compat.py
     ¦       ¦   ¦   ¦   pyarrow.py
     ¦       ¦   ¦   ¦   _constants.py
@@ -10777,6 +11868,7 @@ C:.
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           compressors.cpython-312.pyc
     ¦       ¦   ¦           pickle_compat.cpython-312.pyc
     ¦       ¦   ¦           pyarrow.cpython-312.pyc
     ¦       ¦   ¦           _constants.cpython-312.pyc
@@ -10790,7 +11882,6 @@ C:.
     ¦       ¦   ¦   ¦   apply.py
     ¦       ¦   ¦   ¦   arraylike.py
     ¦       ¦   ¦   ¦   base.py
-    ¦       ¦   ¦   ¦   col.py
     ¦       ¦   ¦   ¦   common.py
     ¦       ¦   ¦   ¦   config_init.py
     ¦       ¦   ¦   ¦   construction.py
@@ -11040,6 +12131,8 @@ C:.
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---internals
     ¦       ¦   ¦   ¦   ¦   api.py
+    ¦       ¦   ¦   ¦   ¦   array_manager.py
+    ¦       ¦   ¦   ¦   ¦   base.py
     ¦       ¦   ¦   ¦   ¦   blocks.py
     ¦       ¦   ¦   ¦   ¦   concat.py
     ¦       ¦   ¦   ¦   ¦   construction.py
@@ -11049,6 +12142,8 @@ C:.
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           api.cpython-312.pyc
+    ¦       ¦   ¦   ¦           array_manager.cpython-312.pyc
+    ¦       ¦   ¦   ¦           base.cpython-312.pyc
     ¦       ¦   ¦   ¦           blocks.cpython-312.pyc
     ¦       ¦   ¦   ¦           concat.cpython-312.pyc
     ¦       ¦   ¦   ¦           construction.cpython-312.pyc
@@ -11097,6 +12192,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   pivot.py
     ¦       ¦   ¦   ¦   ¦   reshape.py
     ¦       ¦   ¦   ¦   ¦   tile.py
+    ¦       ¦   ¦   ¦   ¦   util.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
@@ -11108,6 +12204,7 @@ C:.
     ¦       ¦   ¦   ¦           pivot.cpython-312.pyc
     ¦       ¦   ¦   ¦           reshape.cpython-312.pyc
     ¦       ¦   ¦   ¦           tile.cpython-312.pyc
+    ¦       ¦   ¦   ¦           util.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---sparse
@@ -11120,11 +12217,13 @@ C:.
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---strings
     ¦       ¦   ¦   ¦   ¦   accessor.py
+    ¦       ¦   ¦   ¦   ¦   base.py
     ¦       ¦   ¦   ¦   ¦   object_array.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           accessor.cpython-312.pyc
+    ¦       ¦   ¦   ¦           base.cpython-312.pyc
     ¦       ¦   ¦   ¦           object_array.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
@@ -11205,7 +12304,6 @@ C:.
     ¦       ¦   ¦           apply.cpython-312.pyc
     ¦       ¦   ¦           arraylike.cpython-312.pyc
     ¦       ¦   ¦           base.cpython-312.pyc
-    ¦       ¦   ¦           col.cpython-312.pyc
     ¦       ¦   ¦           common.cpython-312.pyc
     ¦       ¦   ¦           config_init.cpython-312.pyc
     ¦       ¦   ¦           construction.cpython-312.pyc
@@ -11224,11 +12322,9 @@ C:.
     ¦       ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦           
     ¦       ¦   +---errors
-    ¦       ¦   ¦   ¦   cow.py
     ¦       ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   
     ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           cow.cpython-312.pyc
     ¦       ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦           
     ¦       ¦   +---io
@@ -11236,8 +12332,8 @@ C:.
     ¦       ¦   ¦   ¦   clipboards.py
     ¦       ¦   ¦   ¦   common.py
     ¦       ¦   ¦   ¦   feather_format.py
+    ¦       ¦   ¦   ¦   gbq.py
     ¦       ¦   ¦   ¦   html.py
-    ¦       ¦   ¦   ¦   iceberg.py
     ¦       ¦   ¦   ¦   orc.py
     ¦       ¦   ¦   ¦   parquet.py
     ¦       ¦   ¦   ¦   pickle.py
@@ -11303,7 +12399,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦       latex_longtable.tpl
     ¦       ¦   ¦   ¦   ¦       latex_table.tpl
     ¦       ¦   ¦   ¦   ¦       string.tpl
-    ¦       ¦   ¦   ¦   ¦       typst.tpl
     ¦       ¦   ¦   ¦   ¦       
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           console.cpython-312.pyc
@@ -11368,8 +12463,8 @@ C:.
     ¦       ¦   ¦           clipboards.cpython-312.pyc
     ¦       ¦   ¦           common.cpython-312.pyc
     ¦       ¦   ¦           feather_format.cpython-312.pyc
+    ¦       ¦   ¦           gbq.cpython-312.pyc
     ¦       ¦   ¦           html.cpython-312.pyc
-    ¦       ¦   ¦           iceberg.cpython-312.pyc
     ¦       ¦   ¦           orc.cpython-312.pyc
     ¦       ¦   ¦           parquet.cpython-312.pyc
     ¦       ¦   ¦           pickle.cpython-312.pyc
@@ -11418,7 +12513,6 @@ C:.
     ¦       ¦   +---tests
     ¦       ¦   ¦   ¦   test_aggregation.py
     ¦       ¦   ¦   ¦   test_algos.py
-    ¦       ¦   ¦   ¦   test_col.py
     ¦       ¦   ¦   ¦   test_common.py
     ¦       ¦   ¦   ¦   test_downstream.py
     ¦       ¦   ¦   ¦   test_errors.py
@@ -11444,7 +12538,6 @@ C:.
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---apply
     ¦       ¦   ¦   ¦   ¦   common.py
-    ¦       ¦   ¦   ¦   ¦   conftest.py
     ¦       ¦   ¦   ¦   ¦   test_frame_apply.py
     ¦       ¦   ¦   ¦   ¦   test_frame_apply_relabeling.py
     ¦       ¦   ¦   ¦   ¦   test_frame_transform.py
@@ -11458,7 +12551,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           common.cpython-312.pyc
-    ¦       ¦   ¦   ¦           conftest.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_frame_apply.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_frame_apply_relabeling.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_frame_transform.cpython-312.pyc
@@ -11474,14 +12566,12 @@ C:.
     ¦       ¦   ¦   ¦   ¦   common.py
     ¦       ¦   ¦   ¦   ¦   conftest.py
     ¦       ¦   ¦   ¦   ¦   test_array_ops.py
-    ¦       ¦   ¦   ¦   ¦   test_bool.py
     ¦       ¦   ¦   ¦   ¦   test_categorical.py
     ¦       ¦   ¦   ¦   ¦   test_datetime64.py
     ¦       ¦   ¦   ¦   ¦   test_interval.py
     ¦       ¦   ¦   ¦   ¦   test_numeric.py
     ¦       ¦   ¦   ¦   ¦   test_object.py
     ¦       ¦   ¦   ¦   ¦   test_period.py
-    ¦       ¦   ¦   ¦   ¦   test_string.py
     ¦       ¦   ¦   ¦   ¦   test_timedelta64.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
@@ -11489,14 +12579,12 @@ C:.
     ¦       ¦   ¦   ¦           common.cpython-312.pyc
     ¦       ¦   ¦   ¦           conftest.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_array_ops.cpython-312.pyc
-    ¦       ¦   ¦   ¦           test_bool.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_categorical.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_datetime64.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_interval.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_numeric.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_object.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_period.cpython-312.pyc
-    ¦       ¦   ¦   ¦           test_string.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_timedelta64.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
@@ -11810,7 +12898,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   test_chained_assignment_deprecation.py
     ¦       ¦   ¦   ¦   ¦   test_clip.py
     ¦       ¦   ¦   ¦   ¦   test_constructors.py
-    ¦       ¦   ¦   ¦   ¦   test_copy_deprecation.py
     ¦       ¦   ¦   ¦   ¦   test_core_functionalities.py
     ¦       ¦   ¦   ¦   ¦   test_functions.py
     ¦       ¦   ¦   ¦   ¦   test_indexing.py
@@ -11826,7 +12913,6 @@ C:.
     ¦       ¦   ¦   ¦   +---index
     ¦       ¦   ¦   ¦   ¦   ¦   test_datetimeindex.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_index.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_intervalindex.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_periodindex.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_timedeltaindex.py
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
@@ -11834,7 +12920,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦   ¦           test_datetimeindex.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_index.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_intervalindex.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_periodindex.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_timedeltaindex.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
@@ -11845,7 +12930,6 @@ C:.
     ¦       ¦   ¦   ¦           test_chained_assignment_deprecation.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_clip.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_constructors.cpython-312.pyc
-    ¦       ¦   ¦   ¦           test_copy_deprecation.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_core_functionalities.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_functions.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_indexing.cpython-312.pyc
@@ -11868,7 +12952,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---cast
-    ¦       ¦   ¦   ¦   ¦   ¦   test_box_unbox.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_can_hold_element.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_construct_from_scalar.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_construct_ndarray.py
@@ -11878,11 +12961,11 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_find_common_type.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_infer_datetimelike.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_infer_dtype.py
+    ¦       ¦   ¦   ¦   ¦   ¦   test_maybe_box_native.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_promote.py
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦   ¦           test_box_unbox.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_can_hold_element.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_construct_from_scalar.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_construct_ndarray.cpython-312.pyc
@@ -11892,6 +12975,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_find_common_type.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_infer_datetimelike.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_infer_dtype.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           test_maybe_box_native.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_promote.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           
@@ -12120,6 +13204,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_explode.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_fillna.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_filter.py
+    ¦       ¦   ¦   ¦   ¦   ¦   test_first_and_last.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_first_valid_index.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_get_numeric_data.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_head_tail.py
@@ -12155,6 +13240,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_size.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_sort_index.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_sort_values.py
+    ¦       ¦   ¦   ¦   ¦   ¦   test_swapaxes.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_swaplevel.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_to_csv.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_to_dict.py
@@ -12202,6 +13288,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_explode.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_fillna.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_filter.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           test_first_and_last.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_first_valid_index.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_get_numeric_data.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_head_tail.cpython-312.pyc
@@ -12237,6 +13324,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_size.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_sort_index.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_sort_values.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           test_swapaxes.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_swaplevel.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_to_csv.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_to_dict.cpython-312.pyc
@@ -12303,6 +13391,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   test_all_methods.py
     ¦       ¦   ¦   ¦   ¦   test_api.py
     ¦       ¦   ¦   ¦   ¦   test_apply.py
+    ¦       ¦   ¦   ¦   ¦   test_apply_mutate.py
     ¦       ¦   ¦   ¦   ¦   test_bin_groupby.py
     ¦       ¦   ¦   ¦   ¦   test_categorical.py
     ¦       ¦   ¦   ¦   ¦   test_counting.py
@@ -12339,10 +13428,10 @@ C:.
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---methods
+    ¦       ¦   ¦   ¦   ¦   ¦   test_corrwith.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_describe.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_groupby_shift_diff.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_is_monotonic.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_kurt.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_nlargest_nsmallest.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_nth.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_quantile.py
@@ -12354,10 +13443,10 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           test_corrwith.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_describe.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_groupby_shift_diff.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_is_monotonic.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_kurt.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_nlargest_nsmallest.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_nth.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_quantile.cpython-312.pyc
@@ -12383,6 +13472,7 @@ C:.
     ¦       ¦   ¦   ¦           test_all_methods.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_api.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_apply.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_apply_mutate.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_bin_groupby.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_categorical.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_counting.cpython-312.pyc
@@ -12635,7 +13725,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_setops.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_sorting.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_take.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_util.py
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
@@ -12667,7 +13756,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_setops.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_sorting.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_take.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_util.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---numeric
@@ -12852,6 +13940,7 @@ C:.
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---indexing
     ¦       ¦   ¦   ¦   ¦   common.py
+    ¦       ¦   ¦   ¦   ¦   conftest.py
     ¦       ¦   ¦   ¦   ¦   test_at.py
     ¦       ¦   ¦   ¦   ¦   test_categorical.py
     ¦       ¦   ¦   ¦   ¦   test_chaining_and_caching.py
@@ -12909,6 +13998,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           common.cpython-312.pyc
+    ¦       ¦   ¦   ¦           conftest.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_at.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_categorical.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_chaining_and_caching.cpython-312.pyc
@@ -12941,11 +14031,13 @@ C:.
     ¦       ¦   ¦   +---internals
     ¦       ¦   ¦   ¦   ¦   test_api.py
     ¦       ¦   ¦   ¦   ¦   test_internals.py
+    ¦       ¦   ¦   ¦   ¦   test_managers.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           test_api.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_internals.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_managers.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---io
@@ -12956,10 +14048,10 @@ C:.
     ¦       ¦   ¦   ¦   ¦   test_compression.py
     ¦       ¦   ¦   ¦   ¦   test_feather.py
     ¦       ¦   ¦   ¦   ¦   test_fsspec.py
+    ¦       ¦   ¦   ¦   ¦   test_gbq.py
     ¦       ¦   ¦   ¦   ¦   test_gcs.py
     ¦       ¦   ¦   ¦   ¦   test_html.py
     ¦       ¦   ¦   ¦   ¦   test_http_headers.py
-    ¦       ¦   ¦   ¦   ¦   test_iceberg.py
     ¦       ¦   ¦   ¦   ¦   test_orc.py
     ¦       ¦   ¦   ¦   ¦   test_parquet.py
     ¦       ¦   ¦   ¦   ¦   test_pickle.py
@@ -13018,7 +14110,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_tooltip.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_to_latex.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_to_string.py
-    ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_to_typst.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   ¦   +---__pycache__
@@ -13033,7 +14124,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦           test_tooltip.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           test_to_latex.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           test_to_string.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦   ¦           test_to_typst.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
@@ -13112,6 +14202,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_ints.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_iterator.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_read_errors.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   test_verbose.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   ¦   +---__pycache__
@@ -13126,6 +14217,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦           test_ints.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           test_iterator.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           test_read_errors.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           test_verbose.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   ¦   +---dtypes
@@ -13257,10 +14349,10 @@ C:.
     ¦       ¦   ¦   ¦           test_compression.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_feather.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_fsspec.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_gbq.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_gcs.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_html.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_http_headers.cpython-312.pyc
-    ¦       ¦   ¦   ¦           test_iceberg.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_orc.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_parquet.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_pickle.cpython-312.pyc
@@ -13374,9 +14466,11 @@ C:.
     ¦       ¦   ¦   ¦   ¦   test_pivot_multilevel.py
     ¦       ¦   ¦   ¦   ¦   test_qcut.py
     ¦       ¦   ¦   ¦   ¦   test_union_categoricals.py
+    ¦       ¦   ¦   ¦   ¦   test_util.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---concat
+    ¦       ¦   ¦   ¦   ¦   ¦   conftest.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_append.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_append_common.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_categorical.py
@@ -13391,6 +14485,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           conftest.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_append.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_append_common.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_categorical.cpython-312.pyc
@@ -13407,7 +14502,6 @@ C:.
     ¦       ¦   ¦   ¦   +---merge
     ¦       ¦   ¦   ¦   ¦   ¦   test_join.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_merge.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_merge_antijoin.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_merge_asof.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_merge_cross.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_merge_index_as_string.py
@@ -13418,7 +14512,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦   ¦           test_join.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_merge.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_merge_antijoin.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_merge_asof.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_merge_cross.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_merge_index_as_string.cpython-312.pyc
@@ -13436,6 +14529,7 @@ C:.
     ¦       ¦   ¦   ¦           test_pivot_multilevel.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_qcut.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_union_categoricals.cpython-312.pyc
+    ¦       ¦   ¦   ¦           test_util.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---scalar
@@ -13547,7 +14641,6 @@ C:.
     ¦       ¦   ¦   +---series
     ¦       ¦   ¦   ¦   ¦   test_api.py
     ¦       ¦   ¦   ¦   ¦   test_arithmetic.py
-    ¦       ¦   ¦   ¦   ¦   test_arrow_interface.py
     ¦       ¦   ¦   ¦   ¦   test_constructors.py
     ¦       ¦   ¦   ¦   ¦   test_cumulative.py
     ¦       ¦   ¦   ¦   ¦   test_formats.py
@@ -13678,6 +14771,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_update.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_values.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_value_counts.py
+    ¦       ¦   ¦   ¦   ¦   ¦   test_view.py
     ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
@@ -13750,12 +14844,12 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_update.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_values.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_value_counts.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           test_view.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           test_api.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_arithmetic.cpython-312.pyc
-    ¦       ¦   ¦   ¦           test_arrow_interface.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_constructors.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_cumulative.cpython-312.pyc
     ¦       ¦   ¦   ¦           test_formats.cpython-312.pyc
@@ -13842,7 +14936,6 @@ C:.
     ¦       ¦   ¦   ¦   +---offsets
     ¦       ¦   ¦   ¦   ¦   ¦   common.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_business_day.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_business_halfyear.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_business_hour.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_business_month.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_business_quarter.py
@@ -13854,7 +14947,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   ¦   test_dst.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_easter.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_fiscal.py
-    ¦       ¦   ¦   ¦   ¦   ¦   test_halfyear.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_index.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_month.py
     ¦       ¦   ¦   ¦   ¦   ¦   test_offsets.py
@@ -13868,7 +14960,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦   ¦           common.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_business_day.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_business_halfyear.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_business_hour.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_business_month.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_business_quarter.cpython-312.pyc
@@ -13880,7 +14971,6 @@ C:.
     ¦       ¦   ¦   ¦   ¦           test_dst.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_easter.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_fiscal.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           test_halfyear.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_index.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_month.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           test_offsets.cpython-312.pyc
@@ -14051,7 +15141,6 @@ C:.
     ¦       ¦   ¦   +---__pycache__
     ¦       ¦   ¦           test_aggregation.cpython-312.pyc
     ¦       ¦   ¦           test_algos.cpython-312.pyc
-    ¦       ¦   ¦           test_col.cpython-312.pyc
     ¦       ¦   ¦           test_common.cpython-312.pyc
     ¦       ¦   ¦           test_downstream.cpython-312.pyc
     ¦       ¦   ¦           test_errors.cpython-312.pyc
@@ -14196,8 +15285,6 @@ C:.
     ¦       ¦   ¦   ¦   writers.cp312-win_amd64.lib
     ¦       ¦   ¦   ¦   writers.cp312-win_amd64.pyd
     ¦       ¦   ¦   ¦   writers.pyi
-    ¦       ¦   ¦   ¦   _cyutility.cp312-win_amd64.lib
-    ¦       ¦   ¦   ¦   _cyutility.cp312-win_amd64.pyd
     ¦       ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   
     ¦       ¦   ¦   +---tslibs
@@ -14294,14 +15381,13 @@ C:.
     ¦       ¦           _version_meson.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---pandas-3.0.0.dist-info
+    ¦       +---pandas-2.3.3.dist-info
     ¦       ¦       DELVEWHEEL
     ¦       ¦       entry_points.txt
     ¦       ¦       INSTALLER
     ¦       ¦       LICENSE
     ¦       ¦       METADATA
     ¦       ¦       RECORD
-    ¦       ¦       REQUESTED
     ¦       ¦       WHEEL
     ¦       ¦       
     ¦       +---pandas.libs
@@ -17009,6 +18095,22 @@ C:.
     ¦       ¦   ¦   
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE.txt
+    ¦       ¦           
+    ¦       +---pybreaker
+    ¦       ¦   ¦   py.typed
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---__pycache__
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---pybreaker-1.4.1.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
     ¦       ¦           
     ¦       +---pycparser
     ¦       ¦   ¦   ast_transforms.py
@@ -20252,6 +21354,123 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE
     ¦       ¦           
+    ¦       +---thrift
+    ¦       ¦   ¦   compat.py
+    ¦       ¦   ¦   Thrift.py
+    ¦       ¦   ¦   TMultiplexedProcessor.py
+    ¦       ¦   ¦   TRecursive.py
+    ¦       ¦   ¦   TSCons.py
+    ¦       ¦   ¦   TSerialization.py
+    ¦       ¦   ¦   TTornado.py
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---protocol
+    ¦       ¦   ¦   ¦   fastbinary.cp312-win_amd64.pyd
+    ¦       ¦   ¦   ¦   TBase.py
+    ¦       ¦   ¦   ¦   TBinaryProtocol.py
+    ¦       ¦   ¦   ¦   TCompactProtocol.py
+    ¦       ¦   ¦   ¦   THeaderProtocol.py
+    ¦       ¦   ¦   ¦   TJSONProtocol.py
+    ¦       ¦   ¦   ¦   TMultiplexedProtocol.py
+    ¦       ¦   ¦   ¦   TProtocol.py
+    ¦       ¦   ¦   ¦   TProtocolDecorator.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           TBase.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TBase.cpython-312.pyc
+    ¦       ¦   ¦           TBinaryProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TBinaryProtocol.cpython-312.pyc
+    ¦       ¦   ¦           TCompactProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TCompactProtocol.cpython-312.pyc
+    ¦       ¦   ¦           THeaderProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           THeaderProtocol.cpython-312.pyc
+    ¦       ¦   ¦           TJSONProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TJSONProtocol.cpython-312.pyc
+    ¦       ¦   ¦           TMultiplexedProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TMultiplexedProtocol.cpython-312.pyc
+    ¦       ¦   ¦           TProtocol.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TProtocol.cpython-312.pyc
+    ¦       ¦   ¦           TProtocolDecorator.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TProtocolDecorator.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---server
+    ¦       ¦   ¦   ¦   THttpServer.py
+    ¦       ¦   ¦   ¦   TNonblockingServer.py
+    ¦       ¦   ¦   ¦   TProcessPoolServer.py
+    ¦       ¦   ¦   ¦   TServer.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           THttpServer.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           THttpServer.cpython-312.pyc
+    ¦       ¦   ¦           TNonblockingServer.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TNonblockingServer.cpython-312.pyc
+    ¦       ¦   ¦           TProcessPoolServer.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TProcessPoolServer.cpython-312.pyc
+    ¦       ¦   ¦           TServer.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TServer.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---transport
+    ¦       ¦   ¦   ¦   sslcompat.py
+    ¦       ¦   ¦   ¦   THeaderTransport.py
+    ¦       ¦   ¦   ¦   THttpClient.py
+    ¦       ¦   ¦   ¦   TSocket.py
+    ¦       ¦   ¦   ¦   TSSLSocket.py
+    ¦       ¦   ¦   ¦   TTransport.py
+    ¦       ¦   ¦   ¦   TTwisted.py
+    ¦       ¦   ¦   ¦   TZlibTransport.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           sslcompat.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           sslcompat.cpython-312.pyc
+    ¦       ¦   ¦           THeaderTransport.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           THeaderTransport.cpython-312.pyc
+    ¦       ¦   ¦           THttpClient.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           THttpClient.cpython-312.pyc
+    ¦       ¦   ¦           TSocket.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TSocket.cpython-312.pyc
+    ¦       ¦   ¦           TSSLSocket.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TSSLSocket.cpython-312.pyc
+    ¦       ¦   ¦           TTransport.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TTransport.cpython-312.pyc
+    ¦       ¦   ¦           TTwisted.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TTwisted.cpython-312.pyc
+    ¦       ¦   ¦           TZlibTransport.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           TZlibTransport.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.opt-1.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           compat.cpython-312.opt-1.pyc
+    ¦       ¦           compat.cpython-312.pyc
+    ¦       ¦           Thrift.cpython-312.opt-1.pyc
+    ¦       ¦           Thrift.cpython-312.pyc
+    ¦       ¦           TMultiplexedProcessor.cpython-312.opt-1.pyc
+    ¦       ¦           TMultiplexedProcessor.cpython-312.pyc
+    ¦       ¦           TRecursive.cpython-312.opt-1.pyc
+    ¦       ¦           TRecursive.cpython-312.pyc
+    ¦       ¦           TSCons.cpython-312.opt-1.pyc
+    ¦       ¦           TSCons.cpython-312.pyc
+    ¦       ¦           TSerialization.cpython-312.opt-1.pyc
+    ¦       ¦           TSerialization.cpython-312.pyc
+    ¦       ¦           TTornado.cpython-312.opt-1.pyc
+    ¦       ¦           TTornado.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.opt-1.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---thrift-0.20.0.dist-info
+    ¦       ¦       INSTALLER
+    ¦       ¦       METADATA
+    ¦       ¦       RECORD
+    ¦       ¦       top_level.txt
+    ¦       ¦       WHEEL
+    ¦       ¦       
     ¦       +---tika
     ¦       ¦   ¦   config.py
     ¦       ¦   ¦   detector.py
@@ -21229,37 +22448,24 @@ C:.
     ¦       ¦   ¦   
     ¦       ¦   +---contrib
     ¦       ¦   ¦   ¦   pyopenssl.py
+    ¦       ¦   ¦   ¦   securetransport.py
     ¦       ¦   ¦   ¦   socks.py
     ¦       ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---emscripten
-    ¦       ¦   ¦   ¦   ¦   connection.py
-    ¦       ¦   ¦   ¦   ¦   emscripten_fetch_worker.js
-    ¦       ¦   ¦   ¦   ¦   fetch.py
-    ¦       ¦   ¦   ¦   ¦   request.py
-    ¦       ¦   ¦   ¦   ¦   response.py
+    ¦       ¦   ¦   +---_securetransport
+    ¦       ¦   ¦   ¦   ¦   bindings.py
+    ¦       ¦   ¦   ¦   ¦   low_level.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           connection.cpython-312.pyc
-    ¦       ¦   ¦   ¦           fetch.cpython-312.pyc
-    ¦       ¦   ¦   ¦           request.cpython-312.pyc
-    ¦       ¦   ¦   ¦           response.cpython-312.pyc
+    ¦       ¦   ¦   ¦           bindings.cpython-312.pyc
+    ¦       ¦   ¦   ¦           low_level.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---__pycache__
     ¦       ¦   ¦           pyopenssl.cpython-312.pyc
+    ¦       ¦   ¦           securetransport.cpython-312.pyc
     ¦       ¦   ¦           socks.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---http2
-    ¦       ¦   ¦   ¦   connection.py
-    ¦       ¦   ¦   ¦   probe.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           connection.cpython-312.pyc
-    ¦       ¦   ¦           probe.cpython-312.pyc
     ¦       ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦           
     ¦       ¦   +---util
@@ -21306,10 +22512,11 @@ C:.
     ¦       ¦           _version.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---urllib3-2.6.3.dist-info
+    ¦       +---urllib3-2.0.7.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
     ¦       ¦   +---licenses
@@ -21537,12 +22744,14 @@ C:.
         ¦   activate
         ¦   activate.bat
         ¦   Activate.ps1
+        ¦   alembic.exe
         ¦   deactivate.bat
         ¦   dotenv.exe
         ¦   f2py.exe
         ¦   flask.exe
         ¦   google-oauthlib-tool.exe
         ¦   jp.py
+        ¦   mako-render.exe
         ¦   normalizer.exe
         ¦   numpy-config.exe
         ¦   pip.exe

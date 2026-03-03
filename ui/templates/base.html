@@ -113,15 +113,6 @@
             </div>
 
             <div class="flex items-center gap-6">
-                <!-- Navigation Actions -->
-                <button onclick="window.history.back()"
-                    class="text-sm font-bold text-slate-800 bg-slate-200 hover:bg-white px-4 py-2 rounded-full transition-colors flex items-center gap-1 shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Back
-                </button>
                 {% if is_logged_in %}
                 <a href="/usage" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Usage</a>
                 <a href="/logout"

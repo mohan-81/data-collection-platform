@@ -4,6 +4,7 @@ import time
 from flask import send_from_directory
 from flask import Flask,request,redirect,make_response,jsonify,render_template_string
 import sqlite3,uuid,datetime,os,json
+import secrets
 from flask_cors import CORS
 import zoneinfo
 from user_agents import parse
@@ -73,6 +74,12 @@ from connectors.x import (
     handle_x_oauth_callback,
     sync_x,
     disconnect_x
+)
+from connectors.linkedin import (
+    get_linkedin_auth_url,
+    handle_linkedin_oauth_callback,
+    sync_linkedin,
+    disconnect_linkedin,
 )
 
 # ---------------- CONFIG ----------------
@@ -2608,6 +2615,89 @@ def init_db():
         raw_json TEXT,
         fetched_at TEXT,
         UNIQUE(uid, tweet_id)
+    )
+    """)
+
+    # ---------------- LINKEDIN MARKETING ----------------
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS linkedin_connections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT UNIQUE,
+        linkedin_member_id TEXT,
+        access_token TEXT,
+        refresh_token TEXT,
+        expires_at TEXT,
+        linkedin_version TEXT,
+        connected_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS linkedin_ad_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        account_id TEXT,
+        name TEXT,
+        status TEXT,
+        type TEXT,
+        currency TEXT,
+        test TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, account_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS linkedin_campaigns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        account_id TEXT,
+        campaign_id TEXT,
+        name TEXT,
+        status TEXT,
+        daily_budget TEXT,
+        objective TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, campaign_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS linkedin_creatives (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        account_id TEXT,
+        creative_id TEXT,
+        campaign_id TEXT,
+        intended_status TEXT,
+        is_serving TEXT,
+        review_status TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, creative_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS linkedin_ad_analytics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        account_id TEXT,
+        pivot_type TEXT,
+        pivot_value TEXT,
+        impressions TEXT,
+        clicks TEXT,
+        cost_in_local_currency TEXT,
+        date_start TEXT,
+        date_end TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, account_id, pivot_type, pivot_value, date_start, date_end)
     )
     """)
 
@@ -8388,6 +8478,226 @@ def x_job_save():
     con.close()
     return jsonify({"status": "job_saved"})
 
+# ---------------- LINKEDIN MARKETING ----------------
+
+@app.route("/connectors/linkedin/save_app", methods=["POST"])
+def linkedin_save_app():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+    redirect_uri = data.get("redirect_uri") or (request.host_url.rstrip("/") + "/connectors/linkedin/callback")
+    linkedin_version = data.get("linkedin_version") or "202503"
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "client_id and client_secret are required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, api_key, scopes, status, created_at)
+        VALUES (?, 'linkedin', ?, ?, ?, ?, 'configured', datetime('now'))
+    """, (
+        uid,
+        encrypt_value(client_id),
+        encrypt_value(client_secret),
+        encrypt_value(linkedin_version),
+        encrypt_value(redirect_uri),
+    ))
+    con.commit()
+    con.close()
+
+    ensure_connector_initialized(uid, "linkedin")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/linkedin/connect")
+def linkedin_connect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        oauth_state = secrets.token_urlsafe(24)
+        state = get_connector_state(uid, "linkedin") or {}
+        state["oauth_state"] = oauth_state
+        state["oauth_state_expires_at"] = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=10)
+        ).isoformat()
+        save_connector_state(uid, "linkedin", state)
+        return redirect(get_linkedin_auth_url(uid, oauth_state))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/connectors/linkedin/callback")
+def linkedin_callback():
+    uid = getattr(g, "user_id", None)
+    code = request.args.get("code")
+    returned_state = request.args.get("state")
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    if not code:
+        return "Authorization failed", 400
+
+    stored_state = get_connector_state(uid, "linkedin") or {}
+    expected_state = stored_state.get("oauth_state")
+    expires_at = stored_state.get("oauth_state_expires_at")
+    expires_dt = None
+    if expires_at:
+        try:
+            expires_dt = datetime.datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            if expires_dt.tzinfo is None:
+                expires_dt = expires_dt.replace(tzinfo=datetime.UTC)
+        except Exception:
+            expires_dt = None
+
+    if not expected_state or not returned_state or returned_state != expected_state:
+        return jsonify({"error": "Invalid OAuth state"}), 400
+    if not expires_dt or expires_dt < datetime.datetime.now(datetime.UTC):
+        return jsonify({"error": "OAuth state expired"}), 400
+
+    result = handle_linkedin_oauth_callback(uid, code)
+    if result.get("status") != "success":
+        return jsonify(result), 400
+
+    stored_state.pop("oauth_state", None)
+    stored_state.pop("oauth_state_expires_at", None)
+    save_connector_state(uid, "linkedin", stored_state)
+
+    return redirect("http://localhost:3000/connectors/linkedin")
+
+
+@app.route("/connectors/linkedin/disconnect")
+def linkedin_disconnect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    disconnect_linkedin(uid)
+    return jsonify({"status": "disconnected"})
+
+
+@app.route("/connectors/linkedin/sync")
+def linkedin_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='linkedin'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_linkedin(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/linkedin")
+def linkedin_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='linkedin'
+        LIMIT 1
+    """, (uid,))
+    creds = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='linkedin'
+        LIMIT 1
+    """, (uid,))
+    conn = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT linkedin_member_id, expires_at
+        FROM linkedin_connections
+        WHERE uid=?
+        LIMIT 1
+    """, (uid,))
+    lk = fetchone_secure(cur)
+    con.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected": bool(conn and conn["enabled"] == 1),
+        "linkedin_member_id": lk["linkedin_member_id"] if lk else None,
+        "expires_at": lk["expires_at"] if lk else None,
+    })
+
+
+@app.route("/connectors/linkedin/job/get")
+def linkedin_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute("""
+            SELECT sync_type, schedule_time
+            FROM connector_jobs
+            WHERE uid=? AND source='linkedin'
+        """, (uid,))
+        row = fetchone_secure(cur)
+    finally:
+        con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row["sync_type"],
+        "schedule_time": row["schedule_time"],
+    })
+
+
+@app.route("/connectors/linkedin/job/save", methods=["POST"])
+def linkedin_job_save():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'linkedin', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
+    return jsonify({"status": "job_saved"})
+
 # ---------------- GITLAB ----------------
 
 @app.route("/gitlab/connect")
@@ -12726,7 +13036,7 @@ def usage_analytics():
 
     # ---------------- CONNECTOR METRICS ----------------
 
-    TOTAL_CONNECTORS = 40
+    TOTAL_CONNECTORS = 41
 
     cur.execute("""
         SELECT COUNT(*)

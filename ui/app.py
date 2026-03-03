@@ -498,6 +498,67 @@ def x_disconnect():
     )
     return redirect("/connectors/x")
 
+# ================= LINKEDIN ========================
+
+@app.route("/connectors/linkedin")
+@require_login
+def linkedin_page():
+    return render_template("connectors/linkedin.html")
+
+@app.route("/connectors/linkedin/connect")
+def linkedin_connect():
+    return redirect("http://localhost:4000/connectors/linkedin/connect")
+
+@app.route("/connectors/linkedin/sync")
+def linkedin_sync():
+    res = requests.get(
+        "http://localhost:4000/connectors/linkedin/sync",
+        cookies=request.cookies
+    )
+    return jsonify(res.json())
+
+@app.route("/api/status/linkedin")
+def linkedin_status_proxy():
+    r = requests.get(
+        "http://localhost:4000/api/status/linkedin",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/linkedin/job/get")
+def linkedin_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/linkedin/job/get",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/linkedin/job/save", methods=["POST"])
+def linkedin_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/linkedin/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/linkedin/save_app", methods=["POST"])
+def linkedin_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/linkedin/save_app",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/linkedin/disconnect")
+def linkedin_disconnect():
+    requests.get(
+        "http://localhost:4000/connectors/linkedin/disconnect",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return redirect("/connectors/linkedin")
+
 # ================= REDDIT ========================
 
 @app.route("/connectors/reddit")

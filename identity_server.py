@@ -62,6 +62,12 @@ from connectors.google_forms import sync_forms
 from connectors.google_sheets import sync_sheets_files
 from connectors.google_ga4 import sync_ga4
 from connectors.facebook_pages import sync_facebook_pages
+from connectors.tiktok import (
+    get_tiktok_auth_url,
+    handle_tiktok_oauth_callback,
+    sync_tiktok,
+    disconnect_tiktok
+)
 
 # ---------------- CONFIG ----------------
 load_dotenv()
@@ -2475,6 +2481,75 @@ def init_db():
         reach TEXT,
         raw_json TEXT,
         fetched_at TEXT
+    )
+    """)
+
+    # ---------------- TIKTOK BUSINESS ----------------
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tiktok_connections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT UNIQUE,
+        advertiser_id TEXT,
+        access_token TEXT,
+        refresh_token TEXT,
+        expires_at TEXT,
+        connected_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tiktok_campaigns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        advertiser_id TEXT,
+        campaign_id TEXT,
+        campaign_name TEXT,
+        objective TEXT,
+        status TEXT,
+        budget TEXT,
+        budget_type TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, campaign_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tiktok_ads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        advertiser_id TEXT,
+        ad_id TEXT,
+        campaign_id TEXT,
+        adgroup_id TEXT,
+        ad_name TEXT,
+        status TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, ad_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tiktok_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        advertiser_id TEXT,
+        ad_id TEXT,
+        campaign_id TEXT,
+        adgroup_id TEXT,
+        stat_time_day TEXT,
+        impressions TEXT,
+        clicks TEXT,
+        spend TEXT,
+        ctr TEXT,
+        cpc TEXT,
+        cpm TEXT,
+        conversions TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, ad_id, stat_time_day)
     )
     """)
 
@@ -7868,6 +7943,200 @@ def instagram_job_save():
     con.commit()
     con.close()
 
+    return jsonify({"status": "job_saved"})
+
+# ---------------- TIKTOK BUSINESS ----------------
+
+@app.route("/connectors/tiktok/save_app", methods=["POST"])
+def tiktok_save_app():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+
+    client_key = data.get("client_key")
+    client_secret = data.get("client_secret")
+    advertiser_id = data.get("advertiser_id")
+    scopes = data.get("scopes") or "user.info.basic,video.list,ads.read"
+    redirect_uri = data.get("redirect_uri") or (request.host_url.rstrip("/") + "/connectors/tiktok/callback")
+
+    if not client_key or not client_secret or not advertiser_id:
+        return jsonify({"error": "client_key, client_secret and advertiser_id are required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, api_key, scopes, status, created_at)
+        VALUES (?, 'tiktok', ?, ?, ?, ?, 'configured', datetime('now'))
+    """, (
+        uid,
+        encrypt_value(client_key),
+        encrypt_value(client_secret),
+        encrypt_value(advertiser_id),
+        encrypt_value(redirect_uri)
+    ))
+
+    con.commit()
+    con.close()
+
+    ensure_connector_initialized(uid, "tiktok")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/tiktok/connect")
+def tiktok_connect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        return redirect(get_tiktok_auth_url(uid))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/connectors/tiktok/callback")
+def tiktok_callback():
+    uid = getattr(g, "user_id", None)
+    code = request.args.get("code")
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    if not code:
+        return "Authorization failed", 400
+
+    result = handle_tiktok_oauth_callback(uid, code)
+    if result.get("status") != "success":
+        return jsonify(result), 400
+
+    return redirect("http://localhost:3000/connectors/tiktok")
+
+
+@app.route("/connectors/tiktok/disconnect")
+def tiktok_disconnect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    disconnect_tiktok(uid)
+    return jsonify({"status": "disconnected"})
+
+
+@app.route("/connectors/tiktok/sync")
+def tiktok_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='tiktok'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_tiktok(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/tiktok")
+def tiktok_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='tiktok'
+        LIMIT 1
+    """, (uid,))
+    creds = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='tiktok'
+        LIMIT 1
+    """, (uid,))
+    conn = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT advertiser_id, expires_at
+        FROM tiktok_connections
+        WHERE uid=?
+        LIMIT 1
+    """, (uid,))
+    tk = fetchone_secure(cur)
+    con.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected": bool(conn and conn["enabled"] == 1),
+        "advertiser_id": tk["advertiser_id"] if tk else None,
+        "expires_at": tk["expires_at"] if tk else None
+    })
+
+
+@app.route("/connectors/tiktok/job/get")
+def tiktok_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute("""
+            SELECT sync_type, schedule_time
+            FROM connector_jobs
+            WHERE uid=? AND source='tiktok'
+        """, (uid,))
+        row = fetchone_secure(cur)
+    finally:
+        con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row["sync_type"],
+        "schedule_time": row["schedule_time"]
+    })
+
+
+@app.route("/connectors/tiktok/job/save", methods=["POST"])
+def tiktok_job_save():
+
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'tiktok', ?, ?)
+    """, (uid, sync_type, schedule_time))
+
+    con.commit()
+    con.close()
     return jsonify({"status": "job_saved"})
 
 # ---------------- GITLAB ----------------

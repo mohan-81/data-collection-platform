@@ -838,6 +838,48 @@ OAuth access is scoped and securely stored.
   ]
 },
 
+{
+  id:"tiktok",
+  name:"TikTok Business",
+  category:"video",
+  logo:"/static/images/logos/tiktok.png",
+
+  auth_type:"oauth",
+
+  connect_url:"http://localhost:4000/connectors/tiktok/connect",
+  sync_url:"http://localhost:4000/connectors/tiktok/sync",
+  dashboard:"/dashboard/tiktok",
+
+  long_description:`
+Connect your TikTok Business account to ingest campaigns, ads,
+and integrated ad reports with secure OAuth token management.
+  `,
+
+  steps:[
+    {title:"Provide App Credentials",desc:"Enter TikTok client key, client secret and advertiser ID."},
+    {title:"Authorize Access",desc:"Complete OAuth authorization to grant business data access."},
+    {title:"Run Sync",desc:"Campaign, ad and integrated report data are fetched and stored."}
+  ],
+
+  tables:[
+    "tiktok_campaigns",
+    "tiktok_ads",
+    "tiktok_reports"
+  ],
+
+  erd:"/static/images/logos/tiktok.png",
+
+  description:"Collects TikTok Business campaigns, ads and performance reports.",
+
+  data:[
+    "Campaign metadata",
+    "Ad metadata",
+    "Spend and impressions",
+    "Clicks and CTR",
+    "Daily report metrics"
+  ]
+},
+
 /* ================= META ADS ================= */
 {
   id:"facebook_ads",

@@ -376,6 +376,67 @@ def instagram_disconnect():
     )
     return redirect("/connectors/instagram")
 
+# ================= TIKTOK ========================
+
+@app.route("/connectors/tiktok")
+@require_login
+def tiktok_page():
+    return render_template("connectors/tiktok.html")
+
+@app.route("/connectors/tiktok/connect")
+def tiktok_connect():
+    return redirect("http://localhost:4000/connectors/tiktok/connect")
+
+@app.route("/connectors/tiktok/sync")
+def tiktok_sync():
+    res = requests.get(
+        "http://localhost:4000/connectors/tiktok/sync",
+        cookies=request.cookies
+    )
+    return jsonify(res.json())
+
+@app.route("/api/status/tiktok")
+def tiktok_status_proxy():
+    r = requests.get(
+        "http://localhost:4000/api/status/tiktok",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/tiktok/job/get")
+def tiktok_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/tiktok/job/get",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/tiktok/job/save", methods=["POST"])
+def tiktok_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/tiktok/job/save",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/tiktok/save_app", methods=["POST"])
+def tiktok_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/tiktok/save_app",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/tiktok/disconnect")
+def tiktok_disconnect():
+    requests.get(
+        "http://localhost:4000/connectors/tiktok/disconnect",
+        headers={"Cookie": request.headers.get("Cookie", "")}
+    )
+    return redirect("/connectors/tiktok")
+
 # ================= REDDIT ========================
 
 @app.route("/connectors/reddit")

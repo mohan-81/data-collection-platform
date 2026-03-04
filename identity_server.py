@@ -1553,6 +1553,101 @@ def init_db():
     )
     """)
 
+    # ---------------- WHATSAPP ----------------
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_connections (
+        uid TEXT PRIMARY KEY,
+        access_token_encrypted TEXT,
+        waba_id TEXT,
+        phone_number_id TEXT,
+        connected_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_business_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        waba_id TEXT,
+        name TEXT,
+        currency TEXT,
+        timezone_id TEXT,
+        messaging_limit TEXT,
+        verification_status TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, waba_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_phone_numbers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        waba_id TEXT,
+        phone_number_id TEXT,
+        display_phone_number TEXT,
+        verified_name TEXT,
+        quality_rating TEXT,
+        status TEXT,
+        platform_type TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, phone_number_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_message_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        waba_id TEXT,
+        template_name TEXT,
+        namespace TEXT,
+        category TEXT,
+        language TEXT,
+        status TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, waba_id, template_name, language)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_conversation_analytics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        phone_number_id TEXT,
+        conversation_id TEXT,
+        category TEXT,
+        origin_type TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        messages_sent INTEGER,
+        messages_received INTEGER,
+        date TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, conversation_id)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS whatsapp_message_insights (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
+        phone_number_id TEXT,
+        sent INTEGER,
+        delivered INTEGER,
+        read INTEGER,
+        failed INTEGER,
+        date TEXT,
+        raw_json TEXT,
+        fetched_at TEXT,
+        UNIQUE(uid, phone_number_id, date)
+    )
+    """)
+
     cur.execute("""
     CREATE TABLE IF NOT EXISTS devto_tags (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13686,7 +13781,175 @@ def universal_sync(source):
             "status": "failed",
             "error": str(e)
         }), 500
+
+# ---------------- WHATSAPP ----------------
+
+from connectors.whatsapp import (
+    sync_whatsapp,
+    disconnect_whatsapp
+)
+
+@app.route("/connectors/whatsapp/save_app", methods=["POST"])
+def whatsapp_save_app():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.get_json() or {}
+    access_token = data.get("access_token")
+    waba_id = data.get("waba_id")
+    phone_number_id = data.get("phone_number_id")
     
+    if not access_token or not waba_id or not phone_number_id:
+        return jsonify({"error": "access_token, waba_id, and phone_number_id are required"}), 400
+        
+    # Validate credentials with Meta Graph API
+    url = f"https://graph.facebook.com/v18.0/{waba_id}"
+
+    response = requests.get(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+
+    if response.status_code != 200:
+        return jsonify({
+            "error": "Invalid WhatsApp credentials",
+            "details": response.json()
+        }), 403
+        
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO whatsapp_connections
+        (uid, access_token_encrypted, waba_id, phone_number_id, connected_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+    """, (
+        uid,
+        encrypt_value(access_token),
+        waba_id,
+        phone_number_id
+    ))
+    con.commit()
+    con.close()
+    
+    ensure_connector_initialized(uid, "whatsapp")
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+    INSERT OR REPLACE INTO google_connections
+    (uid, source, enabled)
+    VALUES (?, 'whatsapp', 1)
+    """, (uid,))
+
+    con.commit()
+    con.close()
+    
+    # Initialize connector state
+    from connectors.whatsapp import save_state
+    save_state(uid, {"last_sync_date": None})
+    
+    return jsonify({"status": "saved"}), 200
+
+@app.route("/api/status/whatsapp")
+def whatsapp_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("SELECT 1 FROM whatsapp_connections WHERE uid=?", (uid,))
+    row = cur.fetchone()
+    con.close()
+    
+    if row:
+        return jsonify({"connected": True, "has_credentials": True})
+    return jsonify({"connected": False, "has_credentials": False})
+
+@app.route("/connectors/whatsapp/sync")
+def whatsapp_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='whatsapp'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+    
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    
+    try:
+        rows = sync_whatsapp(uid, sync_type)
+        return jsonify({"status": "success", "rows_synced": rows})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/connectors/whatsapp/disconnect")
+def whatsapp_disconnect_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    disconnect_whatsapp(uid)
+    return jsonify({"status": "disconnected"})
+
+@app.route("/connectors/whatsapp/job/get")
+def whatsapp_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type, schedule_time, enabled
+        FROM connector_jobs
+        WHERE uid=? AND source='whatsapp'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+    
+    if row:
+        return jsonify({
+            "status": "configured",
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+            "enabled": bool(row["enabled"])
+        })
+    return jsonify({"status": "not_configured", "sync_type": "historical", "schedule_time": "00:00"})
+
+@app.route("/connectors/whatsapp/job/save", methods=["POST"])
+def whatsapp_job_save():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "historical")
+    schedule_time = data.get("schedule_time", "00:00")
+    
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time, enabled, created_at)
+        VALUES (?, 'whatsapp', ?, ?, 1, datetime('now'))
+    """, (uid, sync_type, schedule_time))
+    con.commit()
+    con.close()
+    
+    return jsonify({"status": "job_saved"})
+
 # UNIVERSAL SYNC LOGGER (SAFE VERSION)
 # NOTE:
 # Logging is handled centrally via Flask middleware.
@@ -13786,7 +14049,7 @@ def usage_analytics():
 
     # ---------------- CONNECTOR METRICS ----------------
 
-    TOTAL_CONNECTORS = 41
+    TOTAL_CONNECTORS = 48
 
     cur.execute("""
         SELECT COUNT(*)

@@ -754,6 +754,42 @@ def linkedin_disconnect():
     )
     return redirect("/connectors/linkedin")
 
+# ================= WHATSAPP ========================
+
+@app.route("/connectors/whatsapp")
+@require_login
+def whatsapp_page():
+    return render_template("connectors/whatsapp.html")
+
+@app.route("/connectors/whatsapp/connect")
+def whatsapp_connect():
+    return jsonify({"status": "manual_credentials"})
+
+@app.route("/connectors/whatsapp/disconnect")
+def whatsapp_disconnect():
+    r = requests.get(
+        "http://localhost:4000/connectors/whatsapp/disconnect",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
+@app.route("/connectors/whatsapp/save_app", methods=["POST"])
+def whatsapp_save_config_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/whatsapp/save_app",
+        json=request.get_json(),
+        cookies=request.cookies
+    )
+    return jsonify(r.json()), r.status_code
+
+@app.route("/connectors/whatsapp/sync")
+def whatsapp_sync():
+    r = requests.get(
+        "http://localhost:4000/connectors/whatsapp/sync",
+        cookies=request.cookies
+    )
+    return jsonify(r.json())
+
 # ================= REDDIT ========================
 
 @app.route("/connectors/reddit")

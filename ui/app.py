@@ -5040,6 +5040,91 @@ def facebook_ads_save_app_proxy():
     )
     return jsonify(r.json()), r.status_code
 
+# ================= CHARTBEAT =================
+
+@app.route("/connectors/chartbeat")
+@require_login
+def chartbeat_page():
+    return render_template("connectors/chartbeat.html")
+
+
+@app.route("/connectors/chartbeat/save_app", methods=["POST"])
+def chartbeat_save_app_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/chartbeat/save_app",
+        json=request.get_json(),
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/chartbeat/connect")
+def chartbeat_connect():
+    r = requests.get(
+        "http://localhost:4000/connectors/chartbeat/connect",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/chartbeat/disconnect")
+def chartbeat_disconnect():
+    r = requests.get(
+        "http://localhost:4000/connectors/chartbeat/disconnect",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/chartbeat/sync")
+def chartbeat_sync():
+    r = requests.get(
+        "http://localhost:4000/connectors/chartbeat/sync",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    return jsonify(r.json())
+
+
+@app.route("/api/status/chartbeat")
+def chartbeat_status():
+    r = requests.get(
+        "http://localhost:4000/api/status/chartbeat",
+        cookies=request.cookies,
+    )
+    return jsonify(r.json())
+
+
+@app.route("/connectors/chartbeat/job/get")
+def chartbeat_job_get_proxy():
+    r = requests.get(
+        "http://localhost:4000/connectors/chartbeat/job/get",
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({
+            "exists": False,
+            "sync_type": "incremental",
+            "schedule_time": None,
+        }), 200
+
+
+@app.route("/connectors/chartbeat/job/save", methods=["POST"])
+def chartbeat_job_save_proxy():
+    r = requests.post(
+        "http://localhost:4000/connectors/chartbeat/job/save",
+        json=request.get_json(),
+        cookies=request.cookies,
+        headers={"Cookie": request.headers.get("Cookie", "")},
+    )
+    return jsonify(r.json()), r.status_code
+
 # ================= DESTINATION =================
 
 @app.route("/destination/save", methods=["POST"])

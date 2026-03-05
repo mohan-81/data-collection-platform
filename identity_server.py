@@ -96,7 +96,11 @@ from connectors.linkedin import (
     sync_linkedin,
     disconnect_linkedin,
 )
-
+from connectors.chartbeat import (
+       connect_chartbeat,
+       sync_chartbeat,
+       disconnect_chartbeat,
+)
 # ---------------- CONFIG ----------------
 load_dotenv()
 
@@ -3033,6 +3037,72 @@ def init_db():
         raw_json TEXT,
         fetched_at TEXT,
         UNIQUE(uid, account_id, pivot_type, pivot_value, date_start, date_end)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chartbeat_connections (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid          TEXT UNIQUE,
+        host         TEXT,
+        connected_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chartbeat_top_pages (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid          TEXT,
+        path         TEXT,
+        title        TEXT,
+        concurrents  INTEGER,
+        engaged_time REAL,
+        page_views   INTEGER,
+        visits       INTEGER,
+        raw_json     TEXT,
+        fetched_at   TEXT,
+        UNIQUE(uid, path, fetched_at)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chartbeat_page_engagement (
+        id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid                 TEXT,
+        path                TEXT,
+        title               TEXT,
+        author              TEXT,
+        section             TEXT,
+        device              TEXT,
+        referrer_type       TEXT,
+        page_views          INTEGER,
+        page_uniques        INTEGER,
+        page_avg_time       REAL,
+        page_total_time     REAL,
+        page_avg_scroll     REAL,
+        page_scroll_starts  INTEGER,
+        page_views_quality  REAL,
+        date                TEXT,
+        raw_json            TEXT,
+        fetched_at          TEXT,
+        UNIQUE(uid, path, device, referrer_type, date)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chartbeat_video_engagement (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid              TEXT,
+        video_title      TEXT,
+        video_path       TEXT,
+        play_state       TEXT,
+        video_plays      INTEGER,
+        video_loads      INTEGER,
+        video_play_rate  REAL,
+        video_avg_time   REAL,
+        raw_json         TEXT,
+        fetched_at       TEXT,
+        UNIQUE(uid, video_path, play_state, fetched_at)
     )
     """)
 
@@ -14338,6 +14408,164 @@ def seed_test_user():
         print("Failed to seed test user:", e)
     finally:
         con.close()
+
+# -------- CHARTBEAT --------
+
+@app.route("/connectors/chartbeat/save_app", methods=["POST"])
+def chartbeat_save_app():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data     = request.get_json() or {}
+    api_key  = data.get("api_key", "").strip()
+    host     = data.get("host", "").strip()
+    query_id = data.get("query_id", "").strip() or None
+
+    if not api_key or not host:
+        return jsonify({"error": "api_key and host are required"}), 400
+
+    from connectors.chartbeat import save_credentials
+    save_credentials(uid, api_key, host, query_id)
+
+    ensure_connector_initialized(uid, "chartbeat")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/chartbeat/connect")
+def chartbeat_connect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    result = connect_chartbeat(uid)
+    if result.get("status") != "success":
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@app.route("/connectors/chartbeat/disconnect")
+def chartbeat_disconnect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    disconnect_chartbeat(uid)
+    return jsonify({"status": "disconnected"})
+
+
+@app.route("/connectors/chartbeat/sync")
+def chartbeat_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='chartbeat'
+        LIMIT 1
+    """, (uid,))
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_chartbeat(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/chartbeat")
+def chartbeat_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='chartbeat'
+        LIMIT 1
+    """, (uid,))
+    creds = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='chartbeat'
+        LIMIT 1
+    """, (uid,))
+    conn = fetchone_secure(cur)
+
+    cur.execute("""
+        SELECT host
+        FROM chartbeat_connections
+        WHERE uid=?
+        LIMIT 1
+    """, (uid,))
+    cb = fetchone_secure(cur)
+
+    con.close()
+
+    return jsonify({
+        "has_credentials": bool(creds),
+        "connected":       bool(conn and conn["enabled"] == 1),
+        "host":            cb["host"] if cb else None,
+    })
+
+
+@app.route("/connectors/chartbeat/job/get")
+def chartbeat_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute("""
+            SELECT sync_type, schedule_time
+            FROM connector_jobs
+            WHERE uid=? AND source='chartbeat'
+        """, (uid,))
+        row = fetchone_secure(cur)
+    finally:
+        con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists":        True,
+        "sync_type":     row["sync_type"],
+        "schedule_time": row["schedule_time"],
+    })
+
+
+@app.route("/connectors/chartbeat/job/save", methods=["POST"])
+def chartbeat_job_save():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data          = request.get_json() or {}
+    sync_type     = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'chartbeat', ?, ?)
+    """, (uid, sync_type, schedule_time))
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
 
 if __name__=="__main__":
     init_db() # Ensure DB is initialized

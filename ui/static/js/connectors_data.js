@@ -2039,5 +2039,59 @@ from Discourse communities.
       "Conversation analytics",
       "Messaging insights"
     ]
-  }
+  },
+
+  // ================================================================
+  // CHARTBEAT CONNECTOR — connectors_data.js entry
+  // ================================================================
+  //
+  // Add this object into the CONNECTORS array in
+  // ui/static/js/connectors_data.js
+  //
+  // ================================================================
+
+  {
+    id: "chartbeat",
+    name: "Chartbeat",
+    categories: ["analytics", "content"],
+    logo: "/static/images/logos/chartbeat.png",
+
+    auth_type: "api_key",
+
+    route: "/connectors/chartbeat",
+    connect_url: "http://localhost:4000/connectors/chartbeat/connect",
+    sync_url: "http://localhost:4000/connectors/chartbeat/sync",
+    dashboard: "/dashboard/chartbeat",
+
+    long_description: `
+Connect Chartbeat using your API Key to ingest real-time top pages,
+historical page engagement analytics, recurring query results, and
+video engagement metrics directly into your data warehouse.
+    `,
+
+    steps: [
+      { title: "Provide API Key", desc: "Enter your Chartbeat API Key and site domain." },
+      { title: "Validate Access", desc: "Credentials are validated against the Chartbeat live endpoint." },
+      { title: "Run Sync", desc: "Real-time pages, engagement reports, and video data are ingested." }
+    ],
+
+    tables: [
+      "chartbeat_top_pages",
+      "chartbeat_page_engagement",
+      "chartbeat_video_engagement"
+    ],
+
+    erd: "/static/images/logos/chartbeat.png",
+
+    description: "Collects real-time audience analytics and historical engagement data from Chartbeat.",
+
+    data: [
+      "Real-time top pages & concurrents",
+      "Page views, uniques & engaged time",
+      "Author, section & device breakdowns",
+      "Referrer type analytics",
+      "Video plays, loads & play rate"
+    ]
+  },
+
 ];

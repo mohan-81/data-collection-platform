@@ -41,13 +41,43 @@
         animation: floatOrb 45s infinite alternate ease-in-out;
     }
 
-    .bg-orb-1 { width: 680px; height: 680px; background: #22d3ee; top: -18%; left: -22%; animation-duration: 55s; }
-    .bg-orb-2 { width: 520px; height: 520px; background: #a78bfa; bottom: -12%; right: -18%; animation-duration: 70s; animation-delay: -18s; }
-    .bg-orb-3 { width: 400px; height: 400px; background: #06b6d4; top: 45%; left: 55%; animation-duration: 90s; animation-delay: -35s; }
+    .bg-orb-1 {
+        width: 680px;
+        height: 680px;
+        background: #22d3ee;
+        top: -18%;
+        left: -22%;
+        animation-duration: 55s;
+    }
+
+    .bg-orb-2 {
+        width: 520px;
+        height: 520px;
+        background: #a78bfa;
+        bottom: -12%;
+        right: -18%;
+        animation-duration: 70s;
+        animation-delay: -18s;
+    }
+
+    .bg-orb-3 {
+        width: 400px;
+        height: 400px;
+        background: #06b6d4;
+        top: 45%;
+        left: 55%;
+        animation-duration: 90s;
+        animation-delay: -35s;
+    }
 
     @keyframes floatOrb {
-        0%   { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(140px, 90px) scale(1.18); }
+        0% {
+            transform: translate(0, 0) scale(1);
+        }
+
+        100% {
+            transform: translate(140px, 90px) scale(1.18);
+        }
     }
 
     .noise-overlay {
@@ -72,7 +102,7 @@
     .premium-card:hover {
         transform: translateY(-10px) scale(1.015);
         border-color: var(--accent-cyan);
-        box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 50px rgba(34,211,238,0.22);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 50px rgba(34, 211, 238, 0.22);
     }
 
     .stat-label {
@@ -90,13 +120,13 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        text-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
     }
 
     .insight-item {
         background: rgba(15, 23, 42, 0.5);
         border-left: 4px solid var(--accent-cyan);
-        box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
+        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
         padding: 1.25rem;
         border-radius: 1rem;
     }
@@ -118,12 +148,14 @@
         <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6" data-aos="fade-down">
             <div>
-                <span class="text-cyan-400 font-bold text-xs uppercase tracking-[0.45em] mb-3 block">Platform Pulse</span>
+                <span class="text-cyan-400 font-bold text-xs uppercase tracking-[0.45em] mb-3 block">Platform
+                    Pulse</span>
                 <h1 class="text-5xl md:text-6xl font-black text-white tracking-tight">
                     Usage <span class="relative inline-block">
                         Dashboard
-                        <svg class="absolute -bottom-3 left-0 w-full h-3" viewBox="0 0 120 8" preserveAspectRatio="none">
-                            <path d="M0 4 Q30 0 60 4 T120 4" stroke="#22d3ee" stroke-width="2.5" fill="none"/>
+                        <svg class="absolute -bottom-3 left-0 w-full h-3" viewBox="0 0 120 8"
+                            preserveAspectRatio="none">
+                            <path d="M0 4 Q30 0 60 4 T120 4" stroke="#22d3ee" stroke-width="2.5" fill="none" />
                         </svg>
                     </span>
                 </h1>
@@ -158,7 +190,8 @@
         </div>
 
         <!-- Key Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8" data-aos="fade-up" data-aos-delay="100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8" data-aos="fade-up"
+            data-aos-delay="100">
             <div class="premium-card p-8 group">
                 <div class="stat-label mb-2 group-hover:text-cyan-300 transition-colors">Connectors</div>
                 <div id="connectedConnectors" class="stat-value">--</div>
@@ -174,7 +207,8 @@
                 <div id="activeDestinations" class="stat-value">--</div>
                 <p class="text-slate-500 text-xs mt-3">Active outputs</p>
             </div>
-            <div class="premium-card p-8 border-r-4 border-r-cyan-500 bg-gradient-to-br from-cyan-600/8 to-transparent group">
+            <div
+                class="premium-card p-8 border-r-4 border-r-cyan-500 bg-gradient-to-br from-cyan-600/8 to-transparent group">
                 <div class="stat-label mb-2 text-cyan-300">Sync Success</div>
                 <div id="successRate" class="stat-value text-cyan-300">--</div>
                 <p class="text-cyan-800/60 text-xs mt-3 font-semibold">Efficiency score</p>
@@ -184,9 +218,9 @@
                 <div class="stat-label mb-3 group-hover:text-cyan-400 transition-colors">Automation Score</div>
                 <div class="relative w-28 h-28 mx-auto mt-3">
                     <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="54" fill="none" stroke="#1e293b" stroke-width="13"/>
-                        <circle id="automationProgress" cx="60" cy="60" r="54" fill="none" stroke="#22d3ee" 
-                                stroke-width="13" stroke-dasharray="339" stroke-dashoffset="339" stroke-linecap="round"/>
+                        <circle cx="60" cy="60" r="54" fill="none" stroke="#1e293b" stroke-width="13" />
+                        <circle id="automationProgress" cx="60" cy="60" r="54" fill="none" stroke="#22d3ee"
+                            stroke-width="13" stroke-dasharray="339" stroke-dashoffset="339" stroke-linecap="round" />
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
                         <div id="automationScore" class="text-4xl font-black text-cyan-400">—%</div>
@@ -200,7 +234,9 @@
         <!-- Intelligence Feed – reverted to original style -->
         <div class="premium-card p-9 md:p-11 overflow-hidden relative" data-aos="zoom-in" data-aos-delay="200">
             <div class="absolute top-0 right-0 p-10 opacity-10 rotate-12">
-                <svg width="120" height="120" fill="white" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <svg width="120" height="120" fill="white" viewBox="0 0 24 24">
+                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
             </div>
             <div class="flex items-center gap-4 mb-8">
                 <div class="h-8 w-1 bg-cyan-500 shadow-[0_0_15px_#22d3ee]"></div>
@@ -235,6 +271,29 @@
             </div>
         </div>
 
+        <!-- Usage Trends -->
+        <div class="grid lg:grid-cols-2 gap-8" data-aos="fade-up">
+            <div class="premium-card p-9 md:p-11">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-2xl font-bold text-white">Daily Usage</h2>
+                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Last 14 Days</span>
+                </div>
+                <div class="h-[300px]">
+                    <canvas id="dailyUsageChart"></canvas>
+                </div>
+            </div>
+
+            <div class="premium-card p-9 md:p-11">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-2xl font-bold text-white">Top Connectors</h2>
+                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">By Records Synced</span>
+                </div>
+                <div class="h-[300px]">
+                    <canvas id="topConnectorsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Data Delivery + Pipeline Activity + rest remains the same as previous version -->
 
         <div class="grid lg:grid-cols-2 gap-8">
@@ -246,7 +305,8 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm premium-table">
                         <thead>
-                            <tr class="text-slate-400 text-[11px] font-black uppercase tracking-widest border-b border-white/10">
+                            <tr
+                                class="text-slate-400 text-[11px] font-black uppercase tracking-widest border-b border-white/10">
                                 <th class="text-left py-5 px-4">Node</th>
                                 <th class="text-center py-5 px-4">Payload (Rows)</th>
                                 <th class="text-right py-5 px-4">Timestamp</th>
@@ -284,18 +344,21 @@
                     <div class="premium-card p-8 bg-opacity-40">
                         <div class="stat-label">Engine Scheduler</div>
                         <div id="scheduledJobs" class="text-3xl font-black text-white mt-2">--</div>
-                        <div class="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-tighter">Active Background Tasks</div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-tighter">Active
+                            Background Tasks</div>
                     </div>
                     <div class="premium-card p-8 bg-opacity-40">
                         <div class="stat-label">API Gateway</div>
                         <div id="apiCalls" class="text-3xl font-black text-white mt-2">--</div>
-                        <div class="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-tighter">Request Consumption</div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-tighter">Request
+                            Consumption</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="premium-card p-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-none shadow-2xl" data-aos="fade-up">
+        <div class="premium-card p-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-none shadow-2xl"
+            data-aos="fade-up">
             <div class="flex flex-col md:flex-row justify-between items-center gap-8">
                 <div class="text-center md:text-left">
                     <h2 class="text-2xl font-black text-white mb-2">Organization Profile</h2>
@@ -308,11 +371,13 @@
                     </div>
                     <div>
                         <span class="stat-label">Access Level</span>
-                        <p id="accountType" class="text-cyan-400 font-bold text-lg mt-1 uppercase tracking-widest">--</p>
+                        <p id="accountType" class="text-cyan-400 font-bold text-lg mt-1 uppercase tracking-widest">--
+                        </p>
                     </div>
                 </div>
             </div>
-            <div class="mt-10 pt-10 border-t border-white/5 flex flex-wrap justify-between text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+            <div
+                class="mt-10 pt-10 border-t border-white/5 flex flex-wrap justify-between text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                 <div>Account Age: <span id="accountAge" class="text-white ml-2">-- Days</span></div>
                 <div>Registry Date: <span id="accountCreated" class="text-white ml-2">--</span></div>
                 <div>Live Sessions: <span id="totalSessions" class="text-cyan-400 ml-2">--</span></div>
@@ -322,34 +387,36 @@
     </div>
 </section>
 
-<div id="companionOrb" class="fixed w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 via-cyan-300 to-blue-500 blur-3xl opacity-35 pointer-events-none z-30 transition-transform duration-200 mix-blend-screen shadow-2xl"></div>
+<div id="companionOrb"
+    class="fixed w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 via-cyan-300 to-blue-500 blur-3xl opacity-35 pointer-events-none z-30 transition-transform duration-200 mix-blend-screen shadow-2xl">
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/static/js/usage.js"></script>
 
 <script>
-// Companion orb
-const orb = document.getElementById('companionOrb');
-let targetX = 0, targetY = 0;
-let currentX = window.innerWidth / 2, currentY = window.innerHeight / 2;
+    // Companion orb
+    const orb = document.getElementById('companionOrb');
+    let targetX = 0, targetY = 0;
+    let currentX = window.innerWidth / 2, currentY = window.innerHeight / 2;
 
-window.addEventListener('mousemove', e => {
-    targetX = e.clientX;
-    targetY = e.clientY;
-});
+    window.addEventListener('mousemove', e => {
+        targetX = e.clientX;
+        targetY = e.clientY;
+    });
 
-function updateOrb() {
-    currentX += (targetX - currentX) * 0.085;
-    currentY += (targetY - currentY) * 0.085;
-    orb.style.transform = `translate(${currentX - 48}px, ${currentY - 48}px)`;
-    requestAnimationFrame(updateOrb);
-}
-updateOrb();
+    function updateOrb() {
+        currentX += (targetX - currentX) * 0.085;
+        currentY += (targetY - currentY) * 0.085;
+        orb.style.transform = `translate(${currentX - 48}px, ${currentY - 48}px)`;
+        requestAnimationFrame(updateOrb);
+    }
+    updateOrb();
 
-setInterval(() => {
-    orb.style.transform += ' scale(1.18)';
-    setTimeout(() => orb.style.transform = orb.style.transform.replace(' scale(1.18)', ''), 1400);
-}, 4200);
+    setInterval(() => {
+        orb.style.transform += ' scale(1.18)';
+        setTimeout(() => orb.style.transform = orb.style.transform.replace(' scale(1.18)', ''), 1400);
+    }, 4200);
 </script>
 
 {% endblock %}

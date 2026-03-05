@@ -14184,6 +14184,45 @@ def usage_analytics():
     """, (uid,))
     scheduled_jobs = cur.fetchone()[0]
 
+    # ---------------- DAILY USAGE (last 14 days) ----------------
+
+    cur.execute("""
+        SELECT
+            DATE(pushed_at) as date,
+            SUM(rows_pushed) as rows
+        FROM destination_push_logs
+        WHERE uid=?
+        GROUP BY DATE(pushed_at)
+        ORDER BY DATE(pushed_at) DESC
+        LIMIT 14
+    """, (uid,))
+    raw_daily = {row[0]: row[1] for row in cur.fetchall()}
+
+    daily_usage = []
+    for offset in range(13, -1, -1):
+        day_str = (datetime.date.today() - datetime.timedelta(days=offset)).isoformat()
+        daily_usage.append({
+            "date": day_str,
+            "rows": raw_daily.get(day_str, 0)
+        })
+
+    # ---------------- TOP CONNECTORS ----------------
+
+    cur.execute("""
+        SELECT
+            source,
+            SUM(rows_pushed) as rows
+        FROM destination_push_logs
+        WHERE uid=?
+        GROUP BY source
+        ORDER BY rows DESC
+        LIMIT 10
+    """, (uid,))
+    top_connectors = [
+        {"source": row[0], "rows": row[1]}
+        for row in cur.fetchall()
+    ]
+
     con.close()
 
     # ---------------- HEALTH CALCULATION ----------------
@@ -14239,6 +14278,16 @@ def usage_analytics():
 
         "health": {
             "sync_success_rate": success_rate
+        },
+
+        "daily_usage":    daily_usage,
+        "top_connectors": top_connectors,
+        "last_sync":      last_sync_time,
+        "stats": {
+            "connectedConnectors": connected_connectors,
+            "totalRecords":        total_records_synced,
+            "activeDestinations":  active_destinations,
+            "successRate":         success_rate
         }
     })
 

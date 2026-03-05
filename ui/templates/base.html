@@ -115,6 +115,8 @@
             <div class="flex items-center gap-6">
                 {% if is_logged_in %}
                 <a href="/usage" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Usage</a>
+                <a href="/account" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Account &
+                    Billing</a>
                 <a href="/logout"
                     class="btn-premium px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl border border-slate-700">
                     Logout
@@ -151,7 +153,8 @@
         </svg>
     </button>
 
-    <div id="issueToastStack" class="fixed top-24 right-6 z-[90] space-y-3 w-[min(92vw,26rem)] pointer-events-none"></div>
+    <div id="issueToastStack" class="fixed top-24 right-6 z-[90] space-y-3 w-[min(92vw,26rem)] pointer-events-none">
+    </div>
 
     <button id="issueCenterToggle"
         class="fixed bottom-8 right-8 z-[90] px-4 py-3 rounded-xl bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-cyan-400/50 shadow-xl text-xs font-bold tracking-widest uppercase flex items-center gap-2">

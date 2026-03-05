@@ -136,6 +136,11 @@ def ui_logout():
 def usage_page():
     return render_template("usage.html")
 
+@app.route("/account")
+@require_login
+def account_page():
+    return render_template("account.html")
+
 @app.route("/tracking")
 def tracking():
     return render_template("tracking.html")

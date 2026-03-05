@@ -5,7 +5,7 @@ const CONNECTORS = [
   {
     id: "gmail",
     name: "Gmail",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/gmail.png",
 
     auth_type: "oauth",
@@ -49,7 +49,7 @@ All metadata and message headers are securely synchronized.
   {
     id: "drive",
     name: "Google Drive",
-    category: "google",
+    categories: ["google", "cloud"],
     logo: "/static/images/logos/drive.png",
 
     auth_type: "oauth",
@@ -90,7 +90,7 @@ visibility into document usage, storage patterns, and ownership.
   {
     id: "calendar",
     name: "Google Calendar",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/calendar.png",
 
     auth_type: "oauth",
@@ -131,7 +131,7 @@ availability, and scheduling patterns.
   {
     id: "sheets",
     name: "Google Sheets",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/sheets.png",
 
     auth_type: "oauth",
@@ -172,7 +172,7 @@ to support reporting, finance tracking, and KPI analysis.
   {
     id: "forms",
     name: "Google Forms",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/forms.png",
 
     auth_type: "oauth",
@@ -213,7 +213,7 @@ for surveys, feedback systems, and analytics pipelines.
   {
     id: "contacts",
     name: "Google Contacts",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/contacts.png",
 
     auth_type: "oauth",
@@ -253,7 +253,7 @@ to enrich CRM and customer databases.
   {
     id: "tasks",
     name: "Google Tasks",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/tasks.png",
 
     auth_type: "oauth",
@@ -294,7 +294,7 @@ to analyze productivity and completion trends.
   {
     id: "ga4",
     name: "Google Analytics (GA4)",
-    category: "google",
+    categories: ["google", "analytics"],
     logo: "/static/images/logos/googleanalytics.png",
 
     auth_type: "oauth",
@@ -338,7 +338,7 @@ user behavior, traffic sources, and conversions.
   {
     id: "search-console",
     name: "Search Console",
-    category: "google",
+    categories: ["google", "analytics"],
     logo: "/static/images/logos/searchconsole.png",
 
     auth_type: "oauth",
@@ -378,7 +378,7 @@ using Google Search Console reports.
   {
     id: "youtube",
     name: "YouTube",
-    category: "google",
+    categories: ["google", "video", "social"],
     logo: "/static/images/logos/youtube.png",
 
     auth_type: "oauth",
@@ -421,7 +421,7 @@ to evaluate audience engagement and growth.
   {
     id: "trends",
     name: "Google Trends",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/googletrends.png",
 
     auth_type: "none",
@@ -464,7 +464,7 @@ Uses Pytrends for data collection.
   {
     id: "news",
     name: "Google News",
-    category: "google",
+    categories: ["google", "content"],
     logo: "/static/images/logos/googlenews.png",
 
     auth_type: "none",
@@ -505,7 +505,7 @@ to monitor brand mentions and trending topics.
   {
     id: "books",
     name: "Google Books",
-    category: "google",
+    categories: ["google", "content"],
     logo: "/static/images/logos/googlebooks.png",
 
     auth_type: "api_key",
@@ -546,7 +546,7 @@ to build searchable digital libraries.
   {
     id: "webfonts",
     name: "Google Webfonts",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/webfonts.png",
 
     auth_type: "api_key",
@@ -586,7 +586,7 @@ and typography optimization.
   {
     id: "pagespeed",
     name: "PageSpeed",
-    category: "google",
+    categories: ["google", "analytics"],
     logo: "/static/images/logos/pagespeed.png",
 
     auth_type: "api_key",
@@ -626,7 +626,7 @@ to optimize SEO and loading speed.
   {
     id: "gcs",
     name: "Google Cloud Storage",
-    category: "google",
+    categories: ["google", "cloud"],
     logo: "/static/images/logos/gcs.png",
 
     auth_type: "oauth",
@@ -667,7 +667,7 @@ and object-level information.
   {
     id: "classroom",
     name: "Google Classroom",
-    category: "google",
+    categories: ["google"],
     logo: "/static/images/logos/classroom.png",
 
     auth_type: "oauth",
@@ -712,7 +712,7 @@ including courses, assignments, and submissions.
   {
     id: "factcheck",
     name: "Fact Check",
-    category: "google",
+    categories: ["google", "content"],
     logo: "/static/images/logos/factcheck.png",
 
     auth_type: "api_key",
@@ -754,7 +754,7 @@ and validate public statements.
   {
     id: "facebook",
     name: "Facebook Pages",
-    category: "social",
+    categories: ["meta", "social"],
     logo: "/static/images/logos/facebook.png",
 
     auth_type: "oauth",
@@ -800,7 +800,7 @@ All page data is securely synchronized using OAuth authorization.
   {
     id: "facebook_ads",
     name: "Facebook Ads",
-    category: "social",
+    categories: ["meta", "ads"],
     logo: "/static/images/logos/facebook.png",
 
     auth_type: "oauth",
@@ -846,7 +846,7 @@ All advertising data is securely synchronized using OAuth authorization.
   {
     id: "instagram",
     name: "Instagram",
-    category: "social",
+    categories: ["meta", "social"],
     logo: "/static/images/logos/instagram.png",
 
     auth_type: "oauth",
@@ -888,7 +888,7 @@ OAuth access is scoped and securely stored.
   {
     id: "tiktok",
     name: "TikTok Business",
-    category: "video",
+    categories: ["video", "ads"],
     logo: "/static/images/logos/tiktok.png",
 
     auth_type: "oauth",
@@ -930,7 +930,7 @@ and integrated ad reports with secure OAuth token management.
   {
     id: "taboola",
     name: "Taboola Backstage",
-    category: "ads",
+    categories: ["ads"],
     logo: "/static/images/logos/taboola.png",
 
     auth_type: "oauth",
@@ -972,7 +972,7 @@ top campaign content, and publisher revenue reports with token caching.
   {
     id: "outbrain",
     name: "Outbrain Amplify",
-    category: "ads",
+    categories: ["ads"],
     logo: "/static/images/logos/outbrain.png",
 
     auth_type: "oauth",
@@ -1014,7 +1014,7 @@ campaign reports, promoted content performance, and periodic campaign metrics.
   {
     id: "similarweb",
     name: "SimilarWeb",
-    category: "analytics",
+    categories: ["analytics"],
     logo: "/static/images/logos/similarweb.png",
 
     auth_type: "api_key",
@@ -1057,7 +1057,7 @@ marketing channel shares, social traffic sources, and search keyword analytics.
   {
     id: "x",
     name: "X (Twitter)",
-    category: "social",
+    categories: ["social"],
     logo: "/static/images/logos/x.png",
 
     auth_type: "oauth",
@@ -1098,7 +1098,7 @@ and recent tweet data with secure token refresh support.
   {
     id: "linkedin",
     name: "LinkedIn Marketing",
-    category: "social",
+    categories: ["social", "ads"],
     logo: "/static/images/logos/linkedin.png",
 
     auth_type: "oauth",
@@ -1137,13 +1137,13 @@ ad accounts, campaigns, creatives, and ad analytics with refresh-token support.
       "Cost metrics by pivot"
     ]
   },
-  
+
   /* ================= DEV ================= */
 
   {
     id: "github",
     name: "GitHub",
-    category: "dev",
+    categories: ["developer", "git"],
     logo: "/static/images/logos/github.png",
 
     auth_type: "oauth",
@@ -1186,7 +1186,7 @@ to provide engineering productivity insights.
   {
     id: "gitlab",
     name: "GitLab",
-    category: "dev",
+    categories: ["developer", "git"],
     logo: "/static/images/logos/gitlab.png",
 
     auth_type: "oauth",
@@ -1230,7 +1230,7 @@ for DevOps and workflow analytics.
   {
     id: "devto",
     name: "Dev.to",
-    category: "dev",
+    categories: ["developer", "content"],
     logo: "/static/images/logos/devto.png",
 
     auth_type: "api_key",
@@ -1273,7 +1273,7 @@ on Dev.to to analyze content performance and trends.
   {
     id: "stackoverflow",
     name: "StackOverflow",
-    category: "dev",
+    categories: ["developer"],
     logo: "/static/images/logos/stackoverflow.png",
 
     auth_type: "api_key",
@@ -1316,7 +1316,7 @@ to analyze developer knowledge trends.
   {
     id: "hackernews",
     name: "HackerNews",
-    category: "dev",
+    categories: ["developer", "content"],
     logo: "/static/images/logos/hackernews.png",
 
     auth_type: "none",
@@ -1358,7 +1358,7 @@ to track technology and startup trends.
   {
     id: "nvd",
     name: "NVD",
-    category: "dev",
+    categories: ["developer", "security"],
     logo: "/static/images/logos/nvd.png",
 
     auth_type: "api_key",
@@ -1404,7 +1404,7 @@ for security monitoring.
   {
     id: "reddit",
     name: "Reddit",
-    category: "social",
+    categories: ["social"],
     logo: "/static/images/logos/reddit.png",
 
     auth_type: "oauth",
@@ -1448,7 +1448,7 @@ to measure community engagement and sentiment.
   {
     id: "discord",
     name: "Discord",
-    category: "social",
+    categories: ["social", "messaging"],
     logo: "/static/images/logos/discord.png",
 
     auth_type: "bot",
@@ -1491,7 +1491,7 @@ using bot-based integration.
   {
     id: "telegram",
     name: "Telegram",
-    category: "social",
+    categories: ["social", "messaging"],
     logo: "/static/images/logos/telegram.png",
 
     auth_type: "bot_token",
@@ -1533,7 +1533,7 @@ using bot token authentication.
   {
     id: "tumblr",
     name: "Tumblr",
-    category: "social",
+    categories: ["social"],
     logo: "/static/images/logos/tumblr.png",
 
     auth_type: "oauth",
@@ -1576,7 +1576,7 @@ to analyze content reach.
   {
     id: "medium",
     name: "Medium",
-    category: "social",
+    categories: ["social", "content"],
     logo: "/static/images/logos/medium.png",
 
     auth_type: "oauth",
@@ -1619,7 +1619,7 @@ to measure content impact.
   {
     id: "mastodon",
     name: "Mastodon",
-    category: "social",
+    categories: ["social"],
     logo: "/static/images/logos/mastodon.png",
 
     auth_type: "oauth",
@@ -1662,7 +1662,7 @@ instances for decentralized social analytics.
   {
     id: "lemmy",
     name: "Lemmy",
-    category: "social",
+    categories: ["social", "community"],
     logo: "/static/images/logos/lemmy.png",
 
     auth_type: "none",
@@ -1706,7 +1706,7 @@ to understand decentralized social engagement.
   {
     id: "pinterest",
     name: "Pinterest",
-    category: "social",
+    categories: ["social"],
     logo: "/static/images/logos/pinterest.png",
 
     auth_type: "oauth",
@@ -1749,7 +1749,7 @@ visual content performance and trends.
   {
     id: "twitch",
     name: "Twitch",
-    category: "video",
+    categories: ["video"],
     logo: "/static/images/logos/twitch.png",
 
     auth_type: "oauth",
@@ -1793,7 +1793,7 @@ for live streaming analytics.
   {
     id: "peertube",
     name: "PeerTube",
-    category: "video",
+    categories: ["video"],
     logo: "/static/images/logos/peertube.png",
 
     auth_type: "none",
@@ -1839,7 +1839,7 @@ instances for federated media analytics.
   {
     id: "openstreetmap",
     name: "OpenStreetMap",
-    category: "other",
+    categories: ["maps"],
     logo: "/static/images/logos/openstreetmap.png",
 
     auth_type: "none",
@@ -1883,7 +1883,7 @@ OpenStreetMap for mapping and location services.
   {
     id: "wikipedia",
     name: "Wikipedia",
-    category: "other",
+    categories: ["content"],
     logo: "/static/images/logos/wikipedia.png",
 
     auth_type: "none",
@@ -1926,7 +1926,7 @@ to track knowledge updates and editor activity.
   {
     id: "producthunt",
     name: "ProductHunt",
-    category: "other",
+    categories: ["content", "community"],
     logo: "/static/images/logos/producthunt.png",
 
     auth_type: "api_key",
@@ -1969,7 +1969,7 @@ on Product Hunt for startup analytics.
   {
     id: "discourse",
     name: "Discourse",
-    category: "other",
+    categories: ["community"],
     logo: "/static/images/logos/discourse.png",
 
     auth_type: "api_key",
@@ -2012,7 +2012,7 @@ from Discourse communities.
   {
     id: "whatsapp",
     name: "WhatsApp",
-    category: "Messaging",
+    categories: ["meta", "messaging"],
     route: "/connectors/whatsapp",
     logo: "/static/images/logos/whatsapp.png",
     tables: [

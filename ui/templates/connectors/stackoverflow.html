@@ -577,7 +577,21 @@ function toggleDestFields(type) {
     document.getElementById("adlsFields").classList.toggle("hidden", type !== "azure_datalake");
     document.getElementById("databricksFields").classList.toggle("hidden", type !== "databricks");
     document.getElementById("formatField").classList.toggle("hidden", !(type === "bigquery" || type === "s3" || type === "azure_datalake"));
+
+    // New logic: Hide Iceberg for BigQuery only
+    const icebergBtn = document.getElementById("format-iceberg");
+    const currentFormat = document.getElementById('dataFormat').value;
+    if (type === "bigquery") {
+        icebergBtn.classList.add("hidden");
+        // Fallback to Parquet if Iceberg was selected (prevents invalid format on save)
+        if (currentFormat === 'iceberg') {
+            selectFormat('parquet');
+        }
+    } else {
+        icebergBtn.classList.remove("hidden");
+    }
 }
+
 
 async function saveDestination(){
     const btn = document.getElementById("saveDestBtn");

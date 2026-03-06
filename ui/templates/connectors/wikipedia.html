@@ -669,19 +669,34 @@ function selectDestination(value, label, logoUrl) {
 }
 
 function toggleDestFields(type) {
-  const fields = document.getElementById("dbFields");
-  if(!type){
-    fields.classList.add("hidden");
-    return;
-  }
-  fields.classList.remove("hidden");
-  document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery" || type === "s3" || type === "azure_datalake" || type === "databricks");
-  document.getElementById("bigqueryFields").classList.toggle("hidden", type !== "bigquery");
-  document.getElementById("s3Fields").classList.toggle("hidden", type !== "s3");
+    const fields = document.getElementById("dbFields");
+    if(!type){
+        fields.classList.add("hidden");
+        return;
+    }
+    fields.classList.remove("hidden");
+
+    document.getElementById("sqlFields").classList.toggle("hidden", type === "bigquery" || type === "s3" || type === "azure_datalake" || type === "databricks");
+    document.getElementById("bigqueryFields").classList.toggle("hidden", type !== "bigquery");
+    document.getElementById("s3Fields").classList.toggle("hidden", type !== "s3");
     document.getElementById("adlsFields").classList.toggle("hidden", type !== "azure_datalake");
     document.getElementById("databricksFields").classList.toggle("hidden", type !== "databricks");
-  document.getElementById("formatField").classList.toggle("hidden", !(type === "bigquery" || type === "s3" || type === "azure_datalake"));
+    document.getElementById("formatField").classList.toggle("hidden", !(type === "bigquery" || type === "s3" || type === "azure_datalake"));
+
+    // New logic: Hide Iceberg for BigQuery only
+    const icebergBtn = document.getElementById("format-iceberg");
+    const currentFormat = document.getElementById('dataFormat').value;
+    if (type === "bigquery") {
+        icebergBtn.classList.add("hidden");
+        // Fallback to Parquet if Iceberg was selected (prevents invalid format on save)
+        if (currentFormat === 'iceberg') {
+            selectFormat('parquet');
+        }
+    } else {
+        icebergBtn.classList.remove("hidden");
+    }
 }
+
 
 window.onclick = function(event) {
   if (!event.target.closest('#customSelectTrigger') && !event.target.closest('#dropdownMenu')) {

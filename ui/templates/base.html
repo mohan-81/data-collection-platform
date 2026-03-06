@@ -489,6 +489,64 @@
         AOS.init({ duration: 900, once: true });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+function enforceDestinationFormats(){
+
+    const destSelect = document.getElementById("destinationType");
+    if(!destSelect) return;
+
+    const dest = destSelect.value;
+
+    const json = document.getElementById("format-json");
+    const parquet = document.getElementById("format-parquet");
+    const iceberg = document.getElementById("format-iceberg");
+    const formatField = document.getElementById("formatField");
+
+    if(!formatField) return;
+
+    // hide everything first
+    if(json) json.style.display="none";
+    if(parquet) parquet.style.display="none";
+    if(iceberg) iceberg.style.display="none";
+
+    if(dest === "s3" || dest === "azure_datalake"){
+
+        formatField.classList.remove("hidden");
+
+        if(json) json.style.display="flex";
+        if(parquet) parquet.style.display="flex";
+        if(iceberg) iceberg.style.display="flex";
+
+    }
+    else if(dest === "bigquery"){
+
+        formatField.classList.remove("hidden");
+
+        if(json) json.style.display="flex";
+        if(parquet) parquet.style.display="flex";
+
+    }
+    else{
+
+        formatField.classList.add("hidden");
+
+    }
+
+}
+
+document.addEventListener("change", function(e){
+
+    if(e.target && e.target.id === "destinationType"){
+        enforceDestinationFormats();
+    }
+
+});
+
+window.addEventListener("load", enforceDestinationFormats);
+
+</script>
 </body>
 
 </html>

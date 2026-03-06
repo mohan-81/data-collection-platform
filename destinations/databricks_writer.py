@@ -7,6 +7,8 @@ def push_databricks(dest, source, rows):
     if not rows:
         return 0
 
+    fmt = (dest.get("format") or "parquet").lower()
+
     try:
         db_name = (dest.get("database_name") or "hive_metastore.default").strip()
 
@@ -36,6 +38,11 @@ def push_databricks(dest, source, rows):
             )
         """)
 
+        if fmt == "iceberg":
+            from destinations.lakehouse_writer import push_iceberg
+            print("[DATABRICKS] Writing Iceberg table")
+            return push_iceberg(dest, source, rows)
+        
         # Databricks SQL doesn't have a PARSE_JSON equivalent directly for inserts from string literals in the same way Snowflake does,
         # but we can insert the JSON as a STRING (payload column) and parse it on read, which is very common in Delta tables.
         insert_sql = f"""

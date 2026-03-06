@@ -10,6 +10,8 @@ from destinations.redshift_writer import push_redshift
 from security.secure_db import decrypt_payload
 from flask import g, has_request_context
 
+from destinations.lakehouse_writer import push_iceberg
+
 import sqlite3
 import datetime
 
@@ -69,7 +71,7 @@ def push_to_destination(dest_cfg, source, rows):
         uid = getattr(g, "user_id", None)
 
     # ---------------- FORMAT ISOLATION ----------------
-    if dest_type in ["bigquery", "s3", "azure_datalake"]:
+    if dest_type in ["bigquery", "s3", "azure_datalake", "databricks"]:
         dest_cfg["format"] = (
             dest_cfg.get("format") or "parquet"
         ).lower()

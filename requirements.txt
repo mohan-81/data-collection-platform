@@ -33,3 +33,6 @@ pyarrow
 cryptography
 azure-storage-file-datalake
 databricks-sql-connector
+pyiceberg 
+s3fs 
+adlfs

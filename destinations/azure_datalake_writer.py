@@ -47,6 +47,11 @@ def push_azure_datalake(dest, source, rows):
         tmp.close()
         df.to_json(file_path, orient="records", lines=True)
         extension = "json"
+    elif fmt == "iceberg":
+        from destinations.lakehouse_writer import push_iceberg
+        print("[ADLS] Writing Iceberg table")
+        return push_iceberg(dest, source, rows)
+
     else:
         raise Exception(f"Unsupported ADLS format: {fmt}")
 

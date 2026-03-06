@@ -77,6 +77,13 @@ def push_s3(dest, source, rows):
 
         extension = "json"
 
+    elif fmt == "iceberg":
+
+        from destinations.lakehouse_writer import push_iceberg
+        print("[S3] Writing Iceberg table")
+
+        return push_iceberg(dest, source, rows)
+
     else:
         raise Exception(f"Unsupported S3 format: {fmt}")
 

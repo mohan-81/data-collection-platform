@@ -35,3 +35,6 @@ Thumbs.db
 # Secret files
 secrets.json
 secret.key
+
+ui/
+.update_connections.py

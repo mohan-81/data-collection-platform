@@ -1,4 +1,4 @@
-from security.crypto import decrypt_value
+from backend.security.crypto import decrypt_value
 
 
 class SecureRow(dict):

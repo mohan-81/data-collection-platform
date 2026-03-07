@@ -4,7 +4,7 @@ import datetime
 import json
 import urllib.parse
 
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 DB = "identity.db"
 SOURCE = "news"

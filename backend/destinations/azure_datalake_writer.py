@@ -105,7 +105,7 @@ def push_azure_datalake(dest, source, rows):
         )
 
         if fmt == "iceberg":
-            from destinations.lakehouse_writer import register_iceberg_table
+            from backend.destinations.lakehouse_writer import register_iceberg_table
             register_iceberg_table(
                 source=source,
                 storage_type="adls",
@@ -113,7 +113,7 @@ def push_azure_datalake(dest, source, rows):
             )
 
         else:  # hudi
-            from destinations.lakehouse_writer import register_hudi_table
+            from backend.destinations.lakehouse_writer import register_hudi_table
             register_hudi_table(
                 source=source,
                 storage_type="adls",

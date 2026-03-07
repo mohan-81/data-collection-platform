@@ -237,7 +237,7 @@ def sync_related(uid, keyword):
         "rows": rows_to_push
     }
 
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 SOURCE = "trends"
 

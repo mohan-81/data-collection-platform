@@ -6,7 +6,7 @@ import time
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 SOURCE = "classroom"
 DB = "identity.db"

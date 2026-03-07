@@ -39,7 +39,7 @@ def push_databricks(dest, source, rows):
         """)
 
         if fmt == "iceberg":
-            from destinations.lakehouse_writer import push_iceberg
+            from backend.destinations.lakehouse_writer import push_iceberg
             print("[DATABRICKS] Writing Iceberg table")
             return push_iceberg(dest, source, rows)
         

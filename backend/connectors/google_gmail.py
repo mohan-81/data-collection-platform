@@ -2,7 +2,7 @@ import sqlite3
 import json
 import datetime
 import time
-from destinations.mysql_writer import push_to_mysql
+from backend.destinations.mysql_writer import push_to_mysql
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -464,7 +464,7 @@ def sync_gmail():
 
         # ============ PUSH TO DESTINATION ============ #
 
-        from destinations.destination_router import push_to_destination
+        from backend.destinations.destination_router import push_to_destination
 
 
         cur.execute("""

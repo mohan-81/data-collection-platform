@@ -156,7 +156,7 @@ def insert_batch(uid, items):
 
 
 # ---------------- Main Sync ----------------
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 
 def sync_hackernews(uid, sync_type="incremental", limit=50):

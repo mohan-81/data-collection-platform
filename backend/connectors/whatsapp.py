@@ -5,9 +5,9 @@ import time
 import sqlite3
 from urllib.parse import urlencode
 
-from security.crypto import decrypt_value
-from security.secure_fetch import fetchone_secure
-from destinations.destination_router import push_to_destination
+from backend.security.crypto import decrypt_value
+from backend.security.secure_fetch import fetchone_secure
+from backend.destinations.destination_router import push_to_destination
 
 DB = "identity.db"
 SOURCE = "whatsapp"
@@ -304,13 +304,13 @@ def sync_whatsapp(uid=None, sync_type="historical"):
     # We aggregate all rows or push by category. Standard seems to be pushing all rows.
     # But usually push_to_destination is called with (dest_cfg, source, rows)
     # Let's find destination config
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
     
     # helper to get active destination from identity_server context if needed
     # but sync_whatsapp is usually called from universal_sync which handles its own?
     # Actually connectors like instagram.py handle it inside.
     
-    from security.secure_fetch import fetchone_secure
+    from backend.security.secure_fetch import fetchone_secure
     def get_active_destination(uid):
         con = get_db()
         cur = con.cursor()

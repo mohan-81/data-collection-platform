@@ -18,7 +18,7 @@ API = "https://gitlab.com/api/v4"
 def db():
     return sqlite3.connect(DB, timeout=60, check_same_thread=False)
 
-from security.secure_fetch import fetchone_secure
+from backend.security.secure_fetch import fetchone_secure
 
 def get_gitlab_app(uid):
 

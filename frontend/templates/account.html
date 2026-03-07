@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-gold: #e2e8f0;
+        --accent-cyan: #22d3ee;
+        --accent-purple: #a78bfa;
+        --accent-emerald: #34d399;
+        --accent-red: #f87171;
+        --deep-slate: #0f172a;
+        --bg-dark: #0a0f1a;
+        --glass-white: rgba(255, 255, 255, 0.07);
+        --neu-upper: rgba(255, 255, 255, 0.06);
+        --neu-lower: rgba(0, 0, 0, 0.55);
+    }
+
+    body {
+        background: radial-gradient(ellipse at 25% 35%, #1e293b 0%, #0a0f1a 70%);
+        color: #e2e8f0;
+        overflow-x: hidden;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    .bg-layer {
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+        background: linear-gradient(to bottom right, #0f172a 0%, #020617 100%);
+        pointer-events: none;
+    }
+
+    .noise-overlay {
+        position: fixed;
+        inset: 0;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" /><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.4"/></svg>') repeat;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.35;
+    }
+
+    .premium-card {
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.88));
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 28px;
+        box-shadow: 12px 12px 24px var(--neu-lower), -6px -6px 16px var(--neu-upper);
+        transition: all 0.55s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .premium-card:hover {
+        transform: translateY(-10px) scale(1.015);
+        border-color: var(--accent-cyan);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 50px rgba(34, 211, 238, 0.22);
+    }
+
+    .stat-label {
+        font-size: 0.81rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #a1b0c9;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #ffffff 20%, #a5f3fc 80%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .plan-card {
+        border: 2px solid transparent;
+        position: relative;
+    }
+
+    .plan-card.featured {
+        border-color: var(--accent-cyan);
+        background: linear-gradient(145deg, rgba(34, 211, 238, 0.1), rgba(15, 23, 42, 0.95));
+        box-shadow: 0 0 40px rgba(34, 211, 238, 0.15);
+    }
+
+    .plan-card.featured::before {
+        content: "CURRENT PLAN";
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-cyan);
+        color: #0f172a;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 4px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.1em;
+    }
+
+    .cycle-tab {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        padding: 6px 16px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .cycle-tab.active {
+        background: var(--accent-cyan);
+        color: #0f172a;
+        border-color: var(--accent-cyan);
+        box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+    }
+
+    .premium-table th {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .premium-table td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+</style>
+
+<div class="bg-layer"></div>
+<div class="noise-overlay"></div>
+
+<section class="min-h-screen px-5 sm:px-8 py-12 md:py-16 relative">
+    <div class="max-w-[1440px] mx-auto space-y-12">
+
+        <!-- Header -->
+        <div class="space-y-4" data-aos="fade-down">
+            <span class="text-cyan-400 font-bold text-xs uppercase tracking-[0.45em] mb-3 block">Billing
+                Portfolio</span>
+            <h1 class="text-5xl md:text-6xl font-black text-white tracking-tight leading-tight">
+                Account & <span class="text-cyan-400">Billing</span>
+            </h1>
+            <p class="text-slate-300 max-w-2xl text-lg leading-relaxed">
+                Manage your subscription, billing cycles and account usage in one central place.
+            </p>
+        </div>
+
+        <!-- Account Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8" data-aos="fade-up">
+            <div class="premium-card p-8">
+                <div class="stat-label mb-2">Current Plan</div>
+                <div class="stat-value text-cyan-400">Pro</div>
+                <p class="text-slate-500 text-xs mt-3">Enterprise scale analytics</p>
+            </div>
+            <div class="premium-card p-8">
+                <div class="stat-label mb-2">Billing Cycle</div>
+                <div class="stat-value">Monthly</div>
+                <p class="text-slate-500 text-xs mt-3">Next: April 1, 2026</p>
+            </div>
+            <div class="premium-card p-8">
+                <div class="stat-label mb-2">Next Billing</div>
+                <div class="stat-value">Mar 31</div>
+                <p class="text-slate-500 text-xs mt-3">Estimated: ₹99.00</p>
+            </div>
+            <div class="premium-card p-8 border-r-4 border-r-cyan-500 bg-gradient-to-br from-cyan-600/5 to-transparent">
+                <div class="stat-label mb-2 text-cyan-300">Total Spent</div>
+                <div class="stat-value text-cyan-300">₹247.50</div>
+                <p class="text-cyan-800/60 text-xs mt-3 font-semibold text-slate-500">Current billing period</p>
+            </div>
+        </div>
+
+        <!-- Subscription Plans -->
+        <div class="space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="h-8 w-1 bg-cyan-500 shadow-[0_0_15px_#22d3ee]"></div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Subscription Plans</h2>
+                </div>
+                <div class="flex p-1 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-white/5 w-fit">
+                    <button class="cycle-tab active" onclick="switchPlanCycle('daily', this)">Daily</button>
+                    <button class="cycle-tab" onclick="switchPlanCycle('weekly', this)">Weekly</button>
+                    <button class="cycle-tab" onclick="switchPlanCycle('monthly', this)">Monthly</button>
+                    <button class="cycle-tab" onclick="switchPlanCycle('yearly', this)">Yearly</button>
+                </div>
+            </div>
+
+            <div id="plansGrid" class="grid grid-cols-1 md:grid-cols-3 gap-8" data-aos="fade-up">
+                <!-- Plans will be injected or toggled via JS -->
+                <!-- Starter -->
+                <div class="premium-card p-10 flex flex-col plan-card" data-plan="starter">
+                    <div class="stat-label text-slate-400 mb-2">Starter</div>
+                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-4 cycle-label">Monthly Plan
+                    </div>
+                    <div class="text-4xl font-black text-white price-value">₹0<span
+                            class="text-lg text-slate-500 font-medium">/mo</span></div>
+                    <div class="mt-8 space-y-4 flex-grow">
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="connector-limit">5</span> Connectors
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="destination-limit">2</span> Destinations
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="record-limit">10k</span> Records/mo
+                        </div>
+                    </div>
+                    <button
+                        class="mt-10 py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition-all">Downgrade</button>
+                </div>
+
+                <!-- Pro -->
+                <div class="premium-card p-10 flex flex-col plan-card featured" data-plan="pro">
+                    <div class="stat-label text-cyan-400 mb-2">Pro</div>
+                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-4 cycle-label">Monthly Plan
+                    </div>
+                    <div class="text-4xl font-black text-white price-value">₹99<span
+                            class="text-lg text-slate-500 font-medium">/mo</span></div>
+                    <div class="mt-8 space-y-4 flex-grow">
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="connector-limit">Unlimited</span> Connectors
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="destination-limit">8</span> Destinations
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="record-limit">1M</span> Records/mo
+                        </div>
+                    </div>
+                    <button
+                        class="mt-10 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-sm hover:bg-cyan-400 transition-all">Active
+                        Plan</button>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="premium-card p-10 flex flex-col plan-card" data-plan="enterprise">
+                    <div class="stat-label text-slate-400 mb-2">Enterprise</div>
+                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-4 cycle-label">Yearly Plan
+                    </div>
+                    <div class="text-4xl font-black text-white price-value">Custom</div>
+                    <div class="mt-8 space-y-4 flex-grow">
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Custom Limits
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Dedicated Support
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-slate-300">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            SLA Guarantee
+                        </div>
+                    </div>
+                    <button
+                        class="mt-10 py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition-all">Contact
+                        Us</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Overview -->
+        <div class="space-y-8">
+            <div class="flex items-center gap-4">
+                <div class="h-8 w-1 bg-cyan-500 shadow-[0_0_15px_#22d3ee]"></div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">Usage Overview</h2>
+            </div>
+
+            <div class="grid grid-cols-1 gap-8">
+                <div class="premium-card p-9 md:p-11" data-aos="fade-up">
+                    <div class="flex justify-between items-center mb-10">
+                        <h3 class="text-xl font-bold text-white">Platform Resource Consumption</h3>
+                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Usage vs Plan
+                            Limits</span>
+                    </div>
+                    <div class="h-[400px]">
+                        <canvas id="usageOverviewChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing History -->
+        <div class="premium-card p-8 overflow-hidden" data-aos="fade-up">
+            <h2 class="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                <span class="w-2 h-2 bg-cyan-500 rounded-full"></span>
+                Billing History
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm premium-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Date</th>
+                            <th class="text-left">Billing Cycle</th>
+                            <th class="text-left">Plan</th>
+                            <th class="text-center">Amount</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-right">Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-200">
+                        <tr class="hover:bg-white/5 transition-all">
+                            <td>Mar 01, 2026</td>
+                            <td>Monthly</td>
+                            <td>Pro</td>
+                            <td class="text-center font-bold">₹99.00</td>
+                            <td class="text-center"><span
+                                    class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">PAID</span>
+                            </td>
+                            <td class="text-right text-cyan-400 font-bold cursor-pointer hover:underline">PDF</td>
+                        </tr>
+                        <tr class="hover:bg-white/5 transition-all">
+                            <td>Feb 01, 2026</td>
+                            <td>Monthly</td>
+                            <td>Pro</td>
+                            <td class="text-center font-bold">₹99.00</td>
+                            <td class="text-center"><span
+                                    class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">PAID</span>
+                            </td>
+                            <td class="text-right text-cyan-400 font-bold cursor-pointer hover:underline">PDF</td>
+                        </tr>
+                        <tr class="hover:bg-white/5 transition-all">
+                            <td>Jan 01, 2026</td>
+                            <td>Monthly</td>
+                            <td>Starter</td>
+                            <td class="text-center font-bold">₹0.00</td>
+                            <td class="text-center"><span
+                                    class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">PAID</span>
+                            </td>
+                            <td class="text-right text-cyan-400 font-bold cursor-pointer hover:underline">PDF</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Organization Profile -->
+        <div class="premium-card p-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-none shadow-2xl"
+            data-aos="fade-up">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="text-center md:text-left">
+                    <h2 class="text-2xl font-black text-white mb-2">Organization Profile</h2>
+                    <p class="text-slate-400 text-sm">Managing your enterprise identity and billing entities.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-x-12 gap-y-6">
+                    <div>
+                        <span class="stat-label">Registered Entity</span>
+                        <p id="companyName" class="text-white font-bold text-lg mt-1">--</p>
+                    </div>
+                    <div>
+                        <span class="stat-label">Account Type</span>
+                        <p id="accountType" class="text-cyan-400 font-bold text-lg mt-1 uppercase tracking-widest">--
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="mt-10 pt-10 border-t border-white/5 flex flex-wrap justify-between text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                <div>Registry Date: <span id="accountCreated" class="text-white ml-2">--</span></div>
+                <div>Live Sessions: <span id="totalSessions" class="text-cyan-400 ml-2">--</span></div>
+                <div>Tax ID: <span class="text-cyan-400 ml-2">US-8429-SEG</span></div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/account.js"></script>
+
+{% endblock %}

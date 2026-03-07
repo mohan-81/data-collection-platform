@@ -12,8 +12,8 @@ from google.api_core.exceptions import (
     TooManyRequests,
 )
 
-from security.secure_fetch import fetchone_secure
-from destinations.destination_router import push_to_destination
+from backend.security.secure_fetch import fetchone_secure
+from backend.destinations.destination_router import push_to_destination
 
 DB = "identity.db"
 SOURCE = "bigquery"

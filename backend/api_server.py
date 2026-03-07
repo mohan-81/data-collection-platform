@@ -15,98 +15,98 @@ import requests
 import datetime
 import sqlite3
 from urllib.parse import urlencode
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 # Google OAuth
 from dotenv import load_dotenv
 from google_auth_oauthlib.flow import Flow
 
 #credentials security
-from security.secure_db import encrypt_payload
-from security.secure_db import decrypt_payload
-from security.crypto import encrypt_value
-from security.secure_fetch import auto_decrypt_row
-from security.secure_fetch import (
+from backend.security.secure_db import encrypt_payload
+from backend.security.secure_db import decrypt_payload
+from backend.security.crypto import encrypt_value
+from backend.security.secure_fetch import auto_decrypt_row
+from backend.security.secure_fetch import (
     fetchone_secure,
     fetchall_secure
 )
-from security.auth_routes import auth
-from security.auth_middleware import load_logged_user
+from backend.security.auth_routes import auth
+from backend.security.auth_middleware import load_logged_user
 
 # Connectors
-from connectors.pinterest import (
+from backend.connectors.pinterest import (
     pinterest_get_auth_url,
     pinterest_exchange_code,
     pinterest_save_token,
     sync_pinterest
 )
-from connectors.nvd import sync_nvd
-from connectors.openstreetmap import sync_openstreetmap
-from connectors.lemmy import sync_lemmy
-from connectors.discourse import sync_discourse
-from connectors.mastodon import sync_mastodon
-from connectors.peertube import sync_peertube
-from connectors.wikipedia import sync_wikipedia
-from connectors.producthunt import sync_producthunt
-from connectors.hackernews import sync_hackernews
-from connectors.google_youtube import sync_youtube
-from connectors.google_webfonts import sync_webfonts
-from connectors.google_gcs import sync_gcs
-from connectors.google_contacts import sync_contacts
-from connectors.google_tasks import sync_tasks
-from connectors.classroom import sync_classroom
-from connectors.google_gmail import sync_gmail
-from connectors.google_calendar import sync_calendar_files
-from connectors.google_pagespeed import sync_pagespeed
-from connectors.google_search_console import sync_search_console
-from connectors.google_drive import sync_drive_files
-from connectors.google_forms import sync_forms
-from connectors.google_sheets import sync_sheets_files
-from connectors.google_ga4 import sync_ga4
-from connectors.facebook_pages import sync_facebook_pages
-from connectors.tiktok import (
+from backend.connectors.nvd import sync_nvd
+from backend.connectors.openstreetmap import sync_openstreetmap
+from backend.connectors.lemmy import sync_lemmy
+from backend.connectors.discourse import sync_discourse
+from backend.connectors.mastodon import sync_mastodon
+from backend.connectors.peertube import sync_peertube
+from backend.connectors.wikipedia import sync_wikipedia
+from backend.connectors.producthunt import sync_producthunt
+from backend.connectors.hackernews import sync_hackernews
+from backend.connectors.google_youtube import sync_youtube
+from backend.connectors.google_webfonts import sync_webfonts
+from backend.connectors.google_gcs import sync_gcs
+from backend.connectors.google_contacts import sync_contacts
+from backend.connectors.google_tasks import sync_tasks
+from backend.connectors.classroom import sync_classroom
+from backend.connectors.google_gmail import sync_gmail
+from backend.connectors.google_calendar import sync_calendar_files
+from backend.connectors.google_pagespeed import sync_pagespeed
+from backend.connectors.google_search_console import sync_search_console
+from backend.connectors.google_drive import sync_drive_files
+from backend.connectors.google_forms import sync_forms
+from backend.connectors.google_sheets import sync_sheets_files
+from backend.connectors.google_ga4 import sync_ga4
+from backend.connectors.facebook_pages import sync_facebook_pages
+from backend.connectors.tiktok import (
     get_tiktok_auth_url,
     handle_tiktok_oauth_callback,
     sync_tiktok,
     disconnect_tiktok
 )
-from connectors.taboola import (
+from backend.connectors.taboola import (
     connect_taboola,
     sync_taboola,
     disconnect_taboola,
 )
-from connectors.outbrain import (
+from backend.connectors.outbrain import (
     connect_outbrain,
     sync_outbrain,
     disconnect_outbrain,
 )
-from connectors.similarweb import (
+from backend.connectors.similarweb import (
     connect_similarweb,
     sync_similarweb,
     disconnect_similarweb,
 )
-from connectors.bigquery import (
+from backend.connectors.bigquery import (
     connect_bigquery,
     sync_bigquery,
     disconnect_bigquery,
 )
-from connectors.x import (
+from backend.connectors.x import (
     get_x_auth_url,
     handle_x_oauth_callback,
     sync_x,
     disconnect_x
 )
-from connectors.linkedin import (
+from backend.connectors.linkedin import (
     get_linkedin_auth_url,
     handle_linkedin_oauth_callback,
     sync_linkedin,
     disconnect_linkedin,
 )
-from connectors.chartbeat import (
+from backend.connectors.chartbeat import (
        connect_chartbeat,
        sync_chartbeat,
        disconnect_chartbeat,
 )
-from connectors.socialinsider import (
+from backend.connectors.socialinsider import (
     connect_socialinsider,
     sync_socialinsider,
     disconnect_socialinsider,
@@ -3764,7 +3764,7 @@ def google_callback():
 @app.route("/google/sync/drive")
 def sync_drive():
 
-    from connectors.google_drive import sync_drive_files
+    from backend.connectors.google_drive import sync_drive_files
 
     return jsonify(sync_drive_files())
 
@@ -3935,7 +3935,7 @@ def sheets_job_save():
 
 
 # ---------- GA4 Sync ----------
-from connectors.google_ga4 import sync_ga4 as run_ga4_sync
+from backend.connectors.google_ga4 import sync_ga4 as run_ga4_sync
 
 
 @app.route("/google/sync/ga4")
@@ -4572,7 +4572,7 @@ def forms_job_save():
 @app.route("/google/sync/calendar")
 def sync_calendar_files():
 
-    from connectors.google_calendar import sync_calendar_files
+    from backend.connectors.google_calendar import sync_calendar_files
 
     return jsonify(sync_calendar_files())
     
@@ -5227,7 +5227,7 @@ def contacts_job_save():
 def google_sync_gcs():
 
     try:
-        from connectors.google_gcs import sync_gcs
+        from backend.connectors.google_gcs import sync_gcs
 
         result = sync_gcs()
 
@@ -5385,7 +5385,7 @@ def google_sync_webfonts():
             "message": str(e)
         }), 500
     
-from connectors.google_webfonts import sync_webfonts
+from backend.connectors.google_webfonts import sync_webfonts
 
 @app.route("/connectors/webfonts/sync")
 def webfonts_sync_route():
@@ -5755,7 +5755,7 @@ def reddit_connect():
     client_id, client_secret, cfg = row
     cfg=json.loads(cfg)
 
-    from connectors.reddit import connect_reddit
+    from backend.connectors.reddit import connect_reddit
 
     connect_reddit(
         uid,
@@ -5968,7 +5968,7 @@ def reddit_sync_universal():
     # ----------------------------
     # IMPORT REAL FUNCTIONS
     # ----------------------------
-    from connectors.reddit import (
+    from backend.connectors.reddit import (
         sync_posts,
         sync_profile,
         sync_messages
@@ -6016,7 +6016,7 @@ def reddit_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -6038,7 +6038,7 @@ def reddit_profile():
 
     uid = request.args.get("uid")
 
-    from connectors.reddit import sync_profile
+    from backend.connectors.reddit import sync_profile
 
     return sync_profile(uid)
 
@@ -6048,7 +6048,7 @@ def reddit_posts():
     uid = request.args.get("uid")
     q = request.args.get("q", "python")
 
-    from connectors.reddit import sync_posts
+    from backend.connectors.reddit import sync_posts
 
     return sync_posts(uid, q)
 
@@ -6057,7 +6057,7 @@ def reddit_messages():
 
     uid = request.args.get("uid")
 
-    from connectors.reddit import sync_messages
+    from backend.connectors.reddit import sync_messages
 
     return sync_messages(uid)
 
@@ -6094,7 +6094,7 @@ def telegram_sync_universal():
 
     con.close()
 
-    from connectors.telegram import sync_messages
+    from backend.connectors.telegram import sync_messages
 
     res = sync_messages(uid, sync_type)
 
@@ -6130,7 +6130,7 @@ def telegram_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
     if rows:
@@ -6286,7 +6286,7 @@ def medium_sync():
     uid = getattr(g, "user_id", None)
     username = request.args.get("username")
 
-    from connectors.medium import sync_user
+    from backend.connectors.medium import sync_user
 
     return jsonify(sync_user(uid, username))
 
@@ -6457,7 +6457,7 @@ def medium_sync_universal():
 
     con.close()
 
-    from connectors.medium import sync_medium
+    from backend.connectors.medium import sync_medium
 
     res = sync_medium(uid, sync_type)
 
@@ -6494,7 +6494,7 @@ def medium_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
     if rows:
@@ -6536,7 +6536,7 @@ def tumblr_sync_blog():
     uid = request.cookies.get("uid")
     blog = request.args.get("blog")
 
-    from connectors.tumblr import sync_blog
+    from backend.connectors.tumblr import sync_blog
 
     return jsonify(sync_blog(uid, blog))
 
@@ -6547,7 +6547,7 @@ def tumblr_sync_posts():
     uid = request.cookies.get("uid")
     blog = request.args.get("blog")
 
-    from connectors.tumblr import sync_posts
+    from backend.connectors.tumblr import sync_posts
 
     return jsonify(sync_posts(uid, blog))
 
@@ -6692,7 +6692,7 @@ def twitch_sync():
     con.close()
 
     # Run connector
-    from connectors.twitch import sync_videos
+    from backend.connectors.twitch import sync_videos
 
     result = sync_videos(
         uid=uid,
@@ -6890,7 +6890,7 @@ def tumblr_sync_universal():
 
     con.close()
 
-    from connectors.tumblr import sync_posts
+    from backend.connectors.tumblr import sync_posts
 
     result=sync_posts(uid,sync_type)
 
@@ -7045,7 +7045,7 @@ def discord_sync_universal():
     job = cur.fetchone()
     sync_type = job[0] if job else "historical"
 
-    from connectors.discord import sync_guilds, sync_channels, sync_messages
+    from backend.connectors.discord import sync_guilds, sync_channels, sync_messages
 
     sync_guilds(uid)
 
@@ -7120,7 +7120,7 @@ def discord_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -7203,7 +7203,7 @@ def discord_save_config():
 
 # ---------------- GOOGLE BOOKS ----------------
 
-from connectors.googlebooks import sync_books
+from backend.connectors.googlebooks import sync_books
 
 
 @app.route("/connectors/books/connect")
@@ -7359,7 +7359,7 @@ def books_status():
 
 # ---------------- GOOGLE FACT CHECK ----------------
 
-from connectors.googlefactcheck import sync_factcheck
+from backend.connectors.googlefactcheck import sync_factcheck
 
 @app.route("/connectors/factcheck/sync")
 def factcheck_sync():
@@ -7563,11 +7563,11 @@ def googlenews_sync():
     query = request.args.get("q")
     limit = int(request.args.get("limit", 100))
 
-    from connectors.googlenews import sync_articles
+    from backend.connectors.googlenews import sync_articles
 
     return jsonify(sync_articles(uid, query, limit))
 
-from connectors.googlenews import sync_news
+from backend.connectors.googlenews import sync_news
 
 @app.route("/connectors/news/sync", methods=["GET"])
 def news_sync():
@@ -7734,7 +7734,7 @@ def googletrends_sync_interest():
         return jsonify({"error": "Unauthorized"}), 401
     keyword = request.args.get("q")
 
-    from connectors.googletrends import sync_interest
+    from backend.connectors.googletrends import sync_interest
 
     return jsonify(sync_interest(uid, keyword))
 
@@ -7748,11 +7748,11 @@ def googletrends_sync_related():
         return jsonify({"error": "Unauthorized"}), 401
     keyword = request.args.get("q")
 
-    from connectors.googletrends import sync_related
+    from backend.connectors.googletrends import sync_related
 
     return jsonify(sync_related(uid, keyword))
 
-from connectors.googletrends import sync_trends
+from backend.connectors.googletrends import sync_trends
 
 
 @app.route("/connectors/trends/sync", methods=["GET"])
@@ -8079,7 +8079,7 @@ def devto_sync_universal():
     con.close()
 
     # ---- Run connector ----
-    from connectors.devto import sync_articles, sync_tags
+    from backend.connectors.devto import sync_articles, sync_tags
 
     articles_data = sync_articles(uid, sync_type=sync_type)
     tags_data = sync_tags(uid)
@@ -8127,7 +8127,7 @@ def devto_sync_universal():
     }
 
     # ---- Push ONLY NEW ROWS ----
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -8151,7 +8151,7 @@ def devto_sync_universal():
 
 # ---------------- GITHUB ----------------
 
-from connectors.github import (
+from backend.connectors.github import (
     get_auth_url,
     exchange_code,
     save_token,
@@ -8350,7 +8350,7 @@ def github_job_save():
 
 # ---------------- INSTAGRAM ----------------
 
-from connectors.instagram import (
+from backend.connectors.instagram import (
     get_instagram_auth_url,
     handle_oauth_callback,
     sync_instagram,
@@ -9869,7 +9869,7 @@ def linkedin_job_save():
 @app.route("/gitlab/connect")
 def gitlab_connect():
 
-    from connectors.gitlab import get_auth_url
+    from backend.connectors.gitlab import get_auth_url
 
     uid = getattr(g, "user_id", None)
 
@@ -9953,7 +9953,7 @@ def gitlab_callback():
         return jsonify({"error": "Unauthorized"}), 401
     code = request.args.get("code")
 
-    from connectors.gitlab import exchange_code, save_token
+    from backend.connectors.gitlab import exchange_code, save_token
 
     data = exchange_code(uid, code)
     save_token(uid, data)
@@ -10103,7 +10103,7 @@ def gitlab_sync_universal():
 
     con.close()
 
-    from connectors.gitlab import (
+    from backend.connectors.gitlab import (
         sync_projects,
         sync_commits,
         sync_issues,
@@ -10136,7 +10136,7 @@ def gitlab_sync_universal():
         new_rows += issues.get("rows", [])
         new_rows += mrs.get("rows", [])
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     con = get_db()
     cur = con.cursor()
@@ -10368,7 +10368,7 @@ def stackoverflow_sync_universal():
 
     con.close()
 
-    from connectors.stackoverflow import (
+    from backend.connectors.stackoverflow import (
         sync_questions,
         sync_answers,
         sync_users
@@ -10411,7 +10411,7 @@ def stackoverflow_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -10519,7 +10519,7 @@ def hackernews_sync_universal():
 
     con.close()
 
-    from connectors.hackernews import sync_hackernews
+    from backend.connectors.hackernews import sync_hackernews
 
     data = sync_hackernews(uid, sync_type)
 
@@ -10555,7 +10555,7 @@ def hackernews_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -11309,7 +11309,7 @@ def mastodon_sync_universal():
 
     con.close()
 
-    from connectors.mastodon import sync_mastodon
+    from backend.connectors.mastodon import sync_mastodon
 
     result = sync_mastodon(uid, instance, sync_type)
 
@@ -11341,7 +11341,7 @@ def mastodon_sync_universal():
             "database_name": dest_row[5]
         }
 
-        from destinations.destination_router import push_to_destination
+        from backend.destinations.destination_router import push_to_destination
         pushed = push_to_destination(dest, "mastodon_statuses_data", rows)
 
     return jsonify({
@@ -11846,7 +11846,7 @@ def lemmy_sync_universal():
     job = cur.fetchone()
     sync_type = job[0] if job else "incremental"
 
-    from connectors.lemmy import sync_lemmy
+    from backend.connectors.lemmy import sync_lemmy
 
     result = sync_lemmy(uid)
 
@@ -11898,7 +11898,7 @@ def lemmy_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
     if rows:
@@ -12168,7 +12168,7 @@ def nvd_sync_universal():
 
     con.close()
 
-    from connectors.nvd import sync_nvd
+    from backend.connectors.nvd import sync_nvd
 
     result = sync_nvd(uid, sync_type)
 
@@ -12204,7 +12204,7 @@ def nvd_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
 
@@ -12501,7 +12501,7 @@ def pinterest_sync_universal():
         "database_name": dest_row[5]
     }
 
-    from destinations.destination_router import push_to_destination
+    from backend.destinations.destination_router import push_to_destination
 
     pushed = 0
     if rows:
@@ -13230,7 +13230,7 @@ def facebook_ads_job_save():
 
 # ---------------- FACEBOOK ADS SYNC ----------------
 
-from connectors.facebook_ads import sync_facebook_ads
+from backend.connectors.facebook_ads import sync_facebook_ads
 
 @app.route("/connectors/facebook_ads/sync")
 def facebook_ads_sync():
@@ -14105,7 +14105,7 @@ def universal_sync(source):
 
 # ---------------- WHATSAPP ----------------
 
-from connectors.whatsapp import (
+from backend.connectors.whatsapp import (
     sync_whatsapp,
     disconnect_whatsapp
 )
@@ -14168,7 +14168,7 @@ def whatsapp_save_app():
     con.close()
     
     # Initialize connector state
-    from connectors.whatsapp import save_state
+    from backend.connectors.whatsapp import save_state
     save_state(uid, {"last_sync_date": None})
     
     return jsonify({"status": "saved"}), 200
@@ -14676,7 +14676,7 @@ def chartbeat_save_app():
     if not api_key or not host:
         return jsonify({"error": "api_key and host are required"}), 400
 
-    from connectors.chartbeat import save_credentials
+    from backend.connectors.chartbeat import save_credentials
     save_credentials(uid, api_key, host, query_id)
 
     ensure_connector_initialized(uid, "chartbeat")
@@ -14835,7 +14835,7 @@ def socialinsider_save_app():
     if not api_key or not platform or not handle:
         return jsonify({"error": "api_key, platform, and handle are required"}), 400
 
-    from connectors.socialinsider import save_credentials
+    from backend.connectors.socialinsider import save_credentials
     save_credentials(uid, api_key, platform, handle)
 
     ensure_connector_initialized(uid, "socialinsider")

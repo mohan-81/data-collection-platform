@@ -4,7 +4,7 @@ import datetime
 import json
 import time
 
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 
 SOURCE = "pagespeed"

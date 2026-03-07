@@ -6,7 +6,7 @@ import os
 
 from urllib.parse import urlencode
 from dotenv import load_dotenv
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 
 DB = "identity.db"
@@ -126,7 +126,7 @@ def get_active_destination(uid):
         "database_name": row[5]
     }
 
-from security.secure_fetch import fetchone_secure
+from backend.security.secure_fetch import fetchone_secure
 
 
 def get_github_app(uid):

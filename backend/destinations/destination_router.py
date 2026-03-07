@@ -1,13 +1,13 @@
-from destinations.mysql_writer import push_to_mysql
-from destinations.postgres_writer import push_postgres
-from destinations.bigquery_writer import push_bigquery
-from destinations.snowflake_writer import push_snowflake
-from destinations.clickhouse_writer import push_clickhouse
-from destinations.s3_writer import push_s3
-from destinations.azure_datalake_writer import push_azure_datalake
-from destinations.databricks_writer import push_databricks
-from destinations.redshift_writer import push_redshift
-from security.secure_db import decrypt_payload
+from backend.destinations.mysql_writer import push_to_mysql
+from backend.destinations.postgres_writer import push_postgres
+from backend.destinations.bigquery_writer import push_bigquery
+from backend.destinations.snowflake_writer import push_snowflake
+from backend.destinations.clickhouse_writer import push_clickhouse
+from backend.destinations.s3_writer import push_s3
+from backend.destinations.azure_datalake_writer import push_azure_datalake
+from backend.destinations.databricks_writer import push_databricks
+from backend.destinations.redshift_writer import push_redshift
+from backend.security.secure_db import decrypt_payload
 from flask import g, has_request_context
 
 import sqlite3

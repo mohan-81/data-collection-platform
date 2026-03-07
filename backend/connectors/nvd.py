@@ -40,7 +40,7 @@ def load_config(uid):
         LIMIT 1
     """, (uid,))
 
-    from security.secure_fetch import fetchone_secure
+    from backend.security.secure_fetch import fetchone_secure
 
     row = fetchone_secure(cur)
     con.close()

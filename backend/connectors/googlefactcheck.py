@@ -4,7 +4,7 @@ import datetime
 import json
 import os
 from dotenv import load_dotenv
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 load_dotenv()
 

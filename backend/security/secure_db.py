@@ -1,6 +1,6 @@
 # this is the platform security layer for encrypting/decrypting sensitive fields in the database
 
-from security.crypto import encrypt_value, decrypt_value
+from backend.security.crypto import encrypt_value, decrypt_value
 
 # fields that must ALWAYS be encrypted
 SECRET_FIELDS = [

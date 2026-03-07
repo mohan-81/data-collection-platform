@@ -4,9 +4,9 @@ import datetime
 import json
 import time
 
-from security.crypto import encrypt_value, decrypt_value
-from security.secure_fetch import fetchone_secure
-from destinations.destination_router import push_to_destination
+from backend.security.crypto import encrypt_value, decrypt_value
+from backend.security.secure_fetch import fetchone_secure
+from backend.destinations.destination_router import push_to_destination
 
 DB = "identity.db"
 SOURCE = "socialinsider"

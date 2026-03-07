@@ -7,7 +7,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 
 # ---------------- CONFIG ---------------- #

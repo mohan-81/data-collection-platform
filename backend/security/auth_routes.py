@@ -6,7 +6,7 @@ import os
 from urllib.parse import quote_plus
 
 from werkzeug.security import generate_password_hash
-from security.secure_db import encrypt_payload
+from backend.security.secure_db import encrypt_payload
 from werkzeug.security import check_password_hash
 
 auth = Blueprint("auth", __name__)
@@ -175,7 +175,7 @@ def signup():
 
 # ================= LOGIN =================
 
-from security.crypto import decrypt_value
+from backend.security.crypto import decrypt_value
 
 
 @auth.route("/auth/login", methods=["POST"])

@@ -100,7 +100,7 @@ def push_s3(dest, source, rows):
         table_location = f"s3://{bucket_name}/{source}"
 
         if fmt == "iceberg":
-            from destinations.lakehouse_writer import register_iceberg_table
+            from backend.destinations.lakehouse_writer import register_iceberg_table
             register_iceberg_table(
                 source=source,
                 storage_type="s3",
@@ -108,7 +108,7 @@ def push_s3(dest, source, rows):
             )
 
         else:  # hudi
-            from destinations.lakehouse_writer import register_hudi_table
+            from backend.destinations.lakehouse_writer import register_hudi_table
             register_hudi_table(
                 source=source,
                 storage_type="s3",

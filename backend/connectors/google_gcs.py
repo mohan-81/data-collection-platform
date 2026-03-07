@@ -6,7 +6,7 @@ import time
 
 from google.oauth2.credentials import Credentials
 from google.cloud import storage
-from destinations.destination_router import push_to_destination
+from backend.destinations.destination_router import push_to_destination
 
 SOURCE = "gcs"
 

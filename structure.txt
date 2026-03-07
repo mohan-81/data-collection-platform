@@ -108,6 +108,10 @@ C:.
 ¦           wikipedia.cpython-312.pyc
 ¦           x.cpython-312.pyc
 ¦           
++---data
+¦       iceberg_registry.db
+¦       lakehouse_registry.db
+¦       
 +---destinations
 ¦   ¦   azure_datalake_writer.py
 ¦   ¦   bigquery_writer.py
@@ -364,6 +368,7 @@ C:.
     ¦                   
     +---Lib
     ¦   +---site-packages
+    ¦       ¦   81d243bd2c585b0f4821__mypyc.cp312-win_amd64.pyd
     ¦       ¦   comerr64.dll
     ¦       ¦   distutils-precedence.pth
     ¦       ¦   google_auth_httplib2.py
@@ -377,7 +382,6 @@ C:.
     ¦       ¦   libssl-3-x64.dll
     ¦       ¦   mmh3.cp312-win_amd64.pyd
     ¦       ¦   pyroaring.cp312-win_amd64.pyd
-    ¦       ¦   README.rst
     ¦       ¦   REVISION
     ¦       ¦   sgmllib.py
     ¦       ¦   six.py
@@ -2138,6 +2142,7 @@ C:.
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
     ¦       ¦   +---licenses
@@ -2323,7 +2328,7 @@ C:.
     ¦       ¦           utils.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---boto3-1.42.45.dist-info
+    ¦       +---boto3-1.42.61.dist-info
     ¦       ¦       INSTALLER
     ¦       ¦       LICENSE
     ¦       ¦       METADATA
@@ -5732,13 +5737,6 @@ C:.
     ¦       ¦           _warnings.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---bs4-0.0.2.dist-info
-    ¦       ¦       INSTALLER
-    ¦       ¦       METADATA
-    ¦       ¦       RECORD
-    ¦       ¦       REQUESTED
-    ¦       ¦       WHEEL
-    ¦       ¦       
     ¦       +---cachetools
     ¦       ¦   ¦   func.py
     ¦       ¦   ¦   keys.py
@@ -5775,7 +5773,7 @@ C:.
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           __main__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---certifi-2026.1.4.dist-info
+    ¦       +---certifi-2026.2.25.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -5843,12 +5841,12 @@ C:.
     ¦       ¦           
     ¦       +---charset_normalizer
     ¦       ¦   ¦   api.py
+    ¦       ¦   ¦   cd.cp312-win_amd64.pyd
     ¦       ¦   ¦   cd.py
     ¦       ¦   ¦   constant.py
     ¦       ¦   ¦   legacy.py
     ¦       ¦   ¦   md.cp312-win_amd64.pyd
     ¦       ¦   ¦   md.py
-    ¦       ¦   ¦   md__mypyc.cp312-win_amd64.pyd
     ¦       ¦   ¦   models.py
     ¦       ¦   ¦   py.typed
     ¦       ¦   ¦   utils.py
@@ -5876,7 +5874,7 @@ C:.
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           __main__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---charset_normalizer-3.4.4.dist-info
+    ¦       +---charset_normalizer-3.4.5.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -6117,7 +6115,7 @@ C:.
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           __version__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---clickhouse_connect-0.11.0.dist-info
+    ¦       +---clickhouse_connect-0.13.0.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -6413,10 +6411,11 @@ C:.
     ¦       ¦           __about__.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---cryptography-46.0.4.dist-info
+    ¦       +---cryptography-46.0.5.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
     ¦       ¦   +---licenses
@@ -6676,286 +6675,6 @@ C:.
     ¦       ¦           _version.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---docx
-    ¦       ¦   ¦   api.py
-    ¦       ¦   ¦   blkcntnr.py
-    ¦       ¦   ¦   comments.py
-    ¦       ¦   ¦   document.py
-    ¦       ¦   ¦   exceptions.py
-    ¦       ¦   ¦   package.py
-    ¦       ¦   ¦   py.typed
-    ¦       ¦   ¦   section.py
-    ¦       ¦   ¦   settings.py
-    ¦       ¦   ¦   shape.py
-    ¦       ¦   ¦   shared.py
-    ¦       ¦   ¦   table.py
-    ¦       ¦   ¦   types.py
-    ¦       ¦   ¦   __init__.py
-    ¦       ¦   ¦   
-    ¦       ¦   +---dml
-    ¦       ¦   ¦   ¦   color.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           color.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---drawing
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---enum
-    ¦       ¦   ¦   ¦   base.py
-    ¦       ¦   ¦   ¦   dml.py
-    ¦       ¦   ¦   ¦   section.py
-    ¦       ¦   ¦   ¦   shape.py
-    ¦       ¦   ¦   ¦   style.py
-    ¦       ¦   ¦   ¦   table.py
-    ¦       ¦   ¦   ¦   text.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           base.cpython-312.pyc
-    ¦       ¦   ¦           dml.cpython-312.pyc
-    ¦       ¦   ¦           section.cpython-312.pyc
-    ¦       ¦   ¦           shape.cpython-312.pyc
-    ¦       ¦   ¦           style.cpython-312.pyc
-    ¦       ¦   ¦           table.cpython-312.pyc
-    ¦       ¦   ¦           text.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---image
-    ¦       ¦   ¦   ¦   bmp.py
-    ¦       ¦   ¦   ¦   constants.py
-    ¦       ¦   ¦   ¦   exceptions.py
-    ¦       ¦   ¦   ¦   gif.py
-    ¦       ¦   ¦   ¦   helpers.py
-    ¦       ¦   ¦   ¦   image.py
-    ¦       ¦   ¦   ¦   jpeg.py
-    ¦       ¦   ¦   ¦   png.py
-    ¦       ¦   ¦   ¦   tiff.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           bmp.cpython-312.pyc
-    ¦       ¦   ¦           constants.cpython-312.pyc
-    ¦       ¦   ¦           exceptions.cpython-312.pyc
-    ¦       ¦   ¦           gif.cpython-312.pyc
-    ¦       ¦   ¦           helpers.cpython-312.pyc
-    ¦       ¦   ¦           image.cpython-312.pyc
-    ¦       ¦   ¦           jpeg.cpython-312.pyc
-    ¦       ¦   ¦           png.cpython-312.pyc
-    ¦       ¦   ¦           tiff.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---opc
-    ¦       ¦   ¦   ¦   constants.py
-    ¦       ¦   ¦   ¦   coreprops.py
-    ¦       ¦   ¦   ¦   exceptions.py
-    ¦       ¦   ¦   ¦   oxml.py
-    ¦       ¦   ¦   ¦   package.py
-    ¦       ¦   ¦   ¦   packuri.py
-    ¦       ¦   ¦   ¦   part.py
-    ¦       ¦   ¦   ¦   phys_pkg.py
-    ¦       ¦   ¦   ¦   pkgreader.py
-    ¦       ¦   ¦   ¦   pkgwriter.py
-    ¦       ¦   ¦   ¦   rel.py
-    ¦       ¦   ¦   ¦   shared.py
-    ¦       ¦   ¦   ¦   spec.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---parts
-    ¦       ¦   ¦   ¦   ¦   coreprops.py
-    ¦       ¦   ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           coreprops.cpython-312.pyc
-    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦   ¦           
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           constants.cpython-312.pyc
-    ¦       ¦   ¦           coreprops.cpython-312.pyc
-    ¦       ¦   ¦           exceptions.cpython-312.pyc
-    ¦       ¦   ¦           oxml.cpython-312.pyc
-    ¦       ¦   ¦           package.cpython-312.pyc
-    ¦       ¦   ¦           packuri.cpython-312.pyc
-    ¦       ¦   ¦           part.cpython-312.pyc
-    ¦       ¦   ¦           phys_pkg.cpython-312.pyc
-    ¦       ¦   ¦           pkgreader.cpython-312.pyc
-    ¦       ¦   ¦           pkgwriter.cpython-312.pyc
-    ¦       ¦   ¦           rel.cpython-312.pyc
-    ¦       ¦   ¦           shared.cpython-312.pyc
-    ¦       ¦   ¦           spec.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---oxml
-    ¦       ¦   ¦   ¦   comments.py
-    ¦       ¦   ¦   ¦   coreprops.py
-    ¦       ¦   ¦   ¦   document.py
-    ¦       ¦   ¦   ¦   drawing.py
-    ¦       ¦   ¦   ¦   exceptions.py
-    ¦       ¦   ¦   ¦   ns.py
-    ¦       ¦   ¦   ¦   numbering.py
-    ¦       ¦   ¦   ¦   parser.py
-    ¦       ¦   ¦   ¦   section.py
-    ¦       ¦   ¦   ¦   settings.py
-    ¦       ¦   ¦   ¦   shape.py
-    ¦       ¦   ¦   ¦   shared.py
-    ¦       ¦   ¦   ¦   simpletypes.py
-    ¦       ¦   ¦   ¦   styles.py
-    ¦       ¦   ¦   ¦   table.py
-    ¦       ¦   ¦   ¦   xmlchemy.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---text
-    ¦       ¦   ¦   ¦   ¦   font.py
-    ¦       ¦   ¦   ¦   ¦   hyperlink.py
-    ¦       ¦   ¦   ¦   ¦   pagebreak.py
-    ¦       ¦   ¦   ¦   ¦   paragraph.py
-    ¦       ¦   ¦   ¦   ¦   parfmt.py
-    ¦       ¦   ¦   ¦   ¦   run.py
-    ¦       ¦   ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           font.cpython-312.pyc
-    ¦       ¦   ¦   ¦           hyperlink.cpython-312.pyc
-    ¦       ¦   ¦   ¦           pagebreak.cpython-312.pyc
-    ¦       ¦   ¦   ¦           paragraph.cpython-312.pyc
-    ¦       ¦   ¦   ¦           parfmt.cpython-312.pyc
-    ¦       ¦   ¦   ¦           run.cpython-312.pyc
-    ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦   ¦           
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           comments.cpython-312.pyc
-    ¦       ¦   ¦           coreprops.cpython-312.pyc
-    ¦       ¦   ¦           document.cpython-312.pyc
-    ¦       ¦   ¦           drawing.cpython-312.pyc
-    ¦       ¦   ¦           exceptions.cpython-312.pyc
-    ¦       ¦   ¦           ns.cpython-312.pyc
-    ¦       ¦   ¦           numbering.cpython-312.pyc
-    ¦       ¦   ¦           parser.cpython-312.pyc
-    ¦       ¦   ¦           section.cpython-312.pyc
-    ¦       ¦   ¦           settings.cpython-312.pyc
-    ¦       ¦   ¦           shape.cpython-312.pyc
-    ¦       ¦   ¦           shared.cpython-312.pyc
-    ¦       ¦   ¦           simpletypes.cpython-312.pyc
-    ¦       ¦   ¦           styles.cpython-312.pyc
-    ¦       ¦   ¦           table.cpython-312.pyc
-    ¦       ¦   ¦           xmlchemy.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---parts
-    ¦       ¦   ¦   ¦   comments.py
-    ¦       ¦   ¦   ¦   document.py
-    ¦       ¦   ¦   ¦   hdrftr.py
-    ¦       ¦   ¦   ¦   image.py
-    ¦       ¦   ¦   ¦   numbering.py
-    ¦       ¦   ¦   ¦   settings.py
-    ¦       ¦   ¦   ¦   story.py
-    ¦       ¦   ¦   ¦   styles.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           comments.cpython-312.pyc
-    ¦       ¦   ¦           document.cpython-312.pyc
-    ¦       ¦   ¦           hdrftr.cpython-312.pyc
-    ¦       ¦   ¦           image.cpython-312.pyc
-    ¦       ¦   ¦           numbering.cpython-312.pyc
-    ¦       ¦   ¦           settings.cpython-312.pyc
-    ¦       ¦   ¦           story.cpython-312.pyc
-    ¦       ¦   ¦           styles.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---styles
-    ¦       ¦   ¦   ¦   latent.py
-    ¦       ¦   ¦   ¦   style.py
-    ¦       ¦   ¦   ¦   styles.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           latent.cpython-312.pyc
-    ¦       ¦   ¦           style.cpython-312.pyc
-    ¦       ¦   ¦           styles.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---templates
-    ¦       ¦   ¦   ¦   default-comments.xml
-    ¦       ¦   ¦   ¦   default-footer.xml
-    ¦       ¦   ¦   ¦   default-header.xml
-    ¦       ¦   ¦   ¦   default-settings.xml
-    ¦       ¦   ¦   ¦   default-styles.xml
-    ¦       ¦   ¦   ¦   default.docx
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---default-docx-template
-    ¦       ¦   ¦       ¦   [Content_Types].xml
-    ¦       ¦   ¦       ¦   
-    ¦       ¦   ¦       +---customXml
-    ¦       ¦   ¦       ¦   ¦   item1.xml
-    ¦       ¦   ¦       ¦   ¦   itemProps1.xml
-    ¦       ¦   ¦       ¦   ¦   
-    ¦       ¦   ¦       ¦   +---_rels
-    ¦       ¦   ¦       ¦           item1.xml.rels
-    ¦       ¦   ¦       ¦           
-    ¦       ¦   ¦       +---docProps
-    ¦       ¦   ¦       ¦       app.xml
-    ¦       ¦   ¦       ¦       core.xml
-    ¦       ¦   ¦       ¦       thumbnail.jpeg
-    ¦       ¦   ¦       ¦       
-    ¦       ¦   ¦       +---word
-    ¦       ¦   ¦       ¦   ¦   document.xml
-    ¦       ¦   ¦       ¦   ¦   fontTable.xml
-    ¦       ¦   ¦       ¦   ¦   numbering.xml
-    ¦       ¦   ¦       ¦   ¦   settings.xml
-    ¦       ¦   ¦       ¦   ¦   styles.xml
-    ¦       ¦   ¦       ¦   ¦   stylesWithEffects.xml
-    ¦       ¦   ¦       ¦   ¦   webSettings.xml
-    ¦       ¦   ¦       ¦   ¦   
-    ¦       ¦   ¦       ¦   +---theme
-    ¦       ¦   ¦       ¦   ¦       theme1.xml
-    ¦       ¦   ¦       ¦   ¦       
-    ¦       ¦   ¦       ¦   +---_rels
-    ¦       ¦   ¦       ¦           document.xml.rels
-    ¦       ¦   ¦       ¦           
-    ¦       ¦   ¦       +---_rels
-    ¦       ¦   ¦               .rels
-    ¦       ¦   ¦               
-    ¦       ¦   +---text
-    ¦       ¦   ¦   ¦   font.py
-    ¦       ¦   ¦   ¦   hyperlink.py
-    ¦       ¦   ¦   ¦   pagebreak.py
-    ¦       ¦   ¦   ¦   paragraph.py
-    ¦       ¦   ¦   ¦   parfmt.py
-    ¦       ¦   ¦   ¦   run.py
-    ¦       ¦   ¦   ¦   tabstops.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           font.cpython-312.pyc
-    ¦       ¦   ¦           hyperlink.cpython-312.pyc
-    ¦       ¦   ¦           pagebreak.cpython-312.pyc
-    ¦       ¦   ¦           paragraph.cpython-312.pyc
-    ¦       ¦   ¦           parfmt.cpython-312.pyc
-    ¦       ¦   ¦           run.cpython-312.pyc
-    ¦       ¦   ¦           tabstops.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---__pycache__
-    ¦       ¦           api.cpython-312.pyc
-    ¦       ¦           blkcntnr.cpython-312.pyc
-    ¦       ¦           comments.cpython-312.pyc
-    ¦       ¦           document.cpython-312.pyc
-    ¦       ¦           exceptions.cpython-312.pyc
-    ¦       ¦           package.cpython-312.pyc
-    ¦       ¦           section.cpython-312.pyc
-    ¦       ¦           settings.cpython-312.pyc
-    ¦       ¦           shape.cpython-312.pyc
-    ¦       ¦           shared.cpython-312.pyc
-    ¦       ¦           table.cpython-312.pyc
-    ¦       ¦           types.cpython-312.pyc
-    ¦       ¦           __init__.cpython-312.pyc
-    ¦       ¦           
     ¦       +---dotenv
     ¦       ¦   ¦   cli.py
     ¦       ¦   ¦   ipython.py
@@ -7105,7 +6824,9 @@ C:.
     ¦       ¦   ¦   py.typed
     ¦       ¦   ¦   version.py
     ¦       ¦   ¦   _api.py
+    ¦       ¦   ¦   _async_read_write.py
     ¦       ¦   ¦   _error.py
+    ¦       ¦   ¦   _read_write.py
     ¦       ¦   ¦   _soft.py
     ¦       ¦   ¦   _unix.py
     ¦       ¦   ¦   _util.py
@@ -7116,14 +6837,16 @@ C:.
     ¦       ¦           asyncio.cpython-312.pyc
     ¦       ¦           version.cpython-312.pyc
     ¦       ¦           _api.cpython-312.pyc
+    ¦       ¦           _async_read_write.cpython-312.pyc
     ¦       ¦           _error.cpython-312.pyc
+    ¦       ¦           _read_write.cpython-312.pyc
     ¦       ¦           _soft.cpython-312.pyc
     ¦       ¦           _unix.cpython-312.pyc
     ¦       ¦           _util.cpython-312.pyc
     ¦       ¦           _windows.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---filelock-3.20.3.dist-info
+    ¦       +---filelock-3.25.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -7194,7 +6917,7 @@ C:.
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           __main__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---flask-3.1.2.dist-info
+    ¦       +---flask-3.1.3.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -8130,6 +7853,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   constants.py
     ¦       ¦   ¦   ¦   ¦   exceptions.py
     ¦       ¦   ¦   ¦   ¦   fileio.py
+    ¦       ¦   ¦   ¦   ¦   grpc_client.py
     ¦       ¦   ¦   ¦   ¦   hmac_key.py
     ¦       ¦   ¦   ¦   ¦   iam.py
     ¦       ¦   ¦   ¦   ¦   ip_filter.py
@@ -8143,6 +7867,38 @@ C:.
     ¦       ¦   ¦   ¦   ¦   _signing.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   +---asyncio
+    ¦       ¦   ¦   ¦   ¦   ¦   async_abstract_object_stream.py
+    ¦       ¦   ¦   ¦   ¦   ¦   async_appendable_object_writer.py
+    ¦       ¦   ¦   ¦   ¦   ¦   async_grpc_client.py
+    ¦       ¦   ¦   ¦   ¦   ¦   async_multi_range_downloader.py
+    ¦       ¦   ¦   ¦   ¦   ¦   async_read_object_stream.py
+    ¦       ¦   ¦   ¦   ¦   ¦   async_write_object_stream.py
+    ¦       ¦   ¦   ¦   ¦   ¦   _utils.py
+    ¦       ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   +---retry
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   base_strategy.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   bidi_stream_retry_manager.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   reads_resumption_strategy.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   writes_resumption_strategy.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   _helpers.py
+    ¦       ¦   ¦   ¦   ¦   ¦   ¦   
+    ¦       ¦   ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦   ¦           base_strategy.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           bidi_stream_retry_manager.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           reads_resumption_strategy.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           writes_resumption_strategy.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           _helpers.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦   ¦           
+    ¦       ¦   ¦   ¦   ¦   +---__pycache__
+    ¦       ¦   ¦   ¦   ¦           async_abstract_object_stream.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           async_appendable_object_writer.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           async_grpc_client.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           async_multi_range_downloader.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           async_read_object_stream.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           async_write_object_stream.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           _utils.cpython-312.pyc
+    ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---_experimental
     ¦       ¦   ¦   ¦   ¦   ¦   grpc_client.py
     ¦       ¦   ¦   ¦   ¦   ¦   
@@ -8217,6 +7973,7 @@ C:.
     ¦       ¦   ¦   ¦           constants.cpython-312.pyc
     ¦       ¦   ¦   ¦           exceptions.cpython-312.pyc
     ¦       ¦   ¦   ¦           fileio.cpython-312.pyc
+    ¦       ¦   ¦   ¦           grpc_client.cpython-312.pyc
     ¦       ¦   ¦   ¦           hmac_key.cpython-312.pyc
     ¦       ¦   ¦   ¦           iam.cpython-312.pyc
     ¦       ¦   ¦   ¦           ip_filter.cpython-312.pyc
@@ -8795,6 +8552,8 @@ C:.
     ¦       ¦   ¦   ¦       businessprofileperformance.v1.json
     ¦       ¦   ¦   ¦       calendar.v3.json
     ¦       ¦   ¦   ¦       certificatemanager.v1.json
+    ¦       ¦   ¦   ¦       ces.v1.json
+    ¦       ¦   ¦   ¦       ces.v1beta.json
     ¦       ¦   ¦   ¦       chat.v1.json
     ¦       ¦   ¦   ¦       checks.v1alpha.json
     ¦       ¦   ¦   ¦       chromemanagement.v1.json
@@ -8991,11 +8750,13 @@ C:.
     ¦       ¦   ¦   ¦       gmail.v1.json
     ¦       ¦   ¦   ¦       gmailpostmastertools.v1.json
     ¦       ¦   ¦   ¦       gmailpostmastertools.v1beta1.json
+    ¦       ¦   ¦   ¦       gmailpostmastertools.v2.json
     ¦       ¦   ¦   ¦       groupsmigration.v1.json
     ¦       ¦   ¦   ¦       groupssettings.v1.json
     ¦       ¦   ¦   ¦       healthcare.v1.json
     ¦       ¦   ¦   ¦       healthcare.v1beta1.json
     ¦       ¦   ¦   ¦       homegraph.v1.json
+    ¦       ¦   ¦   ¦       hypercomputecluster.v1.json
     ¦       ¦   ¦   ¦       iam.v1.json
     ¦       ¦   ¦   ¦       iam.v2.json
     ¦       ¦   ¦   ¦       iam.v2beta.json
@@ -9129,6 +8890,8 @@ C:.
     ¦       ¦   ¦   ¦       policysimulator.v1beta1.json
     ¦       ¦   ¦   ¦       policytroubleshooter.v1.json
     ¦       ¦   ¦   ¦       policytroubleshooter.v1beta.json
+    ¦       ¦   ¦   ¦       policytroubleshooter.v3.json
+    ¦       ¦   ¦   ¦       policytroubleshooter.v3beta.json
     ¦       ¦   ¦   ¦       pollen.v1.json
     ¦       ¦   ¦   ¦       poly.v1.json
     ¦       ¦   ¦   ¦       privateca.v1.json
@@ -9215,6 +8978,7 @@ C:.
     ¦       ¦   ¦   ¦       testing.v1.json
     ¦       ¦   ¦   ¦       texttospeech.v1.json
     ¦       ¦   ¦   ¦       texttospeech.v1beta1.json
+    ¦       ¦   ¦   ¦       threatintelligence.v1beta.json
     ¦       ¦   ¦   ¦       toolresults.v1beta3.json
     ¦       ¦   ¦   ¦       tpu.v1.json
     ¦       ¦   ¦   ¦       tpu.v1alpha1.json
@@ -9307,7 +9071,7 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE
     ¦       ¦           
-    ¦       +---google_api_core-2.29.0.dist-info
+    ¦       +---google_api_core-2.30.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -9317,7 +9081,7 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE
     ¦       ¦           
-    ¦       +---google_api_python_client-2.188.0.dist-info
+    ¦       +---google_api_python_client-2.192.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -9370,19 +9134,17 @@ C:.
     ¦       ¦           interactive.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---google_auth_oauthlib-1.2.4.dist-info
-    ¦       ¦   ¦   entry_points.txt
-    ¦       ¦   ¦   INSTALLER
-    ¦       ¦   ¦   METADATA
-    ¦       ¦   ¦   RECORD
-    ¦       ¦   ¦   REQUESTED
-    ¦       ¦   ¦   top_level.txt
-    ¦       ¦   ¦   WHEEL
-    ¦       ¦   ¦   
-    ¦       ¦   +---licenses
-    ¦       ¦           LICENSE
-    ¦       ¦           
-    ¦       +---google_cloud_bigquery-3.40.0.dist-info
+    ¦       +---google_auth_oauthlib-0.5.3.dist-info
+    ¦       ¦       entry_points.txt
+    ¦       ¦       INSTALLER
+    ¦       ¦       LICENSE
+    ¦       ¦       METADATA
+    ¦       ¦       RECORD
+    ¦       ¦       REQUESTED
+    ¦       ¦       top_level.txt
+    ¦       ¦       WHEEL
+    ¦       ¦       
+    ¦       +---google_cloud_bigquery-3.40.1.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -9403,7 +9165,7 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE
     ¦       ¦           
-    ¦       +---google_cloud_storage-3.8.0.dist-info
+    ¦       +---google_cloud_storage-3.9.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -9540,6 +9302,7 @@ C:.
     ¦       ¦   ¦   ¦   test_generator_nested.py
     ¦       ¦   ¦   ¦   test_greenlet.py
     ¦       ¦   ¦   ¦   test_greenlet_trash.py
+    ¦       ¦   ¦   ¦   test_interpreter_shutdown.py
     ¦       ¦   ¦   ¦   test_leaks.py
     ¦       ¦   ¦   ¦   test_stack_saved.py
     ¦       ¦   ¦   ¦   test_throw.py
@@ -9569,6 +9332,7 @@ C:.
     ¦       ¦   ¦           test_generator_nested.cpython-312.pyc
     ¦       ¦   ¦           test_greenlet.cpython-312.pyc
     ¦       ¦   ¦           test_greenlet_trash.cpython-312.pyc
+    ¦       ¦   ¦           test_interpreter_shutdown.cpython-312.pyc
     ¦       ¦   ¦           test_leaks.cpython-312.pyc
     ¦       ¦   ¦           test_stack_saved.cpython-312.pyc
     ¦       ¦   ¦           test_throw.cpython-312.pyc
@@ -9580,7 +9344,7 @@ C:.
     ¦       ¦   +---__pycache__
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---greenlet-3.3.1.dist-info
+    ¦       +---greenlet-3.3.2.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -9759,22 +9523,26 @@ C:.
     ¦       ¦           _utilities.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---grpcio-1.76.0.dist-info
-    ¦       ¦       INSTALLER
-    ¦       ¦       LICENSE
-    ¦       ¦       METADATA
-    ¦       ¦       RECORD
-    ¦       ¦       top_level.txt
-    ¦       ¦       WHEEL
-    ¦       ¦       
-    ¦       +---grpcio_status-1.76.0.dist-info
-    ¦       ¦       INSTALLER
-    ¦       ¦       LICENSE
-    ¦       ¦       METADATA
-    ¦       ¦       RECORD
-    ¦       ¦       top_level.txt
-    ¦       ¦       WHEEL
-    ¦       ¦       
+    ¦       +---grpcio-1.78.0.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
+    ¦       +---grpcio_status-1.78.0.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   top_level.txt
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           
     ¦       +---grpc_status
     ¦       ¦   ¦   rpc_status.py
     ¦       ¦   ¦   _async.py
@@ -10281,6 +10049,7 @@ C:.
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   top_level.txt
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
@@ -11018,7 +10787,7 @@ C:.
     ¦       ¦   +---__pycache__
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---mysql_connector_python-9.5.0.dist-info
+    ¦       +---mysql_connector_python-9.6.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -12599,7 +12368,7 @@ C:.
     ¦       ¦           __config__.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---numpy-2.4.1.dist-info
+    ¦       +---numpy-2.4.2.dist-info
     ¦       ¦   ¦   DELVEWHEEL
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
@@ -12670,7 +12439,7 @@ C:.
     ¦       ¦                               LICENSE
     ¦       ¦                               
     ¦       +---numpy.libs
-    ¦       ¦       libscipy_openblas64_-9e3e5a4229c1ca39f10dc82bba9e2b2b.dll
+    ¦       ¦       libscipy_openblas64_-74a408729250596b0973e69fdd954eea.dll
     ¦       ¦       msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll
     ¦       ¦       
     ¦       +---oauthlib
@@ -12799,8 +12568,6 @@ C:.
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---rfc8628
-    ¦       ¦   ¦   ¦   ¦   errors.py
-    ¦       ¦   ¦   ¦   ¦   request_validator.py
     ¦       ¦   ¦   ¦   ¦   __init__.py
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---clients
@@ -12811,27 +12578,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦           device.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦   ¦           
-    ¦       ¦   ¦   ¦   +---endpoints
-    ¦       ¦   ¦   ¦   ¦   ¦   device_authorization.py
-    ¦       ¦   ¦   ¦   ¦   ¦   pre_configured.py
-    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦   ¦           device_authorization.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           pre_configured.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           
-    ¦       ¦   ¦   ¦   +---grant_types
-    ¦       ¦   ¦   ¦   ¦   ¦   device_code.py
-    ¦       ¦   ¦   ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦   ¦           device_code.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           
     ¦       ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦           errors.cpython-312.pyc
-    ¦       ¦   ¦   ¦           request_validator.cpython-312.pyc
     ¦       ¦   ¦   ¦           __init__.cpython-312.pyc
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---__pycache__
@@ -12895,16 +12642,15 @@ C:.
     ¦       ¦           uri_validate.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---oauthlib-3.3.1.dist-info
-    ¦       ¦   ¦   INSTALLER
-    ¦       ¦   ¦   METADATA
-    ¦       ¦   ¦   RECORD
-    ¦       ¦   ¦   top_level.txt
-    ¦       ¦   ¦   WHEEL
-    ¦       ¦   ¦   
-    ¦       ¦   +---licenses
-    ¦       ¦           LICENSE
-    ¦       ¦           
+    ¦       +---oauthlib-3.2.0.dist-info
+    ¦       ¦       INSTALLER
+    ¦       ¦       LICENSE
+    ¦       ¦       METADATA
+    ¦       ¦       RECORD
+    ¦       ¦       REQUESTED
+    ¦       ¦       top_level.txt
+    ¦       ¦       WHEEL
+    ¦       ¦       
     ¦       +---openpyxl
     ¦       ¦   ¦   _constants.py
     ¦       ¦   ¦   __init__.py
@@ -17035,6 +16781,7 @@ C:.
     ¦       ¦       LICENSE
     ¦       ¦       METADATA
     ¦       ¦       RECORD
+    ¦       ¦       REQUESTED
     ¦       ¦       WHEEL
     ¦       ¦       
     ¦       +---pandas.libs
@@ -17198,7 +16945,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   index.py
     ¦       ¦   ¦   ¦   ¦   installation_report.py
     ¦       ¦   ¦   ¦   ¦   link.py
-    ¦       ¦   ¦   ¦   ¦   pylock.py
+    ¦       ¦   ¦   ¦   ¦   release_control.py
     ¦       ¦   ¦   ¦   ¦   scheme.py
     ¦       ¦   ¦   ¦   ¦   search_scope.py
     ¦       ¦   ¦   ¦   ¦   selection_prefs.py
@@ -17213,7 +16960,7 @@ C:.
     ¦       ¦   ¦   ¦           index.cpython-312.pyc
     ¦       ¦   ¦   ¦           installation_report.cpython-312.pyc
     ¦       ¦   ¦   ¦           link.cpython-312.pyc
-    ¦       ¦   ¦   ¦           pylock.cpython-312.pyc
+    ¦       ¦   ¦   ¦           release_control.cpython-312.pyc
     ¦       ¦   ¦   ¦           scheme.cpython-312.pyc
     ¦       ¦   ¦   ¦           search_scope.cpython-312.pyc
     ¦       ¦   ¦   ¦           selection_prefs.cpython-312.pyc
@@ -17279,6 +17026,7 @@ C:.
     ¦       ¦   ¦   ¦           
     ¦       ¦   ¦   +---req
     ¦       ¦   ¦   ¦   ¦   constructors.py
+    ¦       ¦   ¦   ¦   ¦   pep723.py
     ¦       ¦   ¦   ¦   ¦   req_dependency_group.py
     ¦       ¦   ¦   ¦   ¦   req_file.py
     ¦       ¦   ¦   ¦   ¦   req_install.py
@@ -17288,6 +17036,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           constructors.cpython-312.pyc
+    ¦       ¦   ¦   ¦           pep723.cpython-312.pyc
     ¦       ¦   ¦   ¦           req_dependency_group.cpython-312.pyc
     ¦       ¦   ¦   ¦           req_file.cpython-312.pyc
     ¦       ¦   ¦   ¦           req_install.cpython-312.pyc
@@ -17349,6 +17098,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   logging.py
     ¦       ¦   ¦   ¦   ¦   misc.py
     ¦       ¦   ¦   ¦   ¦   packaging.py
+    ¦       ¦   ¦   ¦   ¦   pylock.py
     ¦       ¦   ¦   ¦   ¦   retry.py
     ¦       ¦   ¦   ¦   ¦   subprocess.py
     ¦       ¦   ¦   ¦   ¦   temp_dir.py
@@ -17376,6 +17126,7 @@ C:.
     ¦       ¦   ¦   ¦           logging.cpython-312.pyc
     ¦       ¦   ¦   ¦           misc.cpython-312.pyc
     ¦       ¦   ¦   ¦           packaging.cpython-312.pyc
+    ¦       ¦   ¦   ¦           pylock.cpython-312.pyc
     ¦       ¦   ¦   ¦           retry.cpython-312.pyc
     ¦       ¦   ¦   ¦           subprocess.cpython-312.pyc
     ¦       ¦   ¦   ¦           temp_dir.cpython-312.pyc
@@ -17559,6 +17310,7 @@ C:.
     ¦       ¦   ¦   ¦   ¦   markers.py
     ¦       ¦   ¦   ¦   ¦   metadata.py
     ¦       ¦   ¦   ¦   ¦   py.typed
+    ¦       ¦   ¦   ¦   ¦   pylock.py
     ¦       ¦   ¦   ¦   ¦   requirements.py
     ¦       ¦   ¦   ¦   ¦   specifiers.py
     ¦       ¦   ¦   ¦   ¦   tags.py
@@ -17583,6 +17335,7 @@ C:.
     ¦       ¦   ¦   ¦   +---__pycache__
     ¦       ¦   ¦   ¦           markers.cpython-312.pyc
     ¦       ¦   ¦   ¦           metadata.cpython-312.pyc
+    ¦       ¦   ¦   ¦           pylock.cpython-312.pyc
     ¦       ¦   ¦   ¦           requirements.cpython-312.pyc
     ¦       ¦   ¦   ¦           specifiers.cpython-312.pyc
     ¦       ¦   ¦   ¦           tags.cpython-312.pyc
@@ -18092,7 +17845,7 @@ C:.
     ¦       ¦           __main__.cpython-312.pyc
     ¦       ¦           __pip-runner__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---pip-25.3.dist-info
+    ¦       +---pip-26.0.1.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -18166,55 +17919,6 @@ C:.
     ¦       ¦                   +---urllib3
     ¦       ¦                           LICENSE.txt
     ¦       ¦                           
-    ¦       +---pkg_resources
-    ¦       ¦   ¦   api_tests.txt
-    ¦       ¦   ¦   py.typed
-    ¦       ¦   ¦   __init__.py
-    ¦       ¦   ¦   
-    ¦       ¦   +---tests
-    ¦       ¦   ¦   ¦   test_find_distributions.py
-    ¦       ¦   ¦   ¦   test_integration_zope_interface.py
-    ¦       ¦   ¦   ¦   test_markers.py
-    ¦       ¦   ¦   ¦   test_pkg_resources.py
-    ¦       ¦   ¦   ¦   test_resources.py
-    ¦       ¦   ¦   ¦   test_working_set.py
-    ¦       ¦   ¦   ¦   __init__.py
-    ¦       ¦   ¦   ¦   
-    ¦       ¦   ¦   +---data
-    ¦       ¦   ¦   ¦   +---my-test-package-source
-    ¦       ¦   ¦   ¦   ¦   ¦   setup.cfg
-    ¦       ¦   ¦   ¦   ¦   ¦   setup.py
-    ¦       ¦   ¦   ¦   ¦   ¦   
-    ¦       ¦   ¦   ¦   ¦   +---__pycache__
-    ¦       ¦   ¦   ¦   ¦           setup.cpython-312.pyc
-    ¦       ¦   ¦   ¦   ¦           
-    ¦       ¦   ¦   ¦   +---my-test-package-zip
-    ¦       ¦   ¦   ¦   ¦       my-test-package.zip
-    ¦       ¦   ¦   ¦   ¦       
-    ¦       ¦   ¦   ¦   +---my-test-package_unpacked-egg
-    ¦       ¦   ¦   ¦   ¦   +---my_test_package-1.0-py3.7.egg
-    ¦       ¦   ¦   ¦   ¦       +---EGG-INFO
-    ¦       ¦   ¦   ¦   ¦               dependency_links.txt
-    ¦       ¦   ¦   ¦   ¦               PKG-INFO
-    ¦       ¦   ¦   ¦   ¦               SOURCES.txt
-    ¦       ¦   ¦   ¦   ¦               top_level.txt
-    ¦       ¦   ¦   ¦   ¦               zip-safe
-    ¦       ¦   ¦   ¦   ¦               
-    ¦       ¦   ¦   ¦   +---my-test-package_zipped-egg
-    ¦       ¦   ¦   ¦           my_test_package-1.0-py3.7.egg
-    ¦       ¦   ¦   ¦           
-    ¦       ¦   ¦   +---__pycache__
-    ¦       ¦   ¦           test_find_distributions.cpython-312.pyc
-    ¦       ¦   ¦           test_integration_zope_interface.cpython-312.pyc
-    ¦       ¦   ¦           test_markers.cpython-312.pyc
-    ¦       ¦   ¦           test_pkg_resources.cpython-312.pyc
-    ¦       ¦   ¦           test_resources.cpython-312.pyc
-    ¦       ¦   ¦           test_working_set.cpython-312.pyc
-    ¦       ¦   ¦           __init__.cpython-312.pyc
-    ¦       ¦   ¦           
-    ¦       ¦   +---__pycache__
-    ¦       ¦           __init__.cpython-312.pyc
-    ¦       ¦           
     ¦       +---platformdirs
     ¦       ¦   ¦   android.py
     ¦       ¦   ¦   api.py
@@ -18223,6 +17927,7 @@ C:.
     ¦       ¦   ¦   unix.py
     ¦       ¦   ¦   version.py
     ¦       ¦   ¦   windows.py
+    ¦       ¦   ¦   _xdg.py
     ¦       ¦   ¦   __init__.py
     ¦       ¦   ¦   __main__.py
     ¦       ¦   ¦   
@@ -18233,10 +17938,11 @@ C:.
     ¦       ¦           unix.cpython-312.pyc
     ¦       ¦           version.cpython-312.pyc
     ¦       ¦           windows.cpython-312.pyc
+    ¦       ¦           _xdg.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           __main__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---platformdirs-4.5.1.dist-info
+    ¦       +---platformdirs-4.9.4.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -18346,7 +18052,7 @@ C:.
     ¦       ¦       RECORD
     ¦       ¦       WHEEL
     ¦       ¦       
-    ¦       +---proto_plus-1.27.0.dist-info
+    ¦       +---proto_plus-1.27.1.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -21002,6 +20708,23 @@ C:.
     ¦       ¦           LICENSE
     ¦       ¦           NOTICE
     ¦       ¦           
+    ¦       +---pyiceberg_core
+    ¦       ¦   ¦   pyiceberg_core_rust.pyd
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---__pycache__
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---pyiceberg_core-0.8.0.dist-info
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE
+    ¦       ¦           NOTICE
+    ¦       ¦           
     ¦       +---pyjwt-2.11.0.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -21111,18 +20834,7 @@ C:.
     ¦       ¦       WHEEL
     ¦       ¦       zip-safe
     ¦       ¦       
-    ¦       +---python_docx-1.2.0.dist-info
-    ¦       ¦   ¦   INSTALLER
-    ¦       ¦   ¦   METADATA
-    ¦       ¦   ¦   RECORD
-    ¦       ¦   ¦   REQUESTED
-    ¦       ¦   ¦   top_level.txt
-    ¦       ¦   ¦   WHEEL
-    ¦       ¦   ¦   
-    ¦       ¦   +---licenses
-    ¦       ¦           LICENSE
-    ¦       ¦           
-    ¦       +---python_dotenv-1.2.1.dist-info
+    ¦       +---python_dotenv-1.2.2.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
@@ -21817,7 +21529,7 @@ C:.
     ¦       ¦           tzinfo.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---pytz-2025.2.dist-info
+    ¦       +---pytz-2026.1.post1.dist-info
     ¦       ¦       INSTALLER
     ¦       ¦       LICENSE.txt
     ¦       ¦       METADATA
@@ -21915,11 +21627,12 @@ C:.
     ¦       ¦           oauth2_session.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---requests_oauthlib-2.0.0.dist-info
+    ¦       +---requests_oauthlib-1.3.1.dist-info
     ¦       ¦       INSTALLER
     ¦       ¦       LICENSE
     ¦       ¦       METADATA
     ¦       ¦       RECORD
+    ¦       ¦       REQUESTED
     ¦       ¦       top_level.txt
     ¦       ¦       WHEEL
     ¦       ¦       
@@ -23209,11 +22922,12 @@ C:.
     ¦       ¦           _static.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---setuptools-80.10.2.dist-info
+    ¦       +---setuptools-82.0.0.dist-info
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   top_level.txt
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
@@ -23275,6 +22989,7 @@ C:.
     ¦       ¦       ¦   ocsp_asn1crypto.py
     ¦       ¦       ¦   ocsp_snowflake.py
     ¦       ¦       ¦   options.py
+    ¦       ¦       ¦   os_details.py
     ¦       ¦       ¦   pandas_tools.py
     ¦       ¦       ¦   platform_detection.py
     ¦       ¦       ¦   proxy.py
@@ -23307,6 +23022,7 @@ C:.
     ¦       ¦       ¦   __init__.py
     ¦       ¦       ¦   
     ¦       ¦       +---aio
+    ¦       ¦       ¦   ¦   README.md
     ¦       ¦       ¦   ¦   _azure_storage_client.py
     ¦       ¦       ¦   ¦   _bind_upload_agent.py
     ¦       ¦       ¦   ¦   _connection.py
@@ -23770,6 +23486,7 @@ C:.
     ¦       ¦               ocsp_asn1crypto.cpython-312.pyc
     ¦       ¦               ocsp_snowflake.cpython-312.pyc
     ¦       ¦               options.cpython-312.pyc
+    ¦       ¦               os_details.cpython-312.pyc
     ¦       ¦               pandas_tools.cpython-312.pyc
     ¦       ¦               platform_detection.cpython-312.pyc
     ¦       ¦               proxy.cpython-312.pyc
@@ -23800,7 +23517,7 @@ C:.
     ¦       ¦               _utils.cpython-312.pyc
     ¦       ¦               __init__.cpython-312.pyc
     ¦       ¦               
-    ¦       +---snowflake_connector_python-4.2.0.dist-info
+    ¦       +---snowflake_connector_python-4.3.0.dist-info
     ¦       ¦   ¦   DELVEWHEEL
     ¦       ¦   ¦   entry_points.txt
     ¦       ¦   ¦   INSTALLER
@@ -24486,7 +24203,7 @@ C:.
     ¦       ¦           types.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---sqlalchemy-2.0.46.dist-info
+    ¦       +---sqlalchemy-2.0.48.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -25705,7 +25422,7 @@ C:.
     ¦       ¦           regexes.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---ua_parser_builtins-202601.dist-info
+    ¦       +---ua_parser_builtins-202603.dist-info
     ¦       ¦       INSTALLER
     ¦       ¦       METADATA
     ¦       ¦       RECORD
@@ -25988,10 +25705,57 @@ C:.
     ¦       ¦           _reloader.cpython-312.pyc
     ¦       ¦           __init__.cpython-312.pyc
     ¦       ¦           
-    ¦       +---werkzeug-3.1.5.dist-info
+    ¦       +---werkzeug-3.1.6.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   WHEEL
+    ¦       ¦   ¦   
+    ¦       ¦   +---licenses
+    ¦       ¦           LICENSE.txt
+    ¦       ¦           
+    ¦       +---wheel
+    ¦       ¦   ¦   bdist_wheel.py
+    ¦       ¦   ¦   macosx_libfile.py
+    ¦       ¦   ¦   metadata.py
+    ¦       ¦   ¦   wheelfile.py
+    ¦       ¦   ¦   _bdist_wheel.py
+    ¦       ¦   ¦   _metadata.py
+    ¦       ¦   ¦   _setuptools_logging.py
+    ¦       ¦   ¦   __init__.py
+    ¦       ¦   ¦   __main__.py
+    ¦       ¦   ¦   
+    ¦       ¦   +---_commands
+    ¦       ¦   ¦   ¦   convert.py
+    ¦       ¦   ¦   ¦   pack.py
+    ¦       ¦   ¦   ¦   tags.py
+    ¦       ¦   ¦   ¦   unpack.py
+    ¦       ¦   ¦   ¦   __init__.py
+    ¦       ¦   ¦   ¦   
+    ¦       ¦   ¦   +---__pycache__
+    ¦       ¦   ¦           convert.cpython-312.pyc
+    ¦       ¦   ¦           pack.cpython-312.pyc
+    ¦       ¦   ¦           tags.cpython-312.pyc
+    ¦       ¦   ¦           unpack.cpython-312.pyc
+    ¦       ¦   ¦           __init__.cpython-312.pyc
+    ¦       ¦   ¦           
+    ¦       ¦   +---__pycache__
+    ¦       ¦           bdist_wheel.cpython-312.pyc
+    ¦       ¦           macosx_libfile.cpython-312.pyc
+    ¦       ¦           metadata.cpython-312.pyc
+    ¦       ¦           wheelfile.cpython-312.pyc
+    ¦       ¦           _bdist_wheel.cpython-312.pyc
+    ¦       ¦           _metadata.cpython-312.pyc
+    ¦       ¦           _setuptools_logging.cpython-312.pyc
+    ¦       ¦           __init__.cpython-312.pyc
+    ¦       ¦           __main__.cpython-312.pyc
+    ¦       ¦           
+    ¦       +---wheel-0.46.3.dist-info
+    ¦       ¦   ¦   entry_points.txt
+    ¦       ¦   ¦   INSTALLER
+    ¦       ¦   ¦   METADATA
+    ¦       ¦   ¦   RECORD
+    ¦       ¦   ¦   REQUESTED
     ¦       ¦   ¦   WHEEL
     ¦       ¦   ¦   
     ¦       ¦   +---licenses
@@ -26033,7 +25797,7 @@ C:.
     ¦       ¦   +---licenses
     ¦       ¦           LICENSE
     ¦       ¦           
-    ¦       +---xmltodict-1.0.2.dist-info
+    ¦       +---xmltodict-1.0.4.dist-info
     ¦       ¦   ¦   INSTALLER
     ¦       ¦   ¦   METADATA
     ¦       ¦   ¦   RECORD
@@ -26147,6 +25911,7 @@ C:.
         ¦   snowflake-dump-ocsp-response-cache.exe
         ¦   snowflake-dump-ocsp-response.exe
         ¦   tika-python.exe
+        ¦   wheel.exe
         ¦   
         +---__pycache__
                 jp.cpython-312.pyc

@@ -5267,6 +5267,65 @@ def bigquery_save_app_proxy():
     r = proxy_post("/connectors/bigquery/save_app", json=request.get_json())
     return jsonify(r.json()), r.status_code
 
+# ================= AWS RDS =================
+
+@app.route("/connectors/aws_rds")
+@require_login
+def aws_rds_page():
+    return render_template("connectors/aws_rds.html")
+
+
+@app.route("/connectors/aws_rds/save_app", methods=["POST"])
+@require_login
+def aws_rds_save_app_proxy():
+    r = proxy_post("/connectors/aws_rds/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/aws_rds/connect")
+@require_login
+def aws_rds_connect_proxy():
+    r = proxy_get("/connectors/aws_rds/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/aws_rds/disconnect")
+@require_login
+def aws_rds_disconnect_proxy():
+    r = proxy_get("/connectors/aws_rds/disconnect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/aws_rds/sync")
+@require_login
+def aws_rds_sync_proxy():
+    r = proxy_get("/connectors/aws_rds/sync")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/aws_rds/status")
+@require_login
+def aws_rds_status_proxy():
+    r = proxy_get("/api/status/aws_rds")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/aws_rds/job/get")
+@require_login
+def aws_rds_job_get_proxy():
+    r = proxy_get("/connectors/aws_rds/job/get")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/aws_rds/job/save", methods=["POST"])
+@require_login
+def aws_rds_job_save_proxy():
+    r = proxy_post("/connectors/aws_rds/job/save", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
 # ================= MAIN ==========================
 
 if __name__ == "__main__":

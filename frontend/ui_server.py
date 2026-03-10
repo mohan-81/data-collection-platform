@@ -5326,6 +5326,65 @@ def aws_rds_job_save_proxy():
     r = proxy_post("/connectors/aws_rds/job/save", json=request.get_json())
     return jsonify(r.json()), r.status_code
 
+# ================= AWS DYNAMODB =================
+
+@app.route("/connectors/dynamodb")
+@require_login
+def dynamodb_page():
+    return render_template("connectors/dynamodb.html")
+
+
+@app.route("/connectors/dynamodb/save_app", methods=["POST"])
+@require_login
+def dynamodb_save_app_proxy():
+    r = proxy_post("/connectors/dynamodb/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/dynamodb/connect")
+@require_login
+def dynamodb_connect_proxy():
+    r = proxy_get("/connectors/dynamodb/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/dynamodb/disconnect")
+@require_login
+def dynamodb_disconnect_proxy():
+    r = proxy_get("/connectors/dynamodb/disconnect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/dynamodb/sync")
+@require_login
+def dynamodb_sync_proxy():
+    r = proxy_get("/connectors/dynamodb/sync")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/dynamodb/status")
+@require_login
+def dynamodb_status_proxy():
+    r = proxy_get("/api/status/dynamodb")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/dynamodb/job/get")
+@require_login
+def dynamodb_job_get_proxy():
+    r = proxy_get("/connectors/dynamodb/job/get")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/dynamodb/job/save", methods=["POST"])
+@require_login
+def dynamodb_job_save_proxy():
+    r = proxy_post("/connectors/dynamodb/job/save", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
 # ================= MAIN ==========================
 
 if __name__ == "__main__":

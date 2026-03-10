@@ -77,6 +77,10 @@ def push_to_destination(dest_cfg, source, rows):
         dest_cfg.pop("format", None)
 
     try:
+        print(
+            f"[ROUTER] Dispatching rows "
+            f"(source={source}, dest_type={dest_type}, row_count={len(rows)})"
+        )
 
         if dest_type == "mysql":
             count = push_to_mysql(dest_cfg, source, rows)
@@ -111,6 +115,10 @@ def push_to_destination(dest_cfg, source, rows):
             )
 
         # SUCCESS LOG
+        print(
+            f"[ROUTER] Push successful "
+            f"(source={source}, dest_type={dest_type}, rows_pushed={count})"
+        )
         log_destination_push(
             uid,
             source,
@@ -122,6 +130,10 @@ def push_to_destination(dest_cfg, source, rows):
         return count
 
     except Exception as e:
+        print(
+            f"[ROUTER] Push failed "
+            f"(source={source}, dest_type={dest_type}, error={e})"
+        )
 
         # FAILURE LOG
         log_destination_push(

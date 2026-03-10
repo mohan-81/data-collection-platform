@@ -134,6 +134,12 @@ from backend.connectors.aws_rds import (
     disconnect_rds,
     save_config as save_rds_config,
 )
+from backend.connectors.dynamodb import (
+    connect_dynamodb,
+    sync_dynamodb,
+    disconnect_dynamodb,
+    save_config as save_dynamodb_config,
+)
 
 # ---------------- CONFIG ----------------
 load_dotenv()
@@ -15178,6 +15184,181 @@ def aws_rds_job_save():
         INSERT OR REPLACE INTO connector_jobs
         (uid, source, sync_type, schedule_time)
         VALUES (?, 'aws_rds', ?, ?)
+        """,
+        (uid, sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
+
+# -------- AWS DYNAMODB --------
+
+@app.route("/connectors/dynamodb/save_app", methods=["POST"])
+def dynamodb_save_app():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    access_key = data.get("access_key", "").strip()
+    secret_key = data.get("secret_key", "")
+    region = data.get("region", "").strip()
+
+    if not access_key or not secret_key or not region:
+        return jsonify({"error": "All fields are required: access_key, secret_key, region"}), 400
+
+    save_dynamodb_config(uid, access_key, secret_key, region)
+    ensure_connector_initialized(uid, "dynamodb")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/dynamodb/connect")
+def dynamodb_connect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    result = connect_dynamodb(uid)
+    if result.get("status") != "success":
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@app.route("/connectors/dynamodb/disconnect")
+def dynamodb_disconnect():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    disconnect_dynamodb(uid)
+    return jsonify({"status": "disconnected"})
+
+
+@app.route("/connectors/dynamodb/sync")
+def dynamodb_sync_route():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='dynamodb'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_dynamodb(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/dynamodb")
+def dynamodb_status():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='dynamodb'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='dynamodb'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+
+    region = None
+    access_key = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            region = cfg.get("region")
+            raw_access_key = cfg.get("access_key")
+            if raw_access_key:
+                access_key = f"{raw_access_key[:4]}{'*' * max(len(raw_access_key) - 8, 4)}{raw_access_key[-4:]}"
+        except Exception:
+            pass
+
+    return jsonify({
+        "has_credentials": bool(cfg_row),
+        "connected": bool(conn_row and conn_row["enabled"] == 1),
+        "region": region,
+        "access_key": access_key,
+    })
+
+
+@app.route("/connectors/dynamodb/job/get")
+def dynamodb_job_get():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT sync_type, schedule_time
+            FROM connector_jobs
+            WHERE uid=? AND source='dynamodb'
+            """,
+            (uid,),
+        )
+        row = fetchone_secure(cur)
+    finally:
+        con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify({
+        "exists": True,
+        "sync_type": row["sync_type"],
+        "schedule_time": row["schedule_time"],
+    })
+
+
+@app.route("/connectors/dynamodb/job/save", methods=["POST"])
+def dynamodb_job_save():
+    uid = getattr(g, "user_id", None)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, 'dynamodb', ?, ?)
         """,
         (uid, sync_type, schedule_time),
     )

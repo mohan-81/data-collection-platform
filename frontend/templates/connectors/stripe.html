@@ -10,7 +10,8 @@
       <a href="javascript:history.back()"
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-violet-400 bg-violet-950/40 text-violet-300 text-sm font-bold hover:bg-violet-400 hover:text-slate-950 transition-all shadow-[0_0_15px_rgba(167,139,250,0.25)] hover:shadow-[0_0_25px_rgba(167,139,250,0.45)] hover:-translate-x-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+          </path>
         </svg>
         Back to previous
       </a>
@@ -205,13 +206,15 @@
                   <div class="relative">
                     <select id="hourSelect"
                       class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 appearance-none text-center font-bold focus:border-violet-400 outline-none">
-                      {% for h in range(0, 24) %}<option value="{{ '%02d' % h }}" class="bg-slate-800">{{ '%02d' % h }}</option>{% endfor %}
+                      {% for h in range(0, 24) %}<option value="{{ '%02d' % h }}" class="bg-slate-800">{{ '%02d' % h }}
+                      </option>{% endfor %}
                     </select>
                   </div>
                   <div class="relative">
                     <select id="minSelect"
                       class="w-full p-4 rounded-xl bg-slate-900 text-white border border-white/10 appearance-none text-center font-bold focus:border-violet-400 outline-none">
-                      {% for m in range(0, 60, 5) %}<option value="{{ '%02d' % m }}" class="bg-slate-800">{{ '%02d' % m }}</option>{% endfor %}
+                      {% for m in range(0, 60, 5) %}<option value="{{ '%02d' % m }}" class="bg-slate-800">{{ '%02d' % m
+                        }}</option>{% endfor %}
                     </select>
                   </div>
                 </div>
@@ -267,14 +270,18 @@
                 <div id="dropdownMenu"
                   class="hidden absolute w-full mt-2 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto backdrop-blur-xl">
                   <div class="p-2 space-y-1">
-                    <div onclick="selectDestination('mysql', 'MySQL', 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg')"
+                    <div
+                      onclick="selectDestination('mysql', 'MySQL', 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
-                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" class="w-6 h-6 object-contain">
+                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg"
+                        class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">MySQL</span>
                     </div>
-                    <div onclick="selectDestination('postgres', 'PostgreSQL', 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg')"
+                    <div
+                      onclick="selectDestination('postgres', 'PostgreSQL', 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
-                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" class="w-6 h-6 object-contain">
+                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg"
+                        class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">PostgreSQL</span>
                     </div>
                     <div onclick="selectDestination('redshift', 'Amazon Redshift', '/static/images/logos/redshift.png')"
@@ -282,12 +289,14 @@
                       <img src="/static/images/logos/redshift.png" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Amazon Redshift</span>
                     </div>
-                    <div onclick="selectDestination('bigquery', 'Google BigQuery', 'https://cdn.simpleicons.org/googlebigquery/4285F4')"
+                    <div
+                      onclick="selectDestination('bigquery', 'Google BigQuery', 'https://cdn.simpleicons.org/googlebigquery/4285F4')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
                       <img src="https://cdn.simpleicons.org/googlebigquery/4285F4" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Google BigQuery</span>
                     </div>
-                    <div onclick="selectDestination('snowflake', 'Snowflake', 'https://cdn.simpleicons.org/snowflake/29B5E8')"
+                    <div
+                      onclick="selectDestination('snowflake', 'Snowflake', 'https://cdn.simpleicons.org/snowflake/29B5E8')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
                       <img src="https://cdn.simpleicons.org/snowflake/29B5E8" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Snowflake</span>
@@ -297,12 +306,14 @@
                       <img src="/static/images/logos/s3.png" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Amazon S3</span>
                     </div>
-                    <div onclick="selectDestination('azure_datalake', 'Azure Data Lake', '/static/images/logos/adls.png')"
+                    <div
+                      onclick="selectDestination('azure_datalake', 'Azure Data Lake', '/static/images/logos/adls.png')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
                       <img src="/static/images/logos/adls.png" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Azure Data Lake</span>
                     </div>
-                    <div onclick="selectDestination('databricks', 'Databricks', 'https://cdn.simpleicons.org/databricks/FF3621')"
+                    <div
+                      onclick="selectDestination('databricks', 'Databricks', 'https://cdn.simpleicons.org/databricks/FF3621')"
                       class="flex items-center gap-3 px-4 py-3 hover:bg-violet-400/10 rounded-xl cursor-pointer transition-colors group">
                       <img src="https://cdn.simpleicons.org/databricks/FF3621" class="w-6 h-6 object-contain">
                       <span class="text-slate-200 group-hover:text-white font-medium">Databricks</span>
@@ -313,53 +324,80 @@
 
               <div id="dbFields" class="md:col-span-2 hidden">
                 <div id="sqlFields" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <input id="dbHost" placeholder="Host" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbPort" placeholder="Port" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbUser" placeholder="Username" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbPass" placeholder="Password" type="password" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbName" placeholder="Database" class="md:col-span-2 w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbHost" placeholder="Host"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbPort" placeholder="Port"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbUser" placeholder="Username"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbPass" placeholder="Password" type="password"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbName" placeholder="Database"
+                    class="md:col-span-2 w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
                 </div>
 
                 <div id="bigqueryFields" class="hidden grid grid-cols-1 gap-5 mt-5">
-                  <input id="bqProject" placeholder="Project ID" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="bqDataset" placeholder="Dataset" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <textarea id="bqKey" rows="6" placeholder="Service Account JSON" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400"></textarea>
+                  <input id="bqProject" placeholder="Project ID"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="bqDataset" placeholder="Dataset"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <textarea id="bqKey" rows="6" placeholder="Service Account JSON"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400"></textarea>
                 </div>
 
                 <div id="s3Fields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  <input id="s3Bucket" placeholder="Bucket" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="s3Region" placeholder="Region" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="s3AccessKey" placeholder="Access Key" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="s3SecretKey" placeholder="Secret Key" type="password" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="s3Bucket" placeholder="Bucket"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="s3Region" placeholder="Region"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="s3AccessKey" placeholder="Access Key"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="s3SecretKey" placeholder="Secret Key" type="password"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
                 </div>
 
                 <div id="adlsFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  <input id="adlsAccount" placeholder="Storage Account" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="adlsFilesystem" placeholder="Filesystem" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="adlsPath" placeholder="Path Prefix" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="adlsKey" placeholder="Account Key" type="password" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="adlsAccount" placeholder="Storage Account"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="adlsFilesystem" placeholder="Filesystem"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="adlsPath" placeholder="Path Prefix"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="adlsKey" placeholder="Account Key" type="password"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
                 </div>
 
                 <div id="databricksFields" class="hidden grid grid-cols-1 gap-5 mt-5">
-                  <input id="dbxHost" placeholder="Workspace Host" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbxHttpPath" placeholder="HTTP Path" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbxCatalogSchema" placeholder="Catalog.Schema" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
-                  <input id="dbxToken" placeholder="Access Token" type="password" class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbxHost" placeholder="Workspace Host"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbxHttpPath" placeholder="HTTP Path"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbxCatalogSchema" placeholder="Catalog.Schema"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
+                  <input id="dbxToken" placeholder="Access Token" type="password"
+                    class="w-full px-5 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400">
                 </div>
 
                 <div id="formatField" class="hidden pt-5">
-                  <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Storage Format</label>
+                  <label class="text-[10px] font-mono text-slate-500 uppercase mb-3 block tracking-widest">Storage
+                    Format</label>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <button type="button" id="format-parquet" onclick="selectFormat('parquet')" class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Parquet</button>
-                    <button type="button" id="format-csv" onclick="selectFormat('csv')" class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">CSV</button>
-                    <button type="button" id="format-iceberg" onclick="selectFormat('iceberg')" class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Iceberg</button>
-                    <button type="button" id="format-hudi" onclick="selectFormat('hudi')" class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Hudi</button>
+                    <button type="button" id="format-parquet" onclick="selectFormat('parquet')"
+                      class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Parquet</button>
+                    <button type="button" id="format-csv" onclick="selectFormat('csv')"
+                      class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">CSV</button>
+                    <button type="button" id="format-iceberg" onclick="selectFormat('iceberg')"
+                      class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Iceberg</button>
+                    <button type="button" id="format-hudi" onclick="selectFormat('hudi')"
+                      class="format-option p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300 font-bold text-xs uppercase tracking-widest">Hudi</button>
                   </div>
                   <input type="hidden" id="dataFormat" value="parquet">
                 </div>
 
                 <div class="pt-5">
-                  <button onclick="saveDestination()" id="saveDestBtn" class="w-full py-5 bg-violet-500 hover:bg-violet-400 text-white rounded-2xl font-black transition-all shadow-lg shadow-violet-500/30 text-xs uppercase tracking-widest">Authenticate & Save</button>
+                  <button onclick="saveDestination()" id="saveDestBtn"
+                    class="w-full py-5 bg-violet-500 hover:bg-violet-400 text-white rounded-2xl font-black transition-all shadow-lg shadow-violet-500/30 text-xs uppercase tracking-widest">Authenticate
+                    & Save</button>
                 </div>
               </div>
 
@@ -378,7 +416,8 @@
     </div>
 
     <div class="pt-12">
-      <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">Stripe <span class="text-violet-300">Schema</span></h2>
+      <h2 class="text-4xl font-black mb-12 text-center text-white tracking-tight">Stripe <span
+          class="text-violet-300">Schema</span></h2>
       <div class="grid lg:grid-cols-2 gap-12 items-start">
         <div class="grid grid-cols-1 gap-4">
           {% for table, columns in [
@@ -387,14 +426,19 @@
           ('stripe_subscriptions', ['record_id', 'object', 'created_at', 'data_json']),
           ('stripe_products', ['record_id', 'object', 'created_at', 'data_json'])
           ] %}
-          <div class="p-6 bg-slate-800/40 border border-white/5 rounded-3xl hover:border-violet-400/30 transition-all group">
+          <div
+            class="p-6 bg-slate-800/40 border border-white/5 rounded-3xl hover:border-violet-400/30 transition-all group">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-3 h-3 rounded-full bg-violet-500 group-hover:animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]"></div>
+              <div
+                class="w-3 h-3 rounded-full bg-violet-500 group-hover:animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]">
+              </div>
               <h4 class="text-white font-mono font-bold text-sm tracking-widest uppercase">{{ table }}</h4>
             </div>
             <div class="flex flex-wrap gap-2">
               {% for col in columns %}
-              <span class="px-3 py-1.5 bg-slate-900/80 border border-white/10 rounded-xl text-[10px] font-mono text-slate-400 group-hover:text-violet-200 transition-colors">{{ col }}</span>
+              <span
+                class="px-3 py-1.5 bg-slate-900/80 border border-white/10 rounded-xl text-[10px] font-mono text-slate-400 group-hover:text-violet-200 transition-colors">{{
+                col }}</span>
               {% endfor %}
             </div>
           </div>
@@ -402,9 +446,13 @@
         </div>
 
         <div class="sticky top-10 group">
-          <div class="absolute -inset-4 bg-violet-500/10 rounded-[4rem] blur-2xl opacity-30 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <div class="relative bg-slate-800/80 border border-white/10 rounded-[3.5rem] p-4 shadow-3xl overflow-hidden backdrop-blur-md">
-            <div class="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white/5 to-transparent flex items-center px-8 justify-between">
+          <div
+            class="absolute -inset-4 bg-violet-500/10 rounded-[4rem] blur-2xl opacity-30 group-hover:opacity-100 transition-opacity duration-700">
+          </div>
+          <div
+            class="relative bg-slate-800/80 border border-white/10 rounded-[3.5rem] p-4 shadow-3xl overflow-hidden backdrop-blur-md">
+            <div
+              class="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white/5 to-transparent flex items-center px-8 justify-between">
               <div class="flex gap-2">
                 <div class="w-2 h-2 rounded-full bg-red-500/40"></div>
                 <div class="w-2 h-2 rounded-full bg-yellow-500/40"></div>
@@ -412,8 +460,11 @@
               </div>
               <span class="text-[9px] font-mono text-slate-500 tracking-widest uppercase">Stripe_Connector.vuerd</span>
             </div>
-            <div class="mt-12 p-10 rounded-[2.5rem] bg-slate-900/50 border border-white/5 min-h-[320px] flex items-center justify-center">
-              <img src="/static/images/logos/stripe.png" class="mx-auto max-w-[220px] rounded-2xl opacity-80 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-[1.02]" alt="Stripe Connector">
+            <div
+              class="mt-12 p-10 rounded-[2.5rem] bg-slate-900/50 border border-white/5 min-h-[320px] flex items-center justify-center">
+              <img src="/static/images/erd/stripe_erd.png"
+                class="mx-auto max-w-[220px] rounded-2xl opacity-80 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-[1.02]"
+                alt="Stripe Connector">
             </div>
           </div>
         </div>
@@ -421,16 +472,23 @@
     </div>
 
     <div class="mb-32">
-      <h2 class="text-4xl font-black mb-12 text-center text-white">Data <span class="text-violet-300">Extracted</span></h2>
+      <h2 class="text-4xl font-black mb-12 text-center text-white">Data <span class="text-violet-300">Extracted</span>
+      </h2>
       <div class="grid md:grid-cols-3 gap-6">
         {% for table in ['stripe_customers', 'stripe_charges', 'stripe_subscriptions', 'stripe_products'] %}
-        <div class="p-8 bg-slate-800/40 border border-white/5 rounded-[2rem] hover:bg-violet-500/5 hover:border-violet-400/20 transition-all flex flex-col items-center text-center group cursor-pointer">
-          <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-violet-500 transition-all duration-500 shadow-xl">
-            <svg class="w-6 h-6 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <div
+          class="p-8 bg-slate-800/40 border border-white/5 rounded-[2rem] hover:bg-violet-500/5 hover:border-violet-400/20 transition-all flex flex-col items-center text-center group cursor-pointer">
+          <div
+            class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-violet-500 transition-all duration-500 shadow-xl">
+            <svg class="w-6 h-6 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <span class="font-mono text-slate-400 font-bold text-sm tracking-widest group-hover:text-white transition-colors">{{ table }}</span>
+          <span
+            class="font-mono text-slate-400 font-bold text-sm tracking-widest group-hover:text-white transition-colors">{{
+            table }}</span>
         </div>
         {% endfor %}
       </div>
@@ -467,6 +525,7 @@
   }
 
   @keyframes pulse-once {
+
     0%,
     100% {
       opacity: 1;

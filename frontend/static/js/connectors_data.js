@@ -1,5 +1,45 @@
 const CONNECTORS = [
 
+  {
+    id: "slack",
+    name: "Slack",
+    categories: ["communication"],
+    logo: "/static/images/logos/slack.png",
+
+    auth_type: "api_key",
+    api_key_label: "Slack Bot Token",
+
+    connect_url: "/connectors/slack/connect",
+    sync_url: "/connectors/slack/sync",
+    disconnect_url: "/connectors/slack/disconnect",
+    status_api: "/api/status/slack",
+    save_app_url: "/connectors/slack/save_app",
+
+    models: [
+      { title: "Channels", desc: "Public and private channels." },
+      { title: "Messages", desc: "Message history across channels." },
+      { title: "Users", desc: "Workspace members and bots." }
+    ],
+
+    tables: [
+      "slack_channels",
+      "slack_messages",
+      "slack_users"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts and syncs communication data from your Slack workspace.",
+
+    data: [
+      "Channel details",
+      "Message threads",
+      "User profiles",
+      "Timestamps",
+      "Message types"
+    ]
+  },
+
   /* ================= GOOGLE ================= */
 
   {
@@ -2211,6 +2251,49 @@ and Aurora PostgreSQL engines.
       "MySQL, MariaDB, Aurora MySQL support",
       "PostgreSQL, Aurora PostgreSQL support",
       "Incremental and historical sync modes"
+    ]
+  },
+
+  {
+    id: "stripe",
+    name: "Stripe",
+    categories: ["finance", "payments"],
+    logo: "/static/images/logos/stripe.png",
+
+    auth_type: "credentials",
+
+    route: "/connectors/stripe",
+    connect_url: "/connectors/stripe/connect",
+    sync_url: "/connectors/stripe/sync",
+    dashboard: "/dashboard/stripe",
+
+    long_description: `
+Connect Stripe using your Secret API Key. Segmento validates access to your Stripe account,
+then paginates through customers, charges, subscriptions, and products and streams normalized
+JSON rows into your configured warehouse destination.
+    `,
+
+    steps: [
+      { title: "Enter Secret Key", desc: "Provide your Stripe Secret API Key." },
+      { title: "Validate Access", desc: "Segmento verifies the key against the Stripe REST API." },
+      { title: "Run Sync", desc: "Customers, charges, subscriptions, and products are extracted." }
+    ],
+
+    tables: [
+      "stripe_customers",
+      "stripe_charges",
+      "stripe_subscriptions",
+      "stripe_products"
+    ],
+
+    description: "Extracts Stripe billing and catalog data and loads normalized JSON rows into your warehouse.",
+
+    data: [
+      "Customers",
+      "Charges",
+      "Subscriptions",
+      "Products",
+      "Normalized JSON payloads"
     ]
   },
 

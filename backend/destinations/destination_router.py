@@ -7,6 +7,10 @@ from backend.destinations.s3_writer import push_s3
 from backend.destinations.azure_datalake_writer import push_azure_datalake
 from backend.destinations.databricks_writer import push_databricks
 from backend.destinations.redshift_writer import push_redshift
+from backend.destinations.mongodb_writer import push_mongodb
+from backend.destinations.elasticsearch_writer import push_elasticsearch
+from backend.destinations.duckdb_writer import push_duckdb
+from backend.destinations.gcs_writer import push_gcs
 from backend.security.secure_db import decrypt_payload
 from flask import g, has_request_context
 
@@ -20,7 +24,7 @@ def resolve_destination_format(dest_cfg, source):
     dest_type = dest_cfg.get("type")
 
     # only needed for supported destinations
-    if dest_type not in ["s3", "bigquery", "azure_datalake"]:
+    if dest_type not in ["s3", "bigquery", "azure_datalake", "gcs", "duckdb"]:
         return dest_cfg
 
     try:
@@ -69,7 +73,7 @@ def push_to_destination(dest_cfg, source, rows):
         uid = getattr(g, "user_id", None)
 
     # ---------------- FORMAT ISOLATION ----------------
-    if dest_type in ["bigquery", "s3", "azure_datalake", "databricks"]:
+    if dest_type in ["bigquery", "s3", "azure_datalake", "databricks", "gcs", "duckdb"]:
         dest_cfg["format"] = (
             dest_cfg.get("format") or "parquet"
         ).lower()
@@ -108,6 +112,18 @@ def push_to_destination(dest_cfg, source, rows):
 
         elif dest_type == "redshift":
             count = push_redshift(dest_cfg, source, rows)
+
+        elif dest_type == "mongodb":
+            count = push_mongodb(dest_cfg, source, rows)
+
+        elif dest_type == "elasticsearch":
+            count = push_elasticsearch(dest_cfg, source, rows)
+
+        elif dest_type == "duckdb":
+            count = push_duckdb(dest_cfg, source, rows)
+
+        elif dest_type == "gcs":
+            count = push_gcs(dest_cfg, source, rows)
 
         else:
             raise Exception(

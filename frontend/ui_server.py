@@ -5328,6 +5328,66 @@ def notion_disconnect():
     return jsonify(r.json()), r.status_code
 
 
+# ================= HUBSPOT ========================
+
+@app.route("/connectors/hubspot")
+@require_login
+def hubspot_page():
+    return render_template("connectors/hubspot.html")
+
+
+@app.route("/connectors/hubspot/connect")
+@require_login
+def hubspot_connect_proxy():
+    r = proxy_get("/connectors/hubspot/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/hubspot/sync")
+@require_login
+def hubspot_sync_proxy():
+    r = connector_sync("hubspot")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/api/status/hubspot")
+@require_login
+def hubspot_status_proxy():
+    r = connector_status("hubspot")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/hubspot/job/get")
+@require_login
+def hubspot_job_get_proxy():
+    r = connector_job_get("hubspot")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/hubspot/job/save", methods=["POST"])
+@require_login
+def hubspot_job_save_proxy():
+    r = connector_job_save("hubspot")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/hubspot/save_app", methods=["POST"])
+@require_login
+def hubspot_save_app_proxy():
+    r = proxy_post("/connectors/hubspot/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/hubspot/disconnect")
+@require_login
+def hubspot_disconnect_proxy():
+    r = connector_disconnect("hubspot")
+    return jsonify(r.json()), r.status_code
+
+
 # ================= AIRTABLE ========================
 
 @app.route("/connectors/airtable")

@@ -79,6 +79,46 @@ const CONNECTORS = [
   },
 
   {
+    id: "hubspot",
+    name: "HubSpot",
+    categories: ["crm", "sales", "marketing"],
+    logo: "https://cdn.simpleicons.org/hubspot/FF7A59",
+
+    auth_type: "api_key",
+    api_key_label: "HubSpot Private App Token",
+
+    connect_url: "/connectors/hubspot/connect",
+    sync_url: "/connectors/hubspot/sync",
+    disconnect_url: "/connectors/hubspot/disconnect",
+    status_api: "/api/status/hubspot",
+    save_app_url: "/connectors/hubspot/save_app",
+
+    models: [
+      { title: "Contacts", desc: "CRM contacts with profile and company fields." },
+      { title: "Companies", desc: "Company records with firmographic metadata." },
+      { title: "Deals", desc: "Pipeline deals with amount, stage, and close details." }
+    ],
+
+    tables: [
+      "hubspot_contacts",
+      "hubspot_companies",
+      "hubspot_deals"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts HubSpot CRM contacts, companies, and deals through a private app token.",
+
+    data: [
+      "Contact profiles",
+      "Company records",
+      "Deals and stages",
+      "Update timestamps",
+      "CRM object metadata"
+    ]
+  },
+
+  {
     id: "slack",
     name: "Slack",
     categories: ["communication"],

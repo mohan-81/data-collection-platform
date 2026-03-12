@@ -158,6 +158,12 @@ from backend.connectors.notion import (
     disconnect_notion,
     save_config as save_notion_config,
 )
+from backend.connectors.hubspot import (
+    connect_hubspot,
+    sync_hubspot,
+    disconnect_hubspot,
+    save_config as save_hubspot_config,
+)
 from backend.connectors.airtable import (
     connect_airtable,
     sync_airtable,
@@ -15905,6 +15911,177 @@ def save_notion_job():
         VALUES (?, ?, ?, ?)
         """,
         (uid, "notion", sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+
+    return jsonify({"status": "job_saved"})
+
+
+# ================= HUBSPOT ========================
+
+@app.route("/connectors/hubspot/save_app", methods=["POST"])
+def hubspot_save_config():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    data = request.get_json() or {}
+    access_token = (data.get("access_token") or "").strip()
+
+    if not access_token:
+        return jsonify({"error": "missing access_token"}), 400
+
+    save_hubspot_config(uid, access_token)
+    ensure_connector_initialized(uid, "hubspot")
+    return jsonify({"status": "saved"})
+
+
+@app.route("/connectors/hubspot/connect")
+def hubspot_connect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    res = connect_hubspot(uid)
+    if res.get("status") != "success":
+        return jsonify(res), 400
+    return jsonify(res)
+
+
+@app.route("/connectors/hubspot/disconnect")
+def hubspot_disconnect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    return jsonify(disconnect_hubspot(uid))
+
+
+@app.route("/connectors/hubspot/sync")
+def hubspot_sync():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='hubspot'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_hubspot(uid, sync_type=sync_type))
+
+
+@app.route("/api/status/hubspot")
+def hubspot_status():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='hubspot'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='hubspot'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+
+    access_token = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            raw_token = cfg.get("access_token")
+            if raw_token:
+                access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+        except Exception:
+            pass
+
+    return jsonify(
+        {
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "access_token": access_token,
+        }
+    )
+
+
+@app.route("/connectors/hubspot/job/get")
+def hubspot_job_get():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        """,
+        (uid, "hubspot"),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+
+    if not row:
+        return jsonify({"exists": False})
+
+    return jsonify(
+        {
+            "exists": True,
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+        }
+    )
+
+
+@app.route("/connectors/hubspot/job/save", methods=["POST"])
+def hubspot_job_save():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, ?, ?, ?)
+        """,
+        (uid, "hubspot", sync_type, schedule_time),
     )
     con.commit()
     con.close()

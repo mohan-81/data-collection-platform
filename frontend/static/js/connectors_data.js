@@ -119,6 +119,206 @@ const CONNECTORS = [
   },
 
   {
+    id: "shopify",
+    name: "Shopify",
+    categories: ["ecommerce"],
+    logo: "https://cdn.simpleicons.org/shopify/95BF47",
+
+    auth_type: "api_key",
+    api_key_label: "Shopify Admin API Access Token",
+
+    connect_url: "/connectors/shopify/connect",
+    sync_url: "/connectors/shopify/sync",
+    disconnect_url: "/connectors/shopify/disconnect",
+    status_api: "/api/status/shopify",
+    save_app_url: "/connectors/shopify/save_app",
+
+    models: [
+      { title: "Products", desc: "Store products, variants, and inventory details." },
+      { title: "Orders", desc: "Customer orders, transactions, and fulfillment status." },
+      { title: "Customers", desc: "Customer profiles, contact info, and lifetime value." }
+    ],
+
+    tables: [
+      "shopify_products",
+      "shopify_orders",
+      "shopify_customers"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts products, orders, and customers from your Shopify store through the Admin API.",
+
+    data: [
+      "Product catalog",
+      "Order history",
+      "Customer profiles",
+      "Timestamps",
+      "Object metadata"
+    ]
+  },
+
+  {
+    id: "zendesk",
+    name: "Zendesk",
+    categories: ["customer-service", "support"],
+    logo: "https://cdn.simpleicons.org/zendesk/03363D",
+
+    auth_type: "api_key",
+    api_key_label: "Zendesk API Token",
+
+    connect_url: "/connectors/zendesk/connect",
+    sync_url: "/connectors/zendesk/sync",
+    disconnect_url: "/connectors/zendesk/disconnect",
+    status_api: "/api/status/zendesk",
+    save_app_url: "/connectors/zendesk/save_app",
+
+    models: [
+      { title: "Tickets", desc: "Support tickets, comments, and tags." },
+      { title: "Users", desc: "Customer profiles and agent details." },
+      { title: "Organizations", desc: "Company groupings and shared data." }
+    ],
+
+    tables: [
+      "zendesk_tickets",
+      "zendesk_users",
+      "zendesk_organizations"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts tickets, users, and organizations from your Zendesk instance.",
+
+    data: [
+      "Ticket details",
+      "Comments & events",
+      "User profiles",
+      "Organization metadata",
+      "Timestamps"
+    ]
+  },
+
+  {
+    id: "intercom",
+    name: "Intercom",
+    categories: ["customer-service", "messaging"],
+    logo: "https://cdn.simpleicons.org/intercom/1F8DED",
+
+    auth_type: "api_key",
+    api_key_label: "Intercom Access Token",
+
+    connect_url: "/connectors/intercom/connect",
+    sync_url: "/connectors/intercom/sync",
+    disconnect_url: "/connectors/intercom/disconnect",
+    status_api: "/api/status/intercom",
+    save_app_url: "/connectors/intercom/save_app",
+
+    models: [
+      { title: "Contacts", desc: "User and lead profiles with attributes." },
+      { title: "Conversations", desc: "Support chat history and transcripts." },
+      { title: "Companies", desc: "Business accounts and firmographic data." }
+    ],
+
+    tables: [
+      "intercom_contacts",
+      "intercom_conversations",
+      "intercom_companies"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Syncs contacts, conversations, and company data from Intercom.",
+
+    data: [
+      "Contact profiles",
+      "Chat transcripts",
+      "Company records",
+      "Custom attributes",
+      "Event timestamps"
+    ]
+  },
+
+  {
+    id: "mailchimp",
+    name: "Mailchimp",
+    categories: ["marketing", "email"],
+    logo: "https://cdn.simpleicons.org/mailchimp/FFE01B",
+
+    auth_type: "api_key",
+    api_key_label: "Mailchimp API Key",
+
+    connect_url: "/connectors/mailchimp/connect",
+    sync_url: "/connectors/mailchimp/sync",
+    disconnect_url: "/connectors/mailchimp/disconnect",
+    status_api: "/api/status/mailchimp",
+    save_app_url: "/connectors/mailchimp/save_app",
+
+    models: [
+      { title: "Lists", desc: "Audiences and segment metadata." },
+      { title: "Members", desc: "Subscriber profiles and activity." },
+      { title: "Campaigns", desc: "Email campaign reports and metrics." }
+    ],
+
+    tables: [
+      "mailchimp_lists",
+      "mailchimp_members",
+      "mailchimp_campaigns"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts audiences, members, and campaign reports from Mailchimp.",
+
+    data: [
+      "Subscriber lists",
+      "Email addresses",
+      "Campaign stats",
+      "Open/click rates",
+      "Member activity"
+    ]
+  },
+
+  {
+    id: "twilio",
+    name: "Twilio",
+    categories: ["communication", "sms", "voice"],
+    logo: "/static/images/logos/twilio.png",
+
+    auth_type: "api_key",
+    api_key_label: "Twilio Auth Token",
+
+    connect_url: "/connectors/twilio/connect",
+    sync_url: "/connectors/twilio/sync",
+    disconnect_url: "/connectors/twilio/disconnect",
+    status_api: "/api/status/twilio",
+    save_app_url: "/connectors/twilio/save_app",
+
+    models: [
+      { title: "Messages", desc: "SMS and WhatsApp message logs." },
+      { title: "Calls", desc: "Voice call logs and metadata." },
+      { title: "Recordings", desc: "Call recordings and transcription info." }
+    ],
+
+    tables: [
+      "twilio_messages",
+      "twilio_calls",
+      "twilio_recordings"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Syncs messages, call logs, and recordings from your Twilio account.",
+
+    data: [
+      "Message logs",
+      "Call details",
+      "Recording links",
+      "Price & status",
+      "Timestamps"
+    ]
+  },
+
+  {
     id: "slack",
     name: "Slack",
     categories: ["communication"],

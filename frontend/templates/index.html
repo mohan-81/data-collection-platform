@@ -1,38 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- Sky Background (Sunrise-Sunset) -->
+<div id="sky-bg" class="fixed inset-0 pointer-events-none transition-colors duration-1000 -z-10 opacity-40"></div>
+
+<!-- Accent Motifs (Subtle Indian Geometric) -->
+<div class="fixed inset-0 pointer-events-none -z-20 opacity-[0.03]">
+  <div class="absolute top-1/4 left-10 w-32 h-32 border border-slate-400 rotate-45"></div>
+  <div class="absolute bottom-1/4 right-10 w-48 h-48 border border-slate-400 rotate-12"></div>
+</div>
+
 <!-- Intro -->
-<div id="intro" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900">
-  <h1 id="introText"
-    class="text-[1rem] md:text-[3rem] lg:text-[7rem] font-extrabold text-cyan-400 transition-all duration-[800ms]">
-    Segmento Collector
-  </h1>
+<div id="intro" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 overflow-hidden">
+  <div class="relative text-center">
+    <div id="welcomeText"
+      class="text-xl md:text-2xl font-medium text-cyan-500/80 mb-4 opacity-0 transform translate-y-4 transition-all duration-700">
+      Welcome to the future of data
+    </div>
+    <h1 id="introText"
+      class="text-[1.5rem] md:text-[4rem] lg:text-[7rem] font-black text-white transition-all duration-[1000ms] opacity-0 scale-90">
+      Segmento <span class="text-cyan-400">Collector</span>
+    </h1>
+    <div id="introLine"
+      class="mt-6 h-[2px] w-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto transition-all duration-[1500ms]">
+    </div>
+  </div>
 </div>
 
 <script>
   window.addEventListener("load", () => {
     const intro = document.getElementById("intro");
     const text = document.getElementById("introText");
+    const welcome = document.getElementById("welcomeText");
+    const line = document.getElementById("introLine");
 
+    // Phase 1: Welcome message
     setTimeout(() => {
-      text.classList.add("scale-75", "opacity-80");
-    }, 100);
+      welcome.classList.remove("opacity-0", "translate-y-4");
+    }, 300);
 
+    // Phase 2: Main title
     setTimeout(() => {
-      text.classList.add("scale-50", "opacity-40");
-    }, 200);
+      text.classList.remove("opacity-0", "scale-90");
+    }, 800);
 
+    // Phase 3: Accent line
     setTimeout(() => {
-      text.classList.add("scale-25", "opacity-0");
-    }, 500);
+      line.style.width = "100%";
+    }, 1200);
 
+    // Phase 4: Fade out
     setTimeout(() => {
       intro.classList.add("opacity-0");
-    }, 1000);
+      intro.style.transition = "opacity 1s ease-out";
+    }, 2800);
 
     setTimeout(() => {
       intro.style.display = "none";
-    }, 2000);
+    }, 3800);
   });
 </script>
 
@@ -88,7 +113,7 @@
 </section>
 
 <!-- Hero -->
-<section class="relative px-6 pb-32 pt-24 md:pb-48 md:pt-28 text-center overflow-hidden">
+<section class="relative px-6 pb-24 pt-4 md:pb-32 md:pt-8 text-center overflow-hidden">
   <div class="absolute inset-0 overflow-hidden -z-10">
     <div
       class="absolute inset-0 bg-[linear-gradient(to_right,#083344_1px,transparent_1px),linear-gradient(to_bottom,#083344_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]">
@@ -185,74 +210,74 @@
 </div>
 
 <!-- What it does -->
-<section class="px-10 py-28 bg-slate-900 relative overflow-hidden">
-  <div class="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-slate-700/50 to-transparent">
+<section class="px-10 py-28 bg-white relative overflow-hidden">
+  <div class="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-slate-200 to-transparent">
   </div>
-  <div class="absolute top-0 right-1/4 w-px h-full bg-gradient-to-b from-transparent via-slate-700/50 to-transparent">
+  <div class="absolute top-0 right-1/4 w-px h-full bg-gradient-to-b from-transparent via-slate-200 to-transparent">
   </div>
 
-  <h2 data-aos="fade" class="text-4xl md:text-5xl font-black text-center mb-20 tracking-tight text-white">
-    What Does <span class="text-cyan-400">Segmento Collector</span> Do?
+  <h2 data-aos="fade" class="text-4xl md:text-5xl font-black text-center mb-20 tracking-tight text-slate-900">
+    What Does <span class="text-cyan-600">Segmento Collector</span> Do?
   </h2>
 
   <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
 
     <div data-aos="fade-up"
-      class="group relative p-8 bg-slate-800/30 rounded-3xl border border-slate-700/50 hover:border-cyan-400/50 transition-all duration-500 overflow-hidden">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-cyan-500/30 hover:border-cyan-400 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl">
       <div
-        class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[60px] group-hover:bg-cyan-500/20 transition-all">
+        class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/5 blur-[60px] group-hover:bg-cyan-500/10 transition-all">
       </div>
 
       <div class="relative z-10">
-        <div class="text-xs font-mono text-cyan-500 mb-6 flex items-center gap-2">
-          <span class="w-8 h-[1px] bg-cyan-500/30"></span> 01 / STEP
+        <div class="text-xs font-bold font-mono text-cyan-600 mb-6 flex items-center gap-2">
+          <span class="w-8 h-px bg-cyan-600"></span> 01 / STEP
         </div>
-        <h3 class="text-3xl font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors">Capture</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+        <h3 class="text-3xl font-bold text-slate-900 mb-4 group-hover:text-cyan-600 transition-colors">Capture</h3>
+        <p class="text-slate-700 text-sm leading-relaxed mb-6">
           Collects behavioral, transactional, and platform data from websites and APIs in real time.
         </p>
-        <div class="w-12 h-1 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-cyan-400 w-0 group-hover:w-full transition-all duration-700"></div>
+        <div class="w-12 h-1 bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-cyan-600 w-0 group-hover:w-full transition-all duration-700"></div>
         </div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="150"
-      class="group relative p-8 bg-slate-800/30 rounded-3xl border border-slate-700/50 hover:border-blue-400/50 transition-all duration-500 overflow-hidden">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-blue-500/30 hover:border-blue-400 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl">
       <div
-        class="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[60px] group-hover:bg-blue-500/20 transition-all">
+        class="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/5 blur-[60px] group-hover:bg-blue-500/10 transition-all">
       </div>
 
       <div class="relative z-10">
-        <div class="text-xs font-mono text-blue-400 mb-6 flex items-center gap-2">
-          <span class="w-8 h-[1px] bg-blue-400/30"></span> 02 / STEP
+        <div class="text-xs font-bold font-mono text-blue-600 mb-6 flex items-center gap-2">
+          <span class="w-8 h-px bg-blue-600"></span> 02 / STEP
         </div>
-        <h3 class="text-3xl font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">Unify</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+        <h3 class="text-3xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">Unify</h3>
+        <p class="text-slate-700 text-sm leading-relaxed mb-6">
           Links sessions, devices, and accounts into unified identities.
         </p>
-        <div class="w-12 h-1 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-blue-400 w-0 group-hover:w-full transition-all duration-700"></div>
+        <div class="w-12 h-1 bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-blue-600 w-0 group-hover:w-full transition-all duration-700"></div>
         </div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="300"
-      class="group relative p-8 bg-slate-800/30 rounded-3xl border border-slate-700/50 hover:border-purple-400/50 transition-all duration-500 overflow-hidden">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-purple-500/30 hover:border-purple-400 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl">
       <div
-        class="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/10 blur-[60px] group-hover:bg-purple-500/20 transition-all">
+        class="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/5 blur-[60px] group-hover:bg-purple-500/10 transition-all">
       </div>
 
       <div class="relative z-10">
-        <div class="text-xs font-mono text-purple-400 mb-6 flex items-center gap-2">
-          <span class="w-8 h-[1px] bg-purple-400/30"></span> 03 / STEP
+        <div class="text-xs font-bold font-mono text-purple-600 mb-6 flex items-center gap-2">
+          <span class="w-8 h-px bg-purple-600"></span> 03 / STEP
         </div>
-        <h3 class="text-3xl font-bold text-white mb-4 group-hover:text-purple-400 transition-colors">Store</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+        <h3 class="text-3xl font-bold text-slate-900 mb-4 group-hover:text-purple-600 transition-colors">Store</h3>
+        <p class="text-slate-700 text-sm leading-relaxed mb-6">
           Persists raw and structured data in relational storage.
         </p>
-        <div class="w-12 h-1 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-purple-400 w-0 group-hover:w-full transition-all duration-700"></div>
+        <div class="w-12 h-1 bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-purple-600 w-0 group-hover:w-full transition-all duration-700"></div>
         </div>
       </div>
     </div>
@@ -274,7 +299,7 @@
 
     <div data-aos="fade-right" class="md:col-span-4 space-y-4">
       <div
-        class="group p-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-cyan-400/50 transition-all">
+        class="motion-card-3d group p-6 bg-slate-900/40 border border-cyan-500/30 rounded-2xl hover:border-cyan-400 transition-all shadow-xl backdrop-blur-md">
         <div class="flex justify-between items-start mb-4">
           <p class="text-[10px] text-cyan-400 font-mono tracking-widest uppercase">Input Alpha</p>
           <div class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></div>
@@ -289,21 +314,21 @@
       </div>
 
       <div
-        class="group p-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-cyan-400/50 transition-all">
+        class="motion-card-3d group p-6 bg-slate-900/40 border border-blue-500/30 rounded-2xl hover:border-blue-400 transition-all shadow-xl backdrop-blur-md">
         <div class="flex justify-between items-start mb-4">
           <p class="text-[10px] text-cyan-400 font-mono tracking-widest uppercase">Input Beta</p>
           <div class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
         </div>
-        <h4 class="font-bold text-xl text-white">38+ Connectors</h4>
+        <h4 class="font-bold text-xl text-white">60+ Connectors</h4>
         <p class="text-slate-400 text-xs mt-1">Cloud & Social API hooks</p>
       </div>
     </div>
 
     <div data-aos="zoom-in" class="md:col-span-4 relative group">
       <div
-        class="h-full p-8 bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-cyan-400/30 rounded-3xl flex flex-col items-center justify-center text-center relative z-10 overflow-hidden shadow-[0_0_50px_-12px_rgba(34,211,238,0.2)]">
+        class="motion-card-3d h-full p-8 bg-slate-900/40 border border-cyan-400/30 rounded-3xl flex flex-col items-center justify-center text-center relative z-10 overflow-hidden shadow-[0_0_50px_-12px_rgba(34,211,238,0.3)] backdrop-blur-md">
         <div
-          class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent animate-[scan_4s_linear_infinite]">
+          class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-[scan_4s_linear_infinite]">
         </div>
 
         <div
@@ -325,7 +350,8 @@
     </div>
 
     <div data-aos="fade-left" class="md:col-span-4 flex flex-col gap-4">
-      <div class="flex-1 p-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl flex items-center gap-4 group">
+      <div
+        class="motion-card-3d flex-1 p-6 bg-slate-900/40 border border-purple-500/30 rounded-2xl flex items-center gap-4 group shadow-xl backdrop-blur-md">
         <div
           class="p-3 bg-slate-900 rounded-lg border border-slate-700 group-hover:border-cyan-400/50 transition-colors">
           🗄️
@@ -337,7 +363,7 @@
       </div>
 
       <div
-        class="flex-2 p-1 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl group cursor-pointer overflow-hidden">
+        class="flex-2 p-1 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl group cursor-pointer overflow-hidden shadow-2xl">
         <div
           class="bg-slate-900 h-full w-full rounded-[calc(1rem-1px)] p-6 group-hover:bg-transparent transition-colors duration-500">
           <h4 class="font-bold text-white group-hover:text-black transition-colors">Interactive Dashboard</h4>
@@ -353,49 +379,45 @@
 </section>
 
 <style>
-  .integration-overlay-panel {
-    backdrop-filter: blur(24px);
-  }
-
-  .integration-overlay-grid {
-    align-content: start;
-    scrollbar-gutter: stable;
-  }
-
   .integration-icon-card {
     min-height: 132px;
     background: rgba(15, 23, 42, 0.78);
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+    transition: transform 0.1s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
+    transform-style: preserve-3d;
   }
 
-  .integration-icon-card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(34, 211, 238, 0.35);
-    box-shadow: 0 20px 50px -24px rgba(34, 211, 238, 0.45);
+  /* Parallax Elements */
+
+  /* High-Drama 3D Motion Cards */
+  .motion-card-3d {
+    background: rgba(15, 23, 42, 0.85);
+    /* Darker for better contrast */
+    backdrop-filter: blur(28px);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8);
   }
 
-  .integration-icon-card img {
-    filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.35));
+  /* Improved Card Text Visibility */
+  .motion-card-3d p,
+  .motion-card-3d .text-slate-700,
+  .motion-card-3d .text-slate-400 {
+    color: #e2e8f0 !important;
+    /* Slate 200 for legibility */
   }
 
-  @keyframes move {
-    0% {
-      left: -20%;
-    }
-
-    100% {
-      left: 120%;
-    }
+  .motion-card-3d h3,
+  .motion-card-3d h4 {
+    color: #ffffff !important;
   }
 
-  @keyframes scan {
-    0% {
-      top: 0%;
-    }
-
-    100% {
-      top: 100%;
-    }
+  .motion-card-3d p {
+    color: #f1f5f9 !important; /* Slate 100 - Peak legibility */
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 </style>
 
@@ -547,24 +569,22 @@
     }
   });
 </script>
-
-<!--CAPABILITIES-->
-<section class="px-6 py-28 relative overflow-hidden bg-slate-900">
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 blur-[120px] rounded-full -z-10"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full -z-10"></div>
+<section class="px-6 py-28 relative overflow-hidden bg-white motif-jaali">
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/5 blur-[120px] rounded-full -z-10"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full -z-10"></div>
 
   <div class="text-center mb-20">
-    <h2 data-aos="fade-up" class="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white">
-      Core <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Capabilities</span>
+    <h2 data-aos="fade-up" class="text-4xl md:text-5xl font-black uppercase tracking-tighter text-slate-900">
+      Core <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Capabilities</span>
     </h2>
     <div data-aos="fade-up" data-aos-delay="100"
-      class="mt-4 h-1 w-24 bg-gradient-to-r from-cyan-400 to-transparent mx-auto rounded-full"></div>
+      class="mt-4 h-1 w-24 bg-gradient-to-r from-cyan-500 to-transparent mx-auto rounded-full"></div>
   </div>
 
   <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-6">
 
     <div data-aos="fade-up"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-cyan-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-cyan-500/30 hover:border-cyan-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
 
       <div
         class="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl">
@@ -575,29 +595,29 @@
           class="absolute inset-0 bg-cyan-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
         </div>
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-md">
           🌐
         </div>
       </div>
 
       <h3
-        class="relative z-10 font-black text-xl mb-4 text-slate-100 group-hover:text-cyan-400 transition-colors tracking-tight">
+        class="relative z-10 font-black text-xl mb-4 text-slate-900 group-hover:text-cyan-600 transition-colors tracking-tight">
         Web Tracking
       </h3>
 
-      <p class="relative z-10 text-gray-400 text-sm leading-relaxed group-hover:text-slate-300 transition-colors">
+      <p class="relative z-10 text-slate-700 text-sm leading-relaxed group-hover:text-slate-800 transition-colors">
         Tracks events, sessions, forms, and files with millisecond precision.
       </p>
 
       <div class="mt-8 flex items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
-        <div class="h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-cyan-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+        <div class="h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-cyan-600 w-0 group-hover:w-full transition-all duration-1000"></div>
         </div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="100"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-blue-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-blue-500/30 hover:border-blue-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
       <div
         class="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl">
       </div>
@@ -606,24 +626,24 @@
           class="absolute inset-0 bg-blue-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
         </div>
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 shadow-md">
           🔌
         </div>
       </div>
-      <h3 class="font-black text-xl mb-4 text-slate-100 group-hover:text-blue-400 transition-colors tracking-tight">
+      <h3 class="font-black text-xl mb-4 text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">
         Connectors</h3>
-      <p class="text-gray-400 text-sm leading-relaxed group-hover:text-slate-300 transition-colors">
+      <p class="text-slate-700 text-sm leading-relaxed group-hover:text-slate-800 transition-colors">
         Modular ingestion pipelines for seamless integration with third-party platforms.
       </p>
       <div class="mt-8 flex items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
-        <div class="h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-blue-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+        <div class="h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-blue-600 w-0 group-hover:w-full transition-all duration-1000"></div>
         </div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="200"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-purple-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-purple-500/30 hover:border-purple-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
       <div
         class="absolute inset-0 bg-gradient-to-br from-purple-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl">
       </div>
@@ -632,70 +652,70 @@
           class="absolute inset-0 bg-purple-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
         </div>
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-md">
           🧠
         </div>
       </div>
-      <h3 class="font-black text-xl mb-4 text-slate-100 group-hover:text-purple-400 transition-colors tracking-tight">
+      <h3 class="font-black text-xl mb-4 text-slate-900 group-hover:text-purple-600 transition-colors tracking-tight">
         Identity Mapping</h3>
-      <p class="text-gray-400 text-sm leading-relaxed group-hover:text-slate-300 transition-colors">
+      <p class="text-slate-700 text-sm leading-relaxed group-hover:text-slate-800 transition-colors">
         Advanced algorithms to unify users and devices across fragmented sessions.
       </p>
       <div class="mt-8 flex items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
-        <div class="h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-purple-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+        <div class="h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+          <div class="h-full bg-purple-600 w-0 group-hover:w-full transition-all duration-1000"></div>
         </div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="300"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-cyan-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-cyan-500/30 hover:border-cyan-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
       <div class="relative w-16 h-16 mb-8">
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-md">
           ⚙️
         </div>
       </div>
-      <h3 class="font-black text-xl mb-4 text-slate-100 group-hover:text-cyan-400 transition-colors tracking-tight">API
+      <h3 class="font-black text-xl mb-4 text-slate-900 group-hover:text-cyan-600 transition-colors tracking-tight">API
         Ingestion</h3>
-      <p class="text-gray-400 text-sm leading-relaxed">Flexible endpoints supporting REST, automated cron jobs, and
+      <p class="text-slate-700 text-sm leading-relaxed">Flexible endpoints supporting REST, automated cron jobs, and
         webhooks.</p>
-      <div class="mt-8 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-        <div class="h-full bg-cyan-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+      <div class="mt-8 h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+        <div class="h-full bg-cyan-600 w-0 group-hover:w-full transition-all duration-1000"></div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="400"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-blue-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-blue-500/30 hover:border-blue-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
       <div class="relative w-16 h-16 mb-8">
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-md">
           📊
         </div>
       </div>
-      <h3 class="font-black text-xl mb-4 text-slate-100 group-hover:text-blue-400 transition-colors tracking-tight">Raw
+      <h3 class="font-black text-xl mb-4 text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">Raw
         Access</h3>
-      <p class="text-gray-400 text-sm leading-relaxed">Full control over your data with direct access to structured
+      <p class="text-slate-700 text-sm leading-relaxed">Full control over your data with direct access to structured
         database tables.</p>
-      <div class="mt-8 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-        <div class="h-full bg-blue-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+      <div class="mt-8 h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+        <div class="h-full bg-blue-600 w-0 group-hover:w-full transition-all duration-1000"></div>
       </div>
     </div>
 
     <div data-aos="fade-up" data-aos-delay="500"
-      class="group relative p-8 bg-slate-800/20 backdrop-blur-xl rounded-3xl border border-white/5 hover:border-red-400/50 transition-all duration-500 hover:-translate-y-3 shadow-2xl">
+      class="motion-card-3d group relative p-8 bg-slate-900/10 backdrop-blur-xl rounded-3xl border border-red-500/30 hover:border-red-400 transition-all duration-500 hover:-translate-y-3 shadow-sm hover:shadow-2xl">
       <div class="relative w-16 h-16 mb-8">
         <div
-          class="relative w-full h-full bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-xl">
+          class="relative w-full h-full bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 shadow-md">
           🔒
         </div>
       </div>
-      <h3 class="font-black text-xl mb-4 text-slate-100 group-hover:text-red-400 transition-colors tracking-tight">
+      <h3 class="font-black text-xl mb-4 text-slate-900 group-hover:text-red-600 transition-colors tracking-tight">
         Security</h3>
-      <p class="text-gray-400 text-sm leading-relaxed">Enterprise-grade encryption for all credentials and sensitive
+      <p class="text-slate-700 text-sm leading-relaxed">Enterprise-grade encryption for all credentials and sensitive
         data flows.</p>
-      <div class="mt-8 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-        <div class="h-full bg-red-400 w-0 group-hover:w-full transition-all duration-1000"></div>
+      <div class="mt-8 h-1 w-full bg-slate-300 rounded-full overflow-hidden">
+        <div class="h-full bg-red-600 w-0 group-hover:w-full transition-all duration-1000"></div>
       </div>
     </div>
 
@@ -703,15 +723,103 @@
 </section>
 
 <!-- CTA -->
-<section class="px-10 py-32 text-center bg-gradient-to-br from-slate-800 to-slate-900">
-  <h2 data-aos="fade-up" class="text-4xl font-bold mb-6">Your Data. One Platform.</h2>
-  <p data-aos="fade-up" data-aos-delay="150" class="text-slate-300 max-w-xl mx-auto mb-10">
-    Build your organization’s data backbone with Segmento Collector.
+<section
+  class="px-10 py-32 text-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+  <div
+    class="parallax-layer absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.1),transparent_70%)]"
+    data-speed="0.2"></div>
+
+  <h2 data-aos="fade-up" class="text-4xl md:text-6xl font-black mb-6 tracking-tighter text-white">Your Data. <span
+      class="gradient-text-vibrant">One Platform.</span></h2>
+  <p data-aos="fade-up" data-aos-delay="150" class="text-slate-400 max-w-xl mx-auto mb-10 text-lg">
+    Build your organization’s data backbone with the precision of Segmento Collector.
   </p>
-  <a data-aos="zoom-in" data-aos-delay="300" href="/tracking"
-    class="px-10 py-4 bg-cyan-400 text-black rounded-xl font-bold hover:bg-cyan-300">
-    Launch Platform
-  </a>
+  <div data-aos="zoom-in" data-aos-delay="300">
+    <a href="/tracking"
+      class="group relative inline-flex items-center px-12 py-5 bg-cyan-400 text-black rounded-2xl font-black transition-all hover:shadow-[0_0_40px_rgba(34,211,238,0.6)] hover:scale-105 active:scale-95 overflow-hidden">
+      <span class="relative z-10 transition-colors group-hover:text-slate-950">Launch Platform</span>
+      <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+    </a>
+  </div>
 </section>
+
+<script>
+  // Advanced Motion UI Controller
+  document.addEventListener('DOMContentLoaded', () => {
+    // Sunrise to Sunset Transition Logic
+    const skyBg = document.getElementById("sky-bg");
+    const updateSky = () => {
+      const scrollPct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+      
+      // colors: Sunrise (Saffron) -> Noon (Cyan/White) -> Sunset (Deep Purple/Orange)
+      let r, g, b;
+      if (scrollPct < 0.5) {
+        // Sunrise to Noon (Saffron #f97316 -> Dark Blue #020617)
+        // Transition saffron to slate-950
+        const pct = scrollPct * 2;
+        r = Math.round(249 * (1 - pct) + 2 * pct);
+        g = Math.round(115 * (1 - pct) + 6 * pct);
+        b = Math.round(22 * (1 - pct) + 23 * pct);
+      } else {
+        // Noon to Sunset (Dark Blue #020617 -> Sunset Purple #4c1d95)
+        const pct = (scrollPct - 0.5) * 2;
+        r = Math.round(2 * (1 - pct) + 76 * pct);
+        g = Math.round(6 * (1 - pct) + 29 * pct);
+        b = Math.round(23 * (1 - pct) + 149 * pct);
+      }
+      
+      if (skyBg) {
+        skyBg.style.background = `radial-gradient(circle at 50% -20%, rgb(${r}, ${g}, ${b}), transparent 80%)`;
+      }
+    };
+    window.addEventListener('scroll', updateSky);
+    updateSky();
+
+    // High-Drama 3D Card Tilt
+    const cards = document.querySelectorAll('.motion-card-3d, .integration-icon-card');
+
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        // Increased rotation for "High Drama"
+        const rotateX = (y - centerY) / 4;
+        const rotateY = (centerX - x) / 4;
+
+        card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.06, 1.06, 1.06)`;
+        card.style.zIndex = "50";
+        card.style.borderColor = "rgba(34, 211, 238, 0.8)";
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        card.style.zIndex = "1";
+        card.style.borderColor = "";
+      });
+    });
+
+    // Purposeful Wave Reveals (Intersection Observer)
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = "1";
+          entry.target.style.transform = "translateY(0) scale(1)";
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-aos]').forEach(el => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(40px) scale(0.95)";
+      el.style.transition = "all 0.8s cubic-bezier(0.2, 0, 0, 1)";
+      observer.observe(el);
+    });
+  });
+</script>
 
 {% endblock %}

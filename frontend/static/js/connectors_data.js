@@ -319,6 +319,166 @@ const CONNECTORS = [
   },
 
   {
+    id: "pipedrive",
+    name: "Pipedrive",
+    categories: ["crm", "sales"],
+    logo: "/static/images/logos/pipedrive.png",
+
+    auth_type: "api_key",
+    api_key_label: "Pipedrive API Token",
+
+    connect_url: "/connectors/pipedrive/connect",
+    sync_url: "/connectors/pipedrive/sync",
+    disconnect_url: "/connectors/pipedrive/disconnect",
+    status_api: "/api/status/pipedrive",
+    save_app_url: "/connectors/pipedrive/save_app",
+
+    models: [
+      { title: "Deals", desc: "Sales deals with value, status, and pipeline information." },
+      { title: "Persons", desc: "Contact records with email, phone, and organization links." },
+      { title: "Organizations", desc: "Company records with addresses and contact counts." }
+    ],
+
+    tables: [
+      "pipedrive_deals",
+      "pipedrive_persons",
+      "pipedrive_organizations"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts CRM data from Pipedrive including deals, contacts, and organizations.",
+
+    data: [
+      "Deal pipeline data",
+      "Contact information",
+      "Organization records",
+      "Activity timestamps",
+      "Owner assignments"
+    ]
+  },
+
+  {
+    id: "freshdesk",
+    name: "Freshdesk",
+    categories: ["support", "helpdesk"],
+    logo: "/static/images/logos/freshdesk.png",
+
+    auth_type: "api_key",
+    api_key_label: "Freshdesk API Key",
+
+    connect_url: "/connectors/freshdesk/connect",
+    sync_url: "/connectors/freshdesk/sync",
+    disconnect_url: "/connectors/freshdesk/disconnect",
+    status_api: "/api/status/freshdesk",
+    save_app_url: "/connectors/freshdesk/save_app",
+
+    models: [
+      { title: "Tickets", desc: "Support tickets with status, priority, and assignee details." },
+      { title: "Contacts", desc: "Customer contact records with email and phone information." },
+      { title: "Companies", desc: "Company accounts with domain and description data." }
+    ],
+
+    tables: [
+      "freshdesk_tickets",
+      "freshdesk_contacts",
+      "freshdesk_companies"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts support data from Freshdesk including tickets, contacts, and companies.",
+
+    data: [
+      "Support tickets",
+      "Contact records",
+      "Company accounts",
+      "Status tracking",
+      "Priority levels"
+    ]
+  },
+
+  {
+    id: "klaviyo",
+    name: "Klaviyo",
+    categories: ["marketing", "email"],
+    logo: "/static/images/logos/klaviyo.png",
+
+    auth_type: "api_key",
+    api_key_label: "Klaviyo Private API Key",
+
+    connect_url: "/connectors/klaviyo/connect",
+    sync_url: "/connectors/klaviyo/sync",
+    disconnect_url: "/connectors/klaviyo/disconnect",
+    status_api: "/api/status/klaviyo",
+    save_app_url: "/connectors/klaviyo/save_app",
+
+    models: [
+      { title: "Profiles", desc: "Customer profiles with email, phone, and demographic data." },
+      { title: "Events", desc: "Tracking events with timestamps and profile associations." },
+      { title: "Lists", desc: "Email list segments with creation and update metadata." }
+    ],
+
+    tables: [
+      "klaviyo_profiles",
+      "klaviyo_events",
+      "klaviyo_lists"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts marketing data from Klaviyo including profiles, events, and lists.",
+
+    data: [
+      "Customer profiles",
+      "Event tracking",
+      "Email lists",
+      "Engagement data",
+      "Timestamps"
+    ]
+  },
+
+  {
+    id: "amplitude",
+    name: "Amplitude",
+    categories: ["analytics", "product"],
+    logo: "/static/images/logos/amplitude.png",
+
+    auth_type: "api_key",
+    api_key_label: "Amplitude API Key",
+
+    connect_url: "/connectors/amplitude/connect",
+    sync_url: "/connectors/amplitude/sync",
+    disconnect_url: "/connectors/amplitude/disconnect",
+    status_api: "/api/status/amplitude",
+    save_app_url: "/connectors/amplitude/save_app",
+
+    models: [
+      { title: "Events", desc: "Product analytics events with user, device, and location data." },
+      { title: "Users", desc: "Unique user records with platform and geographic information." },
+      { title: "Sessions", desc: "User session data with duration and device details." }
+    ],
+
+    tables: [
+      "amplitude_events",
+      "amplitude_users",
+      "amplitude_sessions"
+    ],
+
+    erd: "/static/images/empty_erd.png",
+
+    description: "Extracts product analytics from Amplitude including events, users, and sessions.",
+
+    data: [
+      "Event streams",
+      "User behavior",
+      "Session data",
+      "Device information",
+      "Geographic data"
+    ]
+  },
+
+  {
     id: "slack",
     name: "Slack",
     categories: ["communication"],

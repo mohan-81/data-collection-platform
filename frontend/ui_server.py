@@ -5747,6 +5747,244 @@ def shopify_disconnect():
     r = connector_disconnect("shopify")
     return jsonify(r.json()), r.status_code
 
+# ---------------- PIPEDRIVE ----------------
+
+@app.route("/connectors/pipedrive")
+@require_login
+def pipedrive_page():
+    return render_template("connectors/pipedrive.html")
+
+
+@app.route("/connectors/pipedrive/connect")
+@require_login
+def pipedrive_connect_proxy():
+    r = proxy_get("/connectors/pipedrive/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/pipedrive/sync")
+@require_login
+def pipedrive_sync_proxy():
+    r = connector_sync("pipedrive")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/api/status/pipedrive")
+@require_login
+def pipedrive_status_proxy():
+    r = connector_status("pipedrive")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/pipedrive/job/get")
+@require_login
+def pipedrive_job_get_proxy():
+    r = connector_job_get("pipedrive")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/pipedrive/job/save", methods=["POST"])
+@require_login
+def pipedrive_job_save_proxy():
+    r = connector_job_save("pipedrive")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/pipedrive/save_app", methods=["POST"])
+@require_login
+def pipedrive_save_app_proxy():
+    r = proxy_post("/connectors/pipedrive/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/pipedrive/disconnect")
+@require_login
+def pipedrive_disconnect_proxy():
+    r = proxy_get("/connectors/pipedrive/disconnect")
+    return jsonify(r.json()), r.status_code
+
+
+# ---------------- FRESHDESK ----------------
+
+@app.route("/connectors/freshdesk")
+@require_login
+def freshdesk_page():
+    return render_template("connectors/freshdesk.html")
+
+
+@app.route("/connectors/freshdesk/connect")
+@require_login
+def freshdesk_connect_proxy():
+    r = proxy_get("/connectors/freshdesk/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/freshdesk/sync")
+@require_login
+def freshdesk_sync_proxy():
+    r = connector_sync("freshdesk")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/api/status/freshdesk")
+@require_login
+def freshdesk_status_proxy():
+    r = connector_status("freshdesk")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/freshdesk/job/get")
+@require_login
+def freshdesk_job_get_proxy():
+    r = connector_job_get("freshdesk")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/freshdesk/job/save", methods=["POST"])
+@require_login
+def freshdesk_job_save_proxy():
+    r = connector_job_save("freshdesk")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/freshdesk/save_app", methods=["POST"])
+@require_login
+def freshdesk_save_app_proxy():
+    r = proxy_post("/connectors/freshdesk/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/freshdesk/disconnect")
+@require_login
+def freshdesk_disconnect_proxy():
+    r = proxy_get("/connectors/freshdesk/disconnect")
+    return jsonify(r.json()), r.status_code
+
+
+# ---------------- KLAVIYO ----------------
+
+@app.route("/connectors/klaviyo")
+@require_login
+def klaviyo_page():
+    return render_template("connectors/klaviyo.html")
+
+
+@app.route("/connectors/klaviyo/connect")
+@require_login
+def klaviyo_connect_proxy():
+    r = proxy_get("/connectors/klaviyo/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/klaviyo/sync")
+@require_login
+def klaviyo_sync_proxy():
+    r = connector_sync("klaviyo")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/api/status/klaviyo")
+@require_login
+def klaviyo_status_proxy():
+    r = connector_status("klaviyo")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/klaviyo/job/get")
+@require_login
+def klaviyo_job_get_proxy():
+    r = connector_job_get("klaviyo")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/klaviyo/job/save", methods=["POST"])
+@require_login
+def klaviyo_job_save_proxy():
+    r = connector_job_save("klaviyo")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/klaviyo/save_app", methods=["POST"])
+@require_login
+def klaviyo_save_app_proxy():
+    r = proxy_post("/connectors/klaviyo/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/klaviyo/disconnect")
+@require_login
+def klaviyo_disconnect_proxy():
+    r = proxy_get("/connectors/klaviyo/disconnect")
+    return jsonify(r.json()), r.status_code
+
+
+# ---------------- AMPLITUDE ----------------
+
+@app.route("/connectors/amplitude")
+@require_login
+def amplitude_page():
+    return render_template("connectors/amplitude.html")
+
+
+@app.route("/connectors/amplitude/connect")
+@require_login
+def amplitude_connect_proxy():
+    r = proxy_get("/connectors/amplitude/connect")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/amplitude/sync")
+@require_login
+def amplitude_sync_proxy():
+    r = connector_sync("amplitude")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/api/status/amplitude")
+@require_login
+def amplitude_status_proxy():
+    r = connector_status("amplitude")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/amplitude/job/get")
+@require_login
+def amplitude_job_get_proxy():
+    r = connector_job_get("amplitude")
+    try:
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
+
+
+@app.route("/connectors/amplitude/job/save", methods=["POST"])
+@require_login
+def amplitude_job_save_proxy():
+    r = connector_job_save("amplitude")
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/amplitude/save_app", methods=["POST"])
+@require_login
+def amplitude_save_app_proxy():
+    r = proxy_post("/connectors/amplitude/save_app", json=request.get_json())
+    return jsonify(r.json()), r.status_code
+
+
+@app.route("/connectors/amplitude/disconnect")
+@require_login
+def amplitude_disconnect_proxy():
+    r = proxy_get("/connectors/amplitude/disconnect")
+    return jsonify(r.json()), r.status_code
 
 # ================= MAIN ==========================
 

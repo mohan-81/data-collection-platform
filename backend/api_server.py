@@ -136,7 +136,6 @@ from backend.connectors.socialinsider import (
     sync_socialinsider,
     disconnect_socialinsider,
 )
-
 from backend.connectors.aws_rds import (
     connect_rds,
     sync_rds,
@@ -202,6 +201,30 @@ from backend.connectors.twilio import (
     sync_twilio,
     disconnect_twilio,
     save_config as save_twilio_config,
+)
+from backend.connectors.pipedrive import (
+    connect_pipedrive,
+    sync_pipedrive,
+    disconnect_pipedrive,
+    save_config as save_pipedrive_config,
+)
+from backend.connectors.freshdesk import (
+    connect_freshdesk,
+    sync_freshdesk,
+    disconnect_freshdesk,
+    save_config as save_freshdesk_config,
+)
+from backend.connectors.klaviyo import (
+    connect_klaviyo,
+    sync_klaviyo,
+    disconnect_klaviyo,
+    save_config as save_klaviyo_config,
+)
+from backend.connectors.amplitude import (
+    connect_amplitude,
+    sync_amplitude,
+    disconnect_amplitude,
+    save_config as save_amplitude_config,
 )
 
 # ---------------- CONFIG ----------------
@@ -16766,6 +16789,694 @@ def airtable_job_save():
 
     return jsonify({"status": "job_saved"})
 
+# ---------------- PIPEDRIVE ----------------
+ 
+@app.route("/connectors/pipedrive/save_app", methods=["POST"])
+def pipedrive_save_config():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    api_token = (data.get("api_token") or "").strip()
+ 
+    if not api_token:
+        return jsonify({"error": "missing field: api_token"}), 400
+ 
+    save_pipedrive_config(uid, api_token)
+    ensure_connector_initialized(uid, "pipedrive")
+    return jsonify({"status": "saved"})
+ 
+ 
+@app.route("/connectors/pipedrive/connect")
+def pipedrive_connect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = connect_pipedrive(uid)
+    if res.get("status") != "success":
+        return jsonify(res), 400
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/pipedrive/disconnect")
+def pipedrive_disconnect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = disconnect_pipedrive(uid)
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/pipedrive/sync")
+def pipedrive_sync():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='pipedrive'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_pipedrive(uid, sync_type=sync_type))
+ 
+ 
+@app.route("/api/status/pipedrive")
+def pipedrive_status():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='pipedrive'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+ 
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='pipedrive'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+ 
+    api_token = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            raw_token = cfg.get("api_token")
+            if raw_token:
+                api_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+        except Exception:
+            pass
+ 
+    return jsonify(
+        {
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "api_token": api_token,
+        }
+    )
+ 
+ 
+@app.route("/connectors/pipedrive/job/get")
+def pipedrive_job_get():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        """,
+        (uid, "pipedrive"),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    if not row:
+        return jsonify({"exists": False})
+ 
+    return jsonify(
+        {
+            "exists": True,
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+        }
+    )
+ 
+ 
+@app.route("/connectors/pipedrive/job/save", methods=["POST"])
+def pipedrive_job_save():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, ?, ?, ?)
+        """,
+        (uid, "pipedrive", sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+ 
+    return jsonify({"status": "job_saved"})
+ 
+ 
+# ---------------- FRESHDESK ----------------
+ 
+@app.route("/connectors/freshdesk/save_app", methods=["POST"])
+def freshdesk_save_config():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    domain = (data.get("domain") or "").strip()
+    api_key = (data.get("api_key") or "").strip()
+ 
+    if not domain or not api_key:
+        return jsonify({"error": "missing fields: domain, api_key"}), 400
+ 
+    save_freshdesk_config(uid, domain, api_key)
+    ensure_connector_initialized(uid, "freshdesk")
+    return jsonify({"status": "saved"})
+ 
+ 
+@app.route("/connectors/freshdesk/connect")
+def freshdesk_connect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = connect_freshdesk(uid)
+    if res.get("status") != "success":
+        return jsonify(res), 400
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/freshdesk/disconnect")
+def freshdesk_disconnect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = disconnect_freshdesk(uid)
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/freshdesk/sync")
+def freshdesk_sync():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='freshdesk'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_freshdesk(uid, sync_type=sync_type))
+ 
+ 
+@app.route("/api/status/freshdesk")
+def freshdesk_status():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='freshdesk'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+ 
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='freshdesk'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+ 
+    api_key = None
+    domain = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            domain = cfg.get("domain")
+            raw_key = cfg.get("api_key")
+            if raw_key:
+                api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
+        except Exception:
+            pass
+ 
+    return jsonify(
+        {
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "api_key": api_key,
+            "domain": domain,
+        }
+    )
+ 
+ 
+@app.route("/connectors/freshdesk/job/get")
+def freshdesk_job_get():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        """,
+        (uid, "freshdesk"),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    if not row:
+        return jsonify({"exists": False})
+ 
+    return jsonify(
+        {
+            "exists": True,
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+        }
+    )
+ 
+ 
+@app.route("/connectors/freshdesk/job/save", methods=["POST"])
+def freshdesk_job_save():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, ?, ?, ?)
+        """,
+        (uid, "freshdesk", sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+ 
+    return jsonify({"status": "job_saved"})
+ 
+ 
+# ---------------- KLAVIYO ----------------
+ 
+@app.route("/connectors/klaviyo/save_app", methods=["POST"])
+def klaviyo_save_config():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    api_key = (data.get("api_key") or "").strip()
+ 
+    if not api_key:
+        return jsonify({"error": "missing field: api_key"}), 400
+ 
+    save_klaviyo_config(uid, api_key)
+    ensure_connector_initialized(uid, "klaviyo")
+    return jsonify({"status": "saved"})
+ 
+ 
+@app.route("/connectors/klaviyo/connect")
+def klaviyo_connect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = connect_klaviyo(uid)
+    if res.get("status") != "success":
+        return jsonify(res), 400
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/klaviyo/disconnect")
+def klaviyo_disconnect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = disconnect_klaviyo(uid)
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/klaviyo/sync")
+def klaviyo_sync():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='klaviyo'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_klaviyo(uid, sync_type=sync_type))
+ 
+ 
+@app.route("/api/status/klaviyo")
+def klaviyo_status():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='klaviyo'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+ 
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='klaviyo'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+ 
+    api_key = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            raw_key = cfg.get("api_key")
+            if raw_key:
+                api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
+        except Exception:
+            pass
+ 
+    return jsonify(
+        {
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "api_key": api_key,
+        }
+    )
+ 
+ 
+@app.route("/connectors/klaviyo/job/get")
+def klaviyo_job_get():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        """,
+        (uid, "klaviyo"),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    if not row:
+        return jsonify({"exists": False})
+ 
+    return jsonify(
+        {
+            "exists": True,
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+        }
+    )
+ 
+ 
+@app.route("/connectors/klaviyo/job/save", methods=["POST"])
+def klaviyo_job_save():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, ?, ?, ?)
+        """,
+        (uid, "klaviyo", sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+ 
+    return jsonify({"status": "job_saved"})
+ 
+ 
+# ---------------- AMPLITUDE ----------------
+ 
+@app.route("/connectors/amplitude/save_app", methods=["POST"])
+def amplitude_save_config():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    api_key = (data.get("api_key") or "").strip()
+    secret_key = (data.get("secret_key") or "").strip()
+ 
+    if not api_key or not secret_key:
+        return jsonify({"error": "missing fields: api_key, secret_key"}), 400
+ 
+    save_amplitude_config(uid, api_key, secret_key)
+    ensure_connector_initialized(uid, "amplitude")
+    return jsonify({"status": "saved"})
+ 
+ 
+@app.route("/connectors/amplitude/connect")
+def amplitude_connect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = connect_amplitude(uid)
+    if res.get("status") != "success":
+        return jsonify(res), 400
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/amplitude/disconnect")
+def amplitude_disconnect():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    res = disconnect_amplitude(uid)
+    return jsonify(res)
+ 
+ 
+@app.route("/connectors/amplitude/sync")
+def amplitude_sync():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type
+        FROM connector_jobs
+        WHERE uid=? AND source='amplitude'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    sync_type = row["sync_type"] if row and row.get("sync_type") else "historical"
+    return jsonify(sync_amplitude(uid, sync_type=sync_type))
+ 
+ 
+@app.route("/api/status/amplitude")
+def amplitude_status():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT config_json
+        FROM connector_configs
+        WHERE uid=? AND connector='amplitude'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    cfg_row = fetchone_secure(cur)
+ 
+    cur.execute(
+        """
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='amplitude'
+        LIMIT 1
+        """,
+        (uid,),
+    )
+    conn_row = fetchone_secure(cur)
+    con.close()
+ 
+    api_key = None
+    secret_key = None
+    if cfg_row and cfg_row.get("config_json"):
+        try:
+            cfg = json.loads(cfg_row["config_json"])
+            raw_api_key = cfg.get("api_key")
+            raw_secret_key = cfg.get("secret_key")
+            if raw_api_key:
+                api_key = f"{raw_api_key[:4]}{'*' * max(len(raw_api_key) - 8, 4)}{raw_api_key[-4:]}"
+            if raw_secret_key:
+                secret_key = f"{raw_secret_key[:4]}{'*' * max(len(raw_secret_key) - 8, 4)}{raw_secret_key[-4:]}"
+        except Exception:
+            pass
+ 
+    return jsonify(
+        {
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "api_key": api_key,
+            "secret_key": secret_key,
+        }
+    )
+ 
+ 
+@app.route("/connectors/amplitude/job/get")
+def amplitude_job_get():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT sync_type, schedule_time
+        FROM connector_jobs
+        WHERE uid=? AND source=?
+        """,
+        (uid, "amplitude"),
+    )
+    row = fetchone_secure(cur)
+    con.close()
+ 
+    if not row:
+        return jsonify({"exists": False})
+ 
+    return jsonify(
+        {
+            "exists": True,
+            "sync_type": row["sync_type"],
+            "schedule_time": row["schedule_time"],
+        }
+    )
+ 
+ 
+@app.route("/connectors/amplitude/job/save", methods=["POST"])
+def amplitude_job_save():
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+ 
+    data = request.get_json() or {}
+    sync_type = data.get("sync_type", "incremental")
+    schedule_time = data.get("schedule_time")
+ 
+    con = get_db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO connector_jobs
+        (uid, source, sync_type, schedule_time)
+        VALUES (?, ?, ?, ?)
+        """,
+        (uid, "amplitude", sync_type, schedule_time),
+    )
+    con.commit()
+    con.close()
+ 
+    return jsonify({"status": "job_saved"})
 
 init_db()
 seed_test_user()

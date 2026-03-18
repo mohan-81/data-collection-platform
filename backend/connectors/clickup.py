@@ -283,29 +283,44 @@ def _push_rows(dest_cfg: dict | None, route_source: str, label: str, rows: list[
     return pushed
 
 
+def _get_token(cfg: dict) -> str | None:
+    if not cfg:
+        return None
+    return (
+        cfg.get("access_token")
+        or cfg.get("api_token")
+        or cfg.get("api_key")
+        or cfg.get("api_secret")
+    )
+
+
 def connect_clickup(uid: str) -> dict:
     cfg = _get_config(uid)
-    if not cfg:
-        return {"status": "error", "message": "ClickUp not configured for this user"}
+    token = _get_token(cfg)
+    if not token:
+        return {"status": "failed", "error": "Missing credentials"}
 
     try:
-        # Test connection by fetching teams
-        teams = _fetch_teams(cfg["api_token"])
-        if not teams:
-            raise Exception("No teams found")
+        headers = {
+            "Authorization": token
+        }
+        response = requests.get(
+            "https://api.clickup.com/api/v2/user",
+            headers=headers,
+            timeout=10
+        )
+        if response.status_code >= 400:
+            raise Exception(f"API Error {response.status_code}")
     except Exception as exc:
         _log(f"Connection failed for uid={uid}: {exc}")
         _update_status(uid, "error")
         _set_connection_enabled(uid, False)
-        return {"status": "error", "message": str(exc)}
+        return {"status": "failed", "error": str(exc)}
 
     _set_connection_enabled(uid, True)
     _update_status(uid, "connected")
     _log(f"Connected uid={uid}")
-    return {
-        "status": "success",
-        "team_count": len(teams),
-    }
+    return {"status": "success"}
 
 
 def sync_clickup(uid: str, sync_type: str = "incremental") -> dict:

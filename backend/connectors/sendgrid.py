@@ -278,28 +278,45 @@ def _push_rows(dest_cfg: dict | None, route_source: str, label: str, rows: list[
     return pushed
 
 
+def _get_token(cfg: dict) -> str | None:
+    if not cfg:
+        return None
+    return (
+        cfg.get("access_token")
+        or cfg.get("api_token")
+        or cfg.get("api_key")
+        or cfg.get("api_secret")
+    )
+
+
 def connect_sendgrid(uid: str) -> dict:
     cfg = _get_config(uid)
-    if not cfg:
-        return {"status": "error", "message": "SendGrid not configured for this user"}
+    token = _get_token(cfg)
+    if not token:
+        return {"status": "failed", "error": "Missing credentials"}
 
     try:
-        # Test connection by fetching API key scopes
-        url = f"{API_BASE}/scopes"
-        scopes = _request("GET", url, cfg["api_key"])
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        response = requests.get(
+            "https://api.sendgrid.com/v3/user/account",
+            headers=headers,
+            timeout=10
+        )
+        if response.status_code >= 400:
+            raise Exception(f"API Error {response.status_code}")
     except Exception as exc:
         _log(f"Connection failed for uid={uid}: {exc}")
         _update_status(uid, "error")
         _set_connection_enabled(uid, False)
-        return {"status": "error", "message": str(exc)}
+        return {"status": "failed", "error": str(exc)}
 
     _set_connection_enabled(uid, True)
     _update_status(uid, "connected")
     _log(f"Connected uid={uid}")
-    return {
-        "status": "success",
-        "scopes_count": len(scopes.get("scopes", [])) if isinstance(scopes, dict) else 0,
-    }
+    return {"status": "success"}
 
 
 def sync_sendgrid(uid: str, sync_type: str = "incremental") -> dict:

@@ -756,8 +756,22 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ access_token: accessToken })
       });
-      if (res.ok) { checkAsanaStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/asana/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkAsanaStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectAsana() {

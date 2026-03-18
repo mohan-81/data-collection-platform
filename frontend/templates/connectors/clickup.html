@@ -797,16 +797,30 @@
   }
 
   async function saveCredentials() {
-          const apiToken = document.getElementById("apiToken").value.trim();
+    try {
+      const apiToken = document.getElementById("apiToken").value.trim();
       if (!apiToken) { alert("API Token required"); return; }
       const res = await fetch("/connectors/clickup/save_app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_token: apiToken })
       });
-      });
-      if (res.ok) { checkClickUpStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/clickup/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkClickUpStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectClickup() {

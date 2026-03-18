@@ -760,8 +760,22 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: apiKey })
       });
-      if (res.ok) { checkSendGridStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/sendgrid/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkSendGridStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectSendGrid() {

@@ -760,8 +760,22 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_secret: apiSecret })
       });
-      if (res.ok) { checkMixpanelStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/mixpanel/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkMixpanelStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectMixpanel() {

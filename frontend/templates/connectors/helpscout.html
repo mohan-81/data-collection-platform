@@ -692,7 +692,7 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    checkHelp ScoutStatus();
+    checkHelpScoutStatus();
     loadDestinations();
     loadJob();
     selectFormat('parquet'); // Default selection
@@ -704,7 +704,7 @@
     document.getElementById('format-' + val).classList.add('selected');
   }
 
-  async function checkHelp ScoutStatus() {
+  async function checkHelpScoutStatus() {
     try {
       const res = await fetch("/api/status/helpscout");
       const data = await res.json();
@@ -797,16 +797,30 @@
   }
 
   async function saveCredentials() {
-          const apiKey = document.getElementById("apiKey").value.trim();
+    try {
+      const apiKey = document.getElementById("apiKey").value.trim();
       if (!apiKey) { alert("API Key required"); return; }
       const res = await fetch("/connectors/helpscout/save_app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: apiKey })
       });
-      });
-      if (res.ok) { checkHelp ScoutStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/helpscout/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkHelpScoutStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectHelpscout() {

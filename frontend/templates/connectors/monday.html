@@ -694,7 +694,7 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    checkMonday.comStatus();
+    checkMondayStatus();
     loadDestinations();
     loadJob();
     selectFormat('parquet'); // Default selection
@@ -706,7 +706,7 @@
     document.getElementById('format-' + val).classList.add('selected');
   }
 
-  async function checkMonday.comStatus() {
+  async function checkMondayStatus() {
     try {
       const res = await fetch("/api/status/monday");
       const data = await res.json();
@@ -799,16 +799,30 @@
   }
 
   async function saveCredentials() {
-          const apiToken = document.getElementById("apiToken").value.trim();
+    try {
+      const apiToken = document.getElementById("apiToken").value.trim();
       if (!apiToken) { alert("API Token required"); return; }
       const res = await fetch("/connectors/monday/save_app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_token: apiToken })
       });
-      });
-      if (res.ok) { checkMonday.comStatus(); }
+      if (res.ok) { await connectConnector(); }
     } catch (e) { alert("Save failed"); }
+  }
+
+  async function connectConnector() {
+    try {
+      const res = await fetch("/connectors/monday/connect");
+      const data = await res.json();
+      if (data.status === "success" || data.status === "connected") {
+        checkMondayStatus();
+      } else {
+        alert("Connection failed: " + data.error);
+      }
+    } catch(e) {
+      alert("Connection failed");
+    }
   }
 
   async function disconnectMonday() {

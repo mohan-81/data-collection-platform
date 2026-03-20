@@ -39,5 +39,3 @@ secret.key
 ui/
 .update_connections.py
 .structure.txt
-
-segmento.duckdb

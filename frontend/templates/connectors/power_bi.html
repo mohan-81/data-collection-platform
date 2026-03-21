@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+{% set source_id = "power_bi" %}
+{% set source_name = "Power BI" %}
+{% set accent_color = "#F2C811" %}
+{% set accent_soft_bg = "rgba(242,200,17,0.10)" %}
+{% set accent_border_soft = "rgba(242,200,17,0.20)" %}
+{% set accent_shadow = "rgba(242,200,17,0.25)" %}
+{% set accent_glow_primary = "rgba(242,200,17,0.12)" %}
+{% set accent_glow_secondary = "rgba(242,200,17,0.06)" %}
+{% set accent_gradient = "linear-gradient(to right, #F2C811, #f59e0b)" %}
+{% set headline_prefix = "" %}
+{% set headline_accent = "Power BI" %}
+{% set headline_suffix = " Connector" %}
+{% set description = "Connect Power BI with Azure AD client credentials to sync workspaces, reports, datasets, and usage metadata into your warehouse." %}
+{% set step_two_label = "Validate" %}
+{% set primary_button_text = "Save Credentials & Continue" %}
+{% set connect_button_text = "Connect Power BI" %}
+{% set connected_text = "Power BI connection active" %}
+{% set success_text = "Your Power BI tenant is now securely linked and ready to stream workspace, report, and dataset metadata to your warehouse." %}
+{% set instructions_title = "How to create Power BI API credentials" %}
+{% set instructions = ["Go to the Azure Portal.","Register an application in <b>Azure AD</b>.","Enable <b>Power BI API</b> permissions for the application.","Generate a client secret and paste the tenant ID, client ID, and client secret here."] %}
+{% set erd_label = "power_bi_entity_diagram.vuerd" %}
+{% set erd_image = "/static/images/empty_erd.png" %}
+{% set schema_tables = [("power_bi_workspaces", ["workspace_id", "name", "capacity_id", "is_read_only", "is_on_dedicated_capacity"]), ("power_bi_reports", ["report_id", "workspace_id", "dataset_id", "name", "web_url", "embed_url"]), ("power_bi_datasets", ["dataset_id", "workspace_id", "name", "configured_by", "is_refreshable"])] %}
+{% set extracted_tables = ["workspaces", "reports", "datasets"] %}
+{% set credential_fields = [{"id":"clientId","key":"client_id","label":"Client ID","placeholder":"Enter Azure AD client ID","type":"text"},{"id":"clientSecret","key":"client_secret","label":"Client Secret","placeholder":"Enter client secret","type":"password"},{"id":"tenantId","key":"tenant_id","label":"Tenant ID","placeholder":"Enter Azure tenant ID","type":"text"}] %}
+{% set security_features = [{"icon":"M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z","text":"Credentials are encrypted using AES-256 before being stored in your secure vault."},{"icon":"M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z","text":"OAuth 2.0 client credentials are exchanged against Azure AD to validate Power BI REST API access securely."}] %}
+{% include "connectors/_warehouse_connector_generic.html" %}
+{% endblock %}

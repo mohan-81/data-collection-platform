@@ -35,7 +35,7 @@
                 </h1>
 
                 <p class="text-slate-300 text-lg mb-6 leading-relaxed font-medium max-w-xl">
-                    Connect a Bitbucket App Password to extract repositories, commits, and pull requests into your
+                    Connect a Bitbucket API Token to extract repositories, commits, and pull requests into your
                     destination warehouse.
                 </p>
 
@@ -46,7 +46,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
-                        <span>Your Bitbucket App Password is encrypted with AES-256 before being stored in your secure vault.</span>
+                        <span>Your Bitbucket API Token is encrypted with AES-256 before being stored in your secure vault.</span>
                     </div>
                     <div class="flex gap-3">
                         <svg class="w-5 h-5 text-blue-300 shrink-0" fill="none" stroke="currentColor"
@@ -110,31 +110,31 @@
 
                         <div>
                             <label
-                                class="text-[10px] font-mono text-slate-500 uppercase mb-2 block ml-2 tracking-widest">App
-                                Password</label>
-                            <input id="appPassword" type="password" placeholder="ATBB..."
+                                class="text-[10px] font-mono text-slate-500 uppercase mb-2 block ml-2 tracking-widest">API
+                                Token</label>
+                            <input id="apiToken" type="password" placeholder="BBITXXXXXXXXXXXXXXXXXXXXXX"
                                 class="w-full px-6 py-4 bg-slate-900/50 border border-slate-700 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-400 transition-all shadow-inner hover:shadow-blue-500/10">
                         </div>
 
                         <button id="saveCredsBtn" onclick="saveCredentials()"
-                            class="w-full py-5 bg-blue-500 text-white rounded-2xl font-black hover:bg-blue-400 hover:text-slate-900 transition-all shadow-lg shadow-blue-500/20 text-xs uppercase tracking-widest mt-2 hover:shadow-blue-400/30">
+                            class="w-full py-5 bg-[#0052CC] text-white rounded-2xl font-black hover:bg-blue-400 hover:text-slate-900 transition-all shadow-lg shadow-blue-500/20 text-xs uppercase tracking-widest mt-2 hover:shadow-blue-400/30">
                             Save & Connect
                         </button>
 
                         <div class="mt-8 pt-8 border-t border-white/5">
-                            <h4 class="text-white text-xs font-bold mb-4 uppercase tracking-widest">Prerequisites</h4>
+                            <h4 class="text-white text-xs font-bold mb-4 uppercase tracking-widest">How to generate Bitbucket API Token</h4>
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-3 text-[11px] text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></span>
-                                    <span>Go to Bitbucket → Personal settings → App passwords and create a new App Password</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#0052CC] mt-1.5 shrink-0"></span>
+                                    <span>Go to Bitbucket → Personal Settings → Navigate to API Tokens</span>
                                 </li>
                                 <li class="flex items-start gap-3 text-[11px] text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></span>
-                                    <span>Grant permissions: Repositories (Read), Pull Requests (Read)</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#0052CC] mt-1.5 shrink-0"></span>
+                                    <span>Create a token with scopes: repository (read), pullrequest (read), account (read)</span>
                                 </li>
                                 <li class="flex items-start gap-3 text-[11px] text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></span>
-                                    <span>Enter your Bitbucket username (not email) and the generated App Password above</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#0052CC] mt-1.5 shrink-0"></span>
+                                    <span>Use your Bitbucket username and this token above</span>
                                 </li>
                             </ul>
                         </div>
@@ -424,7 +424,7 @@
                   </div>
                   <div class="md:col-span-2 pt-2">
                     <button onclick="saveDestination()" id="saveDestBtn"
-                      class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20">
+                      class="w-full py-3.5 bg-[#0052CC] hover:bg-blue-400 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20">
                       Authenticate & Save
                     </button>
                   </div>
@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
       s1.innerHTML = "✓";
       s2.className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold transition-all duration-300";
       btn.innerText = "Connect Bitbucket";
-      btn.className = "w-full py-5 bg-blue-500 text-white rounded-2xl font-black hover:bg-blue-400 transition-all shadow-lg text-xs uppercase tracking-widest mt-2 hover:shadow-blue-400/40";
+      btn.className = "w-full py-5 bg-[#0052CC] text-white rounded-2xl font-black hover:bg-blue-400 transition-all shadow-lg text-xs uppercase tracking-widest mt-2 hover:shadow-blue-400/40";
       btn.onclick = () => connectBitbucket();
     }
 
@@ -637,13 +637,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function saveCredentials() {
     const username = document.getElementById("username").value.trim();
-    const appPassword = document.getElementById("appPassword").value.trim();
-    if (!username || !appPassword) { alert("Username and App Password are required"); return; }
+    const apiToken = document.getElementById("apiToken").value.trim();
+    if (!username || !apiToken) { alert("Username and API Token are required"); return; }
     try {
       const res = await fetch("/connectors/bitbucket/save_app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, app_password: appPassword })
+        body: JSON.stringify({ username, api_token: apiToken })
       });
       if (res.ok) { checkBitbucketStatus(); }
       else { alert("Save failed"); }

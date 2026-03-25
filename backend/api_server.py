@@ -20024,13 +20024,12 @@ def _bitbucket_save_config():
         return jsonify({"error": "unauthorized"}), 401
     data = request.get_json() or {}
     username = (data.get("username") or "").strip()
-    app_password = (data.get("app_password") or "").strip()
-    if not username or not app_password:
-        return jsonify({"error": "missing username or app_password"}), 400
-    save_bitbucket_config(uid, username, app_password)
+    api_token = (data.get("api_token") or "").strip()
+    if not username or not api_token:
+        return jsonify({"error": "missing username or api_token"}), 400
+    save_bitbucket_config(uid, username, api_token)
     ensure_connector_initialized(uid, "bitbucket")
     return jsonify({"status": "saved"})
-
 
 @app.route("/connectors/bitbucket/connect")
 def _bitbucket_connect():

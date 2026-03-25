@@ -4,9 +4,10 @@ import sqlite3
 import time
 
 import requests
+from requests.auth import HTTPBasicAuth
 
 from backend.destinations.destination_router import push_to_destination
-from backend.security.crypto import encrypt_value
+from backend.security.crypto import encrypt_value, decrypt_value
 from backend.security.secure_fetch import fetchone_secure
 
 DB = "identity.db"
@@ -60,6 +61,7 @@ def _get_config(uid: str) -> dict | None:
         SELECT config_json
         FROM connector_configs
         WHERE uid=? AND connector=?
+        ORDER BY created_at DESC
         LIMIT 1
         """,
         (uid, SOURCE),
@@ -70,8 +72,18 @@ def _get_config(uid: str) -> dict | None:
     if not row or not row.get("config_json"):
         return None
 
+    raw = row["config_json"]
+
+    # Try decrypting first (correctly stored rows)
     try:
-        return json.loads(row["config_json"])
+        decrypted = decrypt_value(raw)
+        return json.loads(decrypted)
+    except Exception:
+        pass
+
+    # Fall back to plain JSON (legacy unencrypted rows)
+    try:
+        return json.loads(raw)
     except Exception:
         return None
 
@@ -153,10 +165,10 @@ def _set_connection_enabled(uid: str, enabled: bool):
     con.close()
 
 
-def save_config(uid: str, username: str, app_password: str):
+def save_config(uid: str, username: str, api_token: str):
     config = {
         "username": username.strip(),
-        "app_password": app_password.strip(),
+        "api_token": api_token.strip(),
     }
 
     con = get_db()
@@ -186,16 +198,17 @@ def _get_headers():
     }
 
 
-def _request(method: str, path: str, username: str, app_password: str, retries: int = 4, **kwargs):
-    url = f"{API_BASE}{path}"
+def _request(method: str, path: str, username: str, api_token: str, retries: int = 4, **kwargs):
+    url = f"{API_BASE}{path}" if not path.startswith("http") else path
     headers = dict(kwargs.pop("headers", {}) or {})
     headers.update(_get_headers())
 
     for attempt in range(retries):
         response = requests.request(
-            method, url,
+            method,
+            url,
             headers=headers,
-            auth=(username, app_password),
+            auth=HTTPBasicAuth(username, api_token),
             timeout=40,
             **kwargs
         )
@@ -234,15 +247,15 @@ def _request(method: str, path: str, username: str, app_password: str, retries: 
     return response.json()
 
 
-def _fetch_user(username: str, app_password: str) -> dict:
-    return _request("GET", "/user", username, app_password)
+def _fetch_user(username: str, api_token: str) -> dict:
+    return _request("GET", "/user", username, api_token)
 
 
-def _fetch_repositories(username: str, app_password: str) -> list[dict]:
+def _fetch_repositories(username: str, api_token: str) -> list[dict]:
     results = []
-    url = f"/repositories/{username}?pagelen=100"
+    url = "/repositories?role=member&pagelen=100"
     while url:
-        data = _request("GET", url, username, app_password)
+        data = _request("GET", url, username, api_token)
         results.extend(data.get("values", []))
         next_url = data.get("next")
         if next_url:
@@ -252,12 +265,12 @@ def _fetch_repositories(username: str, app_password: str) -> list[dict]:
     return results
 
 
-def _fetch_commits(username: str, app_password: str, repo_slug: str) -> list[dict]:
+def _fetch_commits(username: str, api_token: str, workspace: str, repo_slug: str) -> list[dict]:
     results = []
-    url = f"/repositories/{username}/{repo_slug}/commits?pagelen=100"
+    url = f"/repositories/{workspace}/{repo_slug}/commits?pagelen=100"
     page = 0
     while url and page < 5:
-        data = _request("GET", url, username, app_password)
+        data = _request("GET", url, username, api_token)
         results.extend(data.get("values", []))
         next_url = data.get("next")
         if next_url:
@@ -268,12 +281,12 @@ def _fetch_commits(username: str, app_password: str, repo_slug: str) -> list[dic
     return results
 
 
-def _fetch_pullrequests(username: str, app_password: str, repo_slug: str) -> list[dict]:
+def _fetch_pullrequests(username: str, api_token: str, workspace: str, repo_slug: str) -> list[dict]:
     results = []
-    url = f"/repositories/{username}/{repo_slug}/pullrequests?state=ALL&pagelen=100"
+    url = f"/repositories/{workspace}/{repo_slug}/pullrequests?state=ALL&pagelen=100"
     page = 0
     while url and page < 3:
-        data = _request("GET", url, username, app_password)
+        data = _request("GET", url, username, api_token)
         results.extend(data.get("values", []))
         next_url = data.get("next")
         if next_url:
@@ -309,24 +322,29 @@ def connect_bitbucket(uid: str) -> dict:
     if not cfg:
         return {"status": "error", "message": "Bitbucket not configured for this user"}
 
+    username = cfg.get("username")
+    api_token = cfg.get("api_token")
+    if not username or not api_token:
+        return {"status": "error", "message": "Username or API token not found in configuration"}
+
     try:
-        me = _fetch_user(cfg["username"], cfg["app_password"])
+        me = _fetch_user(username, api_token)
     except Exception as exc:
         _log(f"Connection failed for uid={uid}: {exc}")
         _update_status(uid, "error")
         _set_connection_enabled(uid, False)
         return {"status": "error", "message": str(exc)}
 
-    display_name = me.get("display_name") or cfg["username"]
+    display_name = me.get("display_name") or me.get("username") or username
 
     _set_connection_enabled(uid, True)
     _update_status(uid, "connected")
-    _log(f"Connected uid={uid} username={cfg['username']} display_name={display_name}")
+    _log(f"Connected uid={uid} username={username} display_name={display_name}")
     return {
         "status": "success",
-        "username": cfg["username"],
+        "username": username,
         "display_name": display_name,
-        "app_password": _mask_token(cfg.get("app_password")),
+        "api_token": _mask_token(api_token),
     }
 
 
@@ -335,13 +353,16 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
     if not cfg:
         return {"status": "error", "message": "Bitbucket not configured"}
 
-    username = cfg["username"]
-    app_password = cfg["app_password"]
+    username = cfg.get("username")
+    api_token = cfg.get("api_token")
+    if not username or not api_token:
+        return {"status": "error", "message": "Username or API token not found in configuration"}
+
     state = get_state(uid)
     last_sync_at = _parse_dt(state.get("last_sync_at")) if sync_type == "incremental" else None
 
     try:
-        repositories = _fetch_repositories(username, app_password)
+        repositories = _fetch_repositories(username, api_token)
     except Exception as exc:
         _update_status(uid, "error")
         _set_connection_enabled(uid, False)
@@ -362,7 +383,10 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
         if last_sync_at and updated_on and updated_on <= last_sync_at:
             pass
 
-        repo_slug = repo.get("slug") or repo.get("full_name", "").split("/")[-1]
+        full_name = repo.get("full_name", "")
+        repo_slug = repo.get("slug") or full_name.split("/")[-1]
+        workspace = full_name.split("/")[0] if "/" in full_name else username
+
         repo_rows.append(
             {
                 "uid": uid,
@@ -370,7 +394,7 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
                 "repo_id": repo.get("uuid"),
                 "slug": repo_slug,
                 "name": repo.get("name"),
-                "full_name": repo.get("full_name"),
+                "full_name": full_name,
                 "description": repo.get("description"),
                 "is_private": bool(repo.get("is_private")),
                 "scm": repo.get("scm"),
@@ -384,9 +408,9 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
             }
         )
 
-        if repo_slug:
+        if repo_slug and workspace:
             try:
-                commits = _fetch_commits(username, app_password, repo_slug)
+                commits = _fetch_commits(username, api_token, workspace, repo_slug)
             except Exception as exc:
                 _log(f"Failed to fetch commits for repo {repo_slug}: {exc}")
                 commits = []
@@ -401,7 +425,7 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
                         "source": COMMITS_SOURCE,
                         "commit_hash": commit.get("hash"),
                         "repo_slug": repo_slug,
-                        "repo_full_name": repo.get("full_name"),
+                        "repo_full_name": full_name,
                         "message": commit.get("message"),
                         "author_name": ((commit.get("author") or {}).get("raw")),
                         "date": commit.get("date"),
@@ -413,7 +437,7 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
                 )
 
             try:
-                pullrequests = _fetch_pullrequests(username, app_password, repo_slug)
+                pullrequests = _fetch_pullrequests(username, api_token, workspace, repo_slug)
             except Exception as exc:
                 _log(f"Failed to fetch pullrequests for repo {repo_slug}: {exc}")
                 pullrequests = []
@@ -428,7 +452,7 @@ def sync_bitbucket(uid: str, sync_type: str = "incremental") -> dict:
                         "source": PULLREQUESTS_SOURCE,
                         "pr_id": pr.get("id"),
                         "repo_slug": repo_slug,
-                        "repo_full_name": repo.get("full_name"),
+                        "repo_full_name": full_name,
                         "title": pr.get("title"),
                         "description": pr.get("description"),
                         "state": pr.get("state"),

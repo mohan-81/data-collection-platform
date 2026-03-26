@@ -47,6 +47,9 @@ def fixed_connect(db_path, *args, **kwargs):
 
 sqlite3.connect = fixed_connect
 
+# AI
+from backend.ai.intent_engine import detect_intent
+from backend.ai.executor import execute_intent
 
 #credentials security
 from backend.security.secure_db import encrypt_payload
@@ -4232,6 +4235,77 @@ def google_callback():
         f"http://localhost:3000/connectors/{source}"
     )
 
+@app.route("/ai/connector/<connector>/<action>", methods=["GET", "POST"])
+def ai_connector_router(connector, action):
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    try:
+        # -------- GOOGLE SPECIAL CASE --------
+        if connector == "google_gmail":
+            if action == "sync":
+                return sync_gmail_route()
+            elif action == "connect":
+                # Gmail uses OAuth → redirect flow
+                return redirect("/google/connect/gmail")
+
+        if connector == "google_drive":
+            if action == "sync":
+                return jsonify(sync_drive_files(uid))
+
+        if connector == "google_calendar":
+            if action == "sync":
+                return jsonify(sync_calendar_files(uid))
+
+        # -------- GENERIC CONNECTORS --------
+        module_name = f"backend.connectors.{connector}"
+        module = __import__(module_name, fromlist=["*"])
+
+        func_name = f"{action}_{connector}"
+
+        if hasattr(module, func_name):
+            func = getattr(module, func_name)
+
+            try:
+                result = func(uid)
+            except TypeError:
+                result = func()
+
+            return jsonify(result)
+
+        return jsonify({
+            "error": f"{action} not supported for {connector}"
+        }), 400
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    if action == "status":
+        try:
+            return call_connector_route(f"/connectors/{connector}/status", uid)
+        except:
+            return jsonify({"status": "unknown"})
+
+@app.route("/ai/sync/<source>")
+def ai_sync(source):
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+
+    # call existing sync route internally
+    res = call_existing_sync(source, uid)
+
+    # AFTER sync, read rows from DB or router
+    rows_pushed = get_last_sync_rows(uid, source)
+
+    return jsonify({
+        "status": "ok",
+        "rows_pushed": rows_pushed
+    })
+        
 # ---------------- DRIVE ----------------
 
 @app.route("/google/sync/drive")
@@ -5068,42 +5142,6 @@ def sync_gmail_route():
             "message": str(e)
         }), 500
 
-# ---------------- CALENDAR SAVE APP ----------------
-
-@app.route("/connectors/calendar/save_app", methods=["POST"])
-def calendar_save_app():
-
-    uid = getattr(g, "user_id", None)
-
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = encrypt_payload(request.get_json())
-
-    client_id = data.get("client_id")
-    client_secret = data.get("client_secret")
-
-    if not client_id or not client_secret:
-        return jsonify({"error": "Client ID and Secret required"}), 400
-
-    con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        INSERT OR REPLACE INTO connector_configs
-        (uid, connector, client_id, client_secret, created_at)
-        VALUES (?, 'calendar', ?, ?, ?)
-    """, (
-        uid,
-        client_id,
-        client_secret,
-        datetime.datetime.now(datetime.UTC).isoformat()
-    ))
-
-    con.commit()
-    con.close()
-
-    ensure_connector_initialized(uid, "calendar")
-    return jsonify({"status": "saved"})
 
 @app.route("/google/disconnect/gmail")
 def google_disconnect_gmail():
@@ -5193,6 +5231,43 @@ def gmail_save_app():
     con.close()
 
     ensure_connector_initialized(uid, "gmail")
+    return jsonify({"status": "saved"})
+
+# ---------------- CALENDAR SAVE APP ----------------
+
+@app.route("/connectors/calendar/save_app", methods=["POST"])
+def calendar_save_app():
+
+    uid = getattr(g, "user_id", None)
+
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = encrypt_payload(request.get_json())
+
+    client_id = data.get("client_id")
+    client_secret = data.get("client_secret")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "Client ID and Secret required"}), 400
+
+    con = get_db()
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT OR REPLACE INTO connector_configs
+        (uid, connector, client_id, client_secret, created_at)
+        VALUES (?, 'calendar', ?, ?, ?)
+    """, (
+        uid,
+        client_id,
+        client_secret,
+        datetime.datetime.now(datetime.UTC).isoformat()
+    ))
+
+    con.commit()
+    con.close()
+
+    ensure_connector_initialized(uid, "calendar")
     return jsonify({"status": "saved"})
 
 @app.route("/google/disconnect/drive")
@@ -20570,15 +20645,19 @@ def ai_chat_message():
     uid = get_uid()
     if not uid:
         return jsonify({"error": "unauthorized"}), 401
-    
-    data = request.get_json(silent=True) or {}
-    message = data.get("message", "")
+ 
+    data    = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
     chat_id = data.get("chat_id")
-    
+ 
+    if not message:
+        return jsonify({"error": "message required"}), 400
+ 
+    # ── Resolve / create chat ──────────────────────────────────
     if not chat_id:
         chat_res = create_chat(uid)
-        chat_id = chat_res["id"]
-        title = message[:40] + ("..." if len(message) > 40 else "")
+        chat_id  = chat_res["id"]
+        title    = message[:40] + ("..." if len(message) > 40 else "")
         con = get_db()
         cur = con.cursor()
         cur.execute("UPDATE ai_chats SET title=? WHERE id=?", (title, chat_id))
@@ -20590,17 +20669,37 @@ def ai_chat_message():
         cur.execute("SELECT user_id FROM ai_chats WHERE id=?", (chat_id,))
         row = cur.fetchone()
         con.close()
-        
         if not row or row[0] != uid:
             return jsonify({"error": "unauthorized"}), 403
-            
+ 
+    # ── Persist user message ───────────────────────────────────
     save_message(chat_id, "user", message)
-    response_text = f"Received: {message}"
-    save_message(chat_id, "ai", response_text)
-    
+ 
+    # ── AI: detect intent + execute ───────────────────────────
+    try:
+        intent = detect_intent(message)
+        result = execute_intent(intent, uid)
+    except Exception as exc:
+        print(f"[AI] Error processing intent: {exc}", flush=True)
+        result = {
+            "type":       "error",
+            "message":    "Something went wrong while processing your request. Please try again.",
+            "connectors": [],
+            "links":      [],
+            "data":       None,
+        }
+ 
+    # ── Persist AI reply ──────────────────────────────────────
+    save_message(chat_id, "ai", result["message"])
+ 
+    # ── Return full result so the frontend can render rich UI ──
     return jsonify({
-        "message": response_text,
-        "chat_id": chat_id
+        "message":    result["message"],
+        "chat_id":    chat_id,
+        "type":       result["type"],
+        "connectors": result.get("connectors", []),
+        "links":      result.get("links", []),
+        "data":       result.get("data"),
     }), 200
 
 init_db()

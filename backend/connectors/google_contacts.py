@@ -8,6 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from backend.destinations.destination_router import push_to_destination
+from backend.security.token_manager import ensure_valid_google_token
 
 
 # ---------------- CONFIG ---------------- #
@@ -212,6 +213,8 @@ def sync_contacts():
             "status": "error",
             "message": "Contacts not connected"
         }
+
+    creds = ensure_valid_google_token(creds, uid, "contacts")
 
 
     print(f"[CONTACTS] Connected as {uid}", flush=True)

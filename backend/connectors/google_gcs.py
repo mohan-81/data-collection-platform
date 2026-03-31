@@ -7,6 +7,7 @@ import time
 from google.oauth2.credentials import Credentials
 from google.cloud import storage
 from backend.destinations.destination_router import push_to_destination
+from backend.security.token_manager import ensure_valid_google_token
 
 SOURCE = "gcs"
 
@@ -137,6 +138,8 @@ def sync_gcs(sync_type="incremental"):
             "status": "error",
             "message": "GCS connector not connected"
         }
+
+    creds = ensure_valid_google_token(creds, uid, "gcs")
 
     project_id = os.getenv("GOOGLE_PROJECT_ID")
 

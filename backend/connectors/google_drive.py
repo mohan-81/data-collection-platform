@@ -7,6 +7,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from backend.destinations.destination_router import push_to_destination
+from backend.security.token_manager import ensure_valid_google_token
 
 
 DB = "identity.db"
@@ -235,6 +236,8 @@ def sync_drive_files():
             "status": "error",
             "message": "Drive not connected"
         }
+
+    creds = ensure_valid_google_token(creds, uid, "drive")
 
     print(f"[DRIVE] Connected as {uid}", flush=True)
 

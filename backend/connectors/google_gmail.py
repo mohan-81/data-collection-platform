@@ -5,6 +5,7 @@ import time
 from backend.destinations.mysql_writer import push_to_mysql
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from backend.security.token_manager import ensure_valid_google_token
 
 DB = "identity.db"
 
@@ -235,6 +236,8 @@ def sync_gmail():
             "status": "error",
             "message": "Gmail not connected"
         }
+
+    creds = ensure_valid_google_token(creds, uid, "gmail")
 
 
     service = build(

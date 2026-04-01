@@ -21315,6 +21315,44 @@ def ai_chat_message():
         "state":      result.get("state")
     }), 200
 
+# ---------------- SYNC RECOVERY ROUTE ----------------
+@app.route("/connectors/<source>/recover", methods=["POST"])
+def recover_connector_data(source):
+    uid = get_uid()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    
+    try:
+        from backend.utils.sync_storage import get_recent_sync_data
+        recent_data = get_recent_sync_data(uid, source)
+        if not recent_data:
+            return jsonify({"error": "No recent valid data found to recover"}), 404
+            
+        dest_cfg = get_active_destination(uid, source)
+        
+        if not dest_cfg:
+            return jsonify({"error": "No active destination configured"}), 400
+            
+        dest_cfg["type"] = dest_cfg.get("dest_type")
+            
+        total_pushed = 0
+        batches = 0
+        from backend.destinations.destination_router import push_to_destination
+        for stored_data in recent_data:
+            count = push_to_destination(dest_cfg, source, stored_data, skip_storage=True)
+            total_pushed += count
+            batches += 1
+            
+        return jsonify({
+            "message": "Recovery successful", 
+            "total_rows": total_pushed, 
+            "batches": batches
+        }), 200
+        
+    except Exception as e:
+        print("[RECOVER ERROR]", e, flush=True)
+        return jsonify({"error": str(e)}), 500
+
 init_db()
 seed_test_user()
 

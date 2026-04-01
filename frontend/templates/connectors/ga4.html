@@ -254,6 +254,11 @@
                 <button onclick="runSync()" id="syncBtn"
                   class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-emerald-600/30 text-xs uppercase tracking-widest">Run
                   Manual Sync</button>
+                <button onclick="recoverSync()" id="recoverBtn"
+                  class="w-full py-4 bg-stone-700 hover:bg-stone-600 border border-stone-600 text-white rounded-2xl font-black transition-all shadow-lg text-xs uppercase tracking-widest mt-3">
+                  Recover Last 24h Data
+                  <span class="block text-[9px] font-normal text-slate-300 mt-1 lowercase normal-case tracking-normal">Re-push recently synced data without fetching again</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1183,6 +1188,37 @@ document.addEventListener("DOMContentLoaded", () => {
       if (nameInp) nameInp.placeholder = "Database Name";
     }
   }
+
+  async function recoverSync() {
+    const btn = document.getElementById("recoverBtn");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Recovering...";
+    btn.disabled = true;
+    const pathParts = window.location.pathname.split('/');
+    let source = pathParts[pathParts.length - 1];
+    if (!source || source === "connect" || source === "sync") {
+       source = pathParts[pathParts.length - 2];
+    }
+    try {
+      const res = await fetch(`/connectors/${source}/recover`, { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Recovery Successful!\n${data.total_rows} rows pushed across ${data.batches} batches.`);
+      } else {
+        alert(`Recovery Failed: ${data.error || data.message || 'Unknown error'}`);
+      }
+    } catch (e) {
+      alert("Recovery Request Failed.");
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
 </script>
 
 {% endblock %}

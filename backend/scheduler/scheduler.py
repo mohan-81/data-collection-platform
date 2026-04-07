@@ -8,7 +8,7 @@ import os
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(PROJECT_ROOT, "identity.db")
-BASE_URL = "http://localhost:4000"
+BASE_URL = ""
 
 # Prevent overlapping runs
 RUNNING_JOBS = set()

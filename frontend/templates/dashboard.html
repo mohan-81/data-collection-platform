@@ -82,7 +82,7 @@
 
 <script>
 // Initial Load: Populate Domain Dropdown
-fetch("http://127.0.0.1:4000/api/domains")
+fetch("/api/domains")
   .then(r => r.json())
   .then(d => {
     const s = document.getElementById("domainSelect");
@@ -109,7 +109,7 @@ function loadData() {
       SYNCING WITH IDENTITY SERVER...
     </div>`;
 
-  fetch("http://127.0.0.1:4000/api/dashboard?domain=" + domain)
+  fetch("/api/dashboard?domain=" + domain)
     .then(r => r.json())
     .then(d => {
       if (d.error) { alert(d.error); return; }

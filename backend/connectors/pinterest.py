@@ -1,3 +1,4 @@
+from flask import request
 import requests,sqlite3,os,time,json
 from datetime import datetime
 from dotenv import load_dotenv
@@ -11,7 +12,8 @@ DB="identity.db"
 
 AUTH_URL="https://www.pinterest.com/oauth/"
 TOKEN_URL="https://api.pinterest.com/v5/oauth/token"
-REDIRECT_URI="http://localhost:4000/pinterest/callback"
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/pinterest/callback"
 API_BASE="https://api.pinterest.com/v5"
 
 
@@ -97,7 +99,7 @@ def pinterest_get_auth_url(uid):
     params = {
         "response_type": "code",
         "client_id": cfg["client_id"],
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": get_redirect_uri(),
         "scope": "boards:read,pins:read,user_accounts:read"
     }
 
@@ -132,7 +134,7 @@ def pinterest_exchange_code(uid, code):
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": REDIRECT_URI
+        "redirect_uri": get_redirect_uri()
     }
 
     response = requests.post(

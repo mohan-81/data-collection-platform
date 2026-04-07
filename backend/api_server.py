@@ -475,7 +475,7 @@ app = Flask(__name__)
 CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:3000", "http://127.0.0.1:3000"]
+    origins=["*", "*"]
 )
 
 # Start scheduler once when API server starts
@@ -496,6 +496,7 @@ def load_logged_user():
 
     # Normal logged-in user via session
     session_id = request.cookies.get("segmento_session")
+    print(f"[AUTH MIDDLEWARE] Received session_id: {session_id}", flush=True)
     if not session_id:
         return
 
@@ -513,6 +514,8 @@ def load_logged_user():
 
     if row:
         g.user_id = row[0]
+    
+    print(f"[AUTH CHECK RESULT] Resolved user_id: {g.user_id}", flush=True)
 
 # ---------------- USAGE AUTO SYNC DETECTOR ----------------
 @app.before_request
@@ -643,51 +646,51 @@ DB = REAL_DB
 GOOGLE_SCOPES = [
 
     # Contacts
-    "https://www.googleapis.com/auth/contacts.readonly",
+    "https:/www.googleapis.com/auth/contacts.readonly",
 
     # Cloud Storage
-    "https://www.googleapis.com/auth/devstorage.read_only",
+    "https:/www.googleapis.com/auth/devstorage.read_only",
 
     # Tasks
-    "https://www.googleapis.com/auth/tasks.readonly",
+    "https:/www.googleapis.com/auth/tasks.readonly",
 
     # Classroom
-    "https://www.googleapis.com/auth/classroom.courses.readonly",
-    "https://www.googleapis.com/auth/classroom.rosters.readonly",
-    "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-    "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly",
-    "https://www.googleapis.com/auth/classroom.announcements.readonly",
+    "https:/www.googleapis.com/auth/classroom.courses.readonly",
+    "https:/www.googleapis.com/auth/classroom.rosters.readonly",
+    "https:/www.googleapis.com/auth/classroom.coursework.students.readonly",
+    "https:/www.googleapis.com/auth/classroom.student-submissions.students.readonly",
+    "https:/www.googleapis.com/auth/classroom.announcements.readonly",
 
     # Youtube
-    "https://www.googleapis.com/auth/youtube.readonly",
+    "https:/www.googleapis.com/auth/youtube.readonly",
 
     # Gmail
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https:/www.googleapis.com/auth/gmail.readonly",
 
     # Drive & Sheets
-    "https://www.googleapis.com/auth/drive.readonly",
-    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "https:/www.googleapis.com/auth/drive.readonly",
+    "https:/www.googleapis.com/auth/spreadsheets.readonly",
 
     # Search Console
-    "https://www.googleapis.com/auth/webmasters.readonly",
+    "https:/www.googleapis.com/auth/webmasters.readonly",
 
     # Analytics
-    "https://www.googleapis.com/auth/analytics.readonly",
+    "https:/www.googleapis.com/auth/analytics.readonly",
 
     # Forms
-    "https://www.googleapis.com/auth/forms.responses.readonly",
-    "https://www.googleapis.com/auth/forms.body.readonly",
+    "https:/www.googleapis.com/auth/forms.responses.readonly",
+    "https:/www.googleapis.com/auth/forms.body.readonly",
 
     # Calendar
-    "https://www.googleapis.com/auth/calendar.readonly"
+    "https:/www.googleapis.com/auth/calendar.readonly"
 ]
 
 GOOGLE_CLIENT_CONFIG = {
     "web": {
         "client_id": os.getenv("GOOGLE_CLIENT_ID"),
         "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_uri": "https:/accounts.google.com/o/oauth2/auth",
+        "token_uri": "https:/oauth2.googleapis.com/token",
         "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI")]
     }
 }
@@ -4488,46 +4491,46 @@ def google_connect():
 
     # Define scopes dynamically (for now only gmail)
     if source == "gmail":
-        scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/gmail.readonly"]
 
     elif source == "drive":
-        scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/drive.readonly"]
 
     elif source == "calendar":
-        scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/calendar.readonly"]
 
     elif source == "sheets":
-        scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/spreadsheets.readonly"]
 
     elif source == "forms":
         scopes = [
-            "https://www.googleapis.com/auth/forms.responses.readonly",
-            "https://www.googleapis.com/auth/forms.body.readonly"
+            "https:/www.googleapis.com/auth/forms.responses.readonly",
+            "https:/www.googleapis.com/auth/forms.body.readonly"
         ]
 
     elif source == "classroom":
         scopes = [
-            "https://www.googleapis.com/auth/classroom.courses.readonly",
-            "https://www.googleapis.com/auth/classroom.rosters.readonly",
-            "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-            "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly",
-            "https://www.googleapis.com/auth/classroom.announcements.readonly",
+            "https:/www.googleapis.com/auth/classroom.courses.readonly",
+            "https:/www.googleapis.com/auth/classroom.rosters.readonly",
+            "https:/www.googleapis.com/auth/classroom.coursework.students.readonly",
+            "https:/www.googleapis.com/auth/classroom.student-submissions.students.readonly",
+            "https:/www.googleapis.com/auth/classroom.announcements.readonly",
     ]
         
     elif source == "contacts":
-        scopes = ["https://www.googleapis.com/auth/contacts.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/contacts.readonly"]
 
     elif source == "tasks":
-        scopes = ["https://www.googleapis.com/auth/tasks.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/tasks.readonly"]
 
     elif source == "ga4":
-        scopes = ["https://www.googleapis.com/auth/analytics.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/analytics.readonly"]
 
     elif source == "search-console":
-        scopes = ["https://www.googleapis.com/auth/webmasters.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/webmasters.readonly"]
 
     elif source == "youtube":
-        scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/youtube.readonly"]
 
     else:
         return "Unsupported Google connector", 400
@@ -4537,8 +4540,8 @@ def google_connect():
             "web": {
                 "client_id": client_id,
                 "client_secret": client_secret,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token"
+                "auth_uri": "https:/accounts.google.com/o/oauth2/auth",
+                "token_uri": "https:/oauth2.googleapis.com/token"
             }
         },
         scopes=scopes,
@@ -4589,46 +4592,46 @@ def google_callback():
 
     # Define scopes
     if source == "gmail":
-        scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/gmail.readonly"]
 
     elif source == "drive":
-        scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/drive.readonly"]
 
     elif source == "calendar":
-        scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/calendar.readonly"]
 
     elif source == "sheets":
-        scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/spreadsheets.readonly"]
     
     elif source == "forms":
         scopes = [
-            "https://www.googleapis.com/auth/forms.responses.readonly",
-            "https://www.googleapis.com/auth/forms.body.readonly"
+            "https:/www.googleapis.com/auth/forms.responses.readonly",
+            "https:/www.googleapis.com/auth/forms.body.readonly"
         ]
 
     elif source == "classroom":
         scopes = [
-            "https://www.googleapis.com/auth/classroom.courses.readonly",
-            "https://www.googleapis.com/auth/classroom.rosters.readonly",
-            "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-            "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly",
-            "https://www.googleapis.com/auth/classroom.announcements.readonly",
+            "https:/www.googleapis.com/auth/classroom.courses.readonly",
+            "https:/www.googleapis.com/auth/classroom.rosters.readonly",
+            "https:/www.googleapis.com/auth/classroom.coursework.students.readonly",
+            "https:/www.googleapis.com/auth/classroom.student-submissions.students.readonly",
+            "https:/www.googleapis.com/auth/classroom.announcements.readonly",
     ]
         
     elif source == "contacts":
-        scopes = ["https://www.googleapis.com/auth/contacts.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/contacts.readonly"]
 
     elif source == "tasks":
-        scopes = ["https://www.googleapis.com/auth/tasks.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/tasks.readonly"]
 
     elif source == "ga4":
-        scopes = ["https://www.googleapis.com/auth/analytics.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/analytics.readonly"]
 
     elif source == "search-console":
-        scopes = ["https://www.googleapis.com/auth/webmasters.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/webmasters.readonly"]
 
     elif source == "youtube":
-        scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+        scopes = ["https:/www.googleapis.com/auth/youtube.readonly"]
 
     else:
         con.close()
@@ -4639,8 +4642,8 @@ def google_callback():
             "web": {
                 "client_id": client_id,
                 "client_secret": client_secret,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token"
+                "auth_uri": "https:/accounts.google.com/o/oauth2/auth",
+                "token_uri": "https:/oauth2.googleapis.com/token"
             }
         },
         scopes=scopes,
@@ -4690,7 +4693,7 @@ def google_callback():
         con.close()
 
     return redirect(
-        f"http://localhost:3000/connectors/{source}"
+        f"/connectors/{source}"
     )
 
 @app.route("/ai/connector/<connector>/<action>", methods=["GET", "POST"])
@@ -5201,27 +5204,28 @@ def gsc_job_save():
 
 @app.route("/api/status/search-console")
 def search_console_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='search-console'
+        """, (uid,))
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        row = fetchone_secure(cur)
+        con.close()
 
-    con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='search-console'
-    """, (uid,))
-
-    row = fetchone_secure(cur)
-    con.close()
-
-    return jsonify({
-        "connected": True if row and row[0] == 1 else False
-    })
+        return jsonify({
+            "connected": True if row and row[0] == 1 else False
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] search-console: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/google/disconnect/search-console")
 def disconnect_search_console():
@@ -5362,43 +5366,45 @@ def pagespeed_save_config():
 
 @app.route("/api/status/pagespeed")
 def pagespeed_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # ---------- connection ----------
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='pagespeed'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)
 
-    con = get_db()
-    cur = con.cursor()
+        connected = bool(row and row[0] == 1)
 
-    # ---------- connection ----------
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='pagespeed'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)
+        # ---------- api key ----------
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='pagespeed'
+            LIMIT 1
+        """, (uid,))
+        key_row = fetchone_secure(cur)
 
-    connected = bool(row and row[0] == 1)
+        api_key_saved = key_row is not None
 
-    # ---------- api key ----------
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='pagespeed'
-        LIMIT 1
-    """, (uid,))
-    key_row = fetchone_secure(cur)
+        con.close()
 
-    api_key_saved = key_row is not None
-
-    con.close()
-
-    return jsonify({
-        "connected": connected,
-        "api_key_saved": api_key_saved
-    })
+        return jsonify({
+            "connected": connected,
+            "api_key_saved": api_key_saved
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] pagespeed: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/pagespeed/job/get")
 def pagespeed_job_get():
@@ -6491,46 +6497,48 @@ def webfonts_disconnect():
 
 @app.route("/api/status/webfonts")
 def webfonts_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # ---------- connection ----------
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='webfonts'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)
 
-    con = get_db()
-    cur = con.cursor()
+        connected = bool(row and row[0] == 1)
 
-    # ---------- connection ----------
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='webfonts'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)
+        # ---------- API KEY ----------
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='webfonts'
+            LIMIT 1
+        """, (uid,))
 
-    connected = bool(row and row[0] == 1)
+        key_row = fetchone_secure(cur)
 
-    # ---------- API KEY ----------
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='webfonts'
-        LIMIT 1
-    """, (uid,))
+        api_key_saved = bool(
+            key_row and key_row[0]
+        )
 
-    key_row = fetchone_secure(cur)
+        con.close()
 
-    api_key_saved = bool(
-        key_row and key_row[0]
-    )
-
-    con.close()
-
-    return jsonify({
-        "connected": connected,
-        "api_key_saved": api_key_saved
-    })
+        return jsonify({
+            "connected": connected,
+            "api_key_saved": api_key_saved
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] webfonts: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/webfonts/job/get")
 def webfonts_job_get():
@@ -6830,32 +6838,35 @@ def reddit_disconnect():
 
 @app.route("/api/status/reddit")
 def reddit_status():
+    try:
+        uid=get_uid()
 
-    uid=get_uid()
+        con=get_db()
+        cur=con.cursor()
 
-    con=get_db()
-    cur=con.cursor()
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='reddit'
+        """,(uid,))
+        conn=cur.fetchone()
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='reddit'
-    """,(uid,))
-    conn=cur.fetchone()
+        cur.execute("""
+            SELECT client_id
+            FROM connector_configs
+            WHERE uid=? AND connector='reddit'
+        """,(uid,))
+        cfg=cur.fetchone()
 
-    cur.execute("""
-        SELECT client_id
-        FROM connector_configs
-        WHERE uid=? AND connector='reddit'
-    """,(uid,))
-    cfg=cur.fetchone()
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn and conn[0]==1),
-        "has_credentials": bool(cfg)
-    })
+        return jsonify({
+            "connected": bool(conn and conn[0]==1),
+            "has_credentials": bool(cfg)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] reddit: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/reddit/save_config", methods=["POST"])
 def reddit_save_config():
@@ -7245,37 +7256,39 @@ def telegram_disconnect():
 
 @app.route("/api/status/telegram")
 def telegram_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # enabled
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='telegram'
+        """,(uid,))
+        conn = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # credentials saved
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='telegram'
+        """,(uid,))
+        cfg = cur.fetchone()
 
-    # enabled
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='telegram'
-    """,(uid,))
-    conn = cur.fetchone()
+        con.close()
 
-    # credentials saved
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='telegram'
-    """,(uid,))
-    cfg = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn and conn[0]==1),
-        "has_credentials": bool(cfg and cfg[0])
-    })
+        return jsonify({
+            "connected": bool(conn and conn[0]==1),
+            "has_credentials": bool(cfg and cfg[0])
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] telegram: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- TELEGRAM SAVE CONFIG ----------------
 
@@ -7431,37 +7444,39 @@ def medium_disconnect():
 
 @app.route("/api/status/medium")
 def medium_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # connection
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='medium'
+        """,(uid,))
+        conn = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # credentials
+        cur.execute("""
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='medium'
+        """,(uid,))
+        cfg = cur.fetchone()
 
-    # connection
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='medium'
-    """,(uid,))
-    conn = cur.fetchone()
+        con.close()
 
-    # credentials
-    cur.execute("""
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='medium'
-    """,(uid,))
-    cfg = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn and conn[0]==1),
-        "has_credentials": bool(cfg)
-    })
+        return jsonify({
+            "connected": bool(conn and conn[0]==1),
+            "has_credentials": bool(cfg)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] medium: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/medium/sync")
 def medium_sync_universal():
@@ -7615,39 +7630,41 @@ def twitch_connect():
 
 @app.route("/api/status/twitch")
 def twitch_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='twitch'
+        """,(uid,))
 
-    con = get_db()
-    cur = con.cursor()
+        connected = bool(
+            (row := cur.fetchone()) and row[0]==1
+        )
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='twitch'
-    """,(uid,))
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='twitch'
+        """,(uid,))
 
-    connected = bool(
-        (row := cur.fetchone()) and row[0]==1
-    )
+        has_credentials = bool(cur.fetchone())
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='twitch'
-    """,(uid,))
+        con.close()
 
-    has_credentials = bool(cur.fetchone())
-
-    con.close()
-
-    return jsonify({
-        "connected":connected,
-        "has_credentials":has_credentials
-    })
+        return jsonify({
+            "connected":connected,
+            "has_credentials":has_credentials
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] twitch: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/twitch/disconnect")
 def twitch_disconnect():
@@ -7931,43 +7948,45 @@ def tumblr_sync_universal():
 
 @app.route("/api/status/tumblr")
 def tumblr_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # ---------- connection ----------
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='tumblr'
+            LIMIT 1
+        """,(uid,))
+        conn = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        connected = bool(conn and conn[0] == 1)
 
-    # ---------- connection ----------
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='tumblr'
-        LIMIT 1
-    """,(uid,))
-    conn = cur.fetchone()
+        # ---------- credentials ----------
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='tumblr'
+            LIMIT 1
+        """,(uid,))
+        cfg = cur.fetchone()
 
-    connected = bool(conn and conn[0] == 1)
+        has_credentials = bool(cfg and cfg[0])
 
-    # ---------- credentials ----------
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='tumblr'
-        LIMIT 1
-    """,(uid,))
-    cfg = cur.fetchone()
+        con.close()
 
-    has_credentials = bool(cfg and cfg[0])
-
-    con.close()
-
-    return jsonify({
-        "connected": connected,
-        "has_credentials": has_credentials
-    })
+        return jsonify({
+            "connected": connected,
+            "has_credentials": has_credentials
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] tumblr: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- DISCORD (BOT MODE) ----------------
 
@@ -8167,37 +8186,39 @@ def discord_sync_universal():
 
 @app.route("/api/status/discord")
 def discord_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # connection
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='discord'
+        """,(uid,))
+        conn = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # token saved
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='discord'
+        """,(uid,))
+        cfg = cur.fetchone()
 
-    # connection
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='discord'
-    """,(uid,))
-    conn = cur.fetchone()
+        con.close()
 
-    # token saved
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='discord'
-    """,(uid,))
-    cfg = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn and conn[0]==1),
-        "has_credentials": bool(cfg and cfg[0])
-    })
+        return jsonify({
+            "connected": bool(conn and conn[0]==1),
+            "has_credentials": bool(cfg and cfg[0])
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] discord: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- DISCORD SAVE CONFIG ----------------
 
@@ -8362,28 +8383,30 @@ def save_books_job():
 
 @app.route("/api/status/books")
 def books_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='books'
+            LIMIT 1
+        """, (uid,))
 
-    con = get_db()
-    cur = con.cursor()
+        row = fetchone_secure(cur)
+        con.close()
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='books'
-        LIMIT 1
-    """, (uid,))
-
-    row = fetchone_secure(cur)
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
+        return jsonify({
+            "connected": bool(row and row[0] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] books: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- GOOGLE FACT CHECK ----------------
 
@@ -8483,41 +8506,43 @@ def factcheck_disconnect():
 
 @app.route("/api/status/factcheck")
 def factcheck_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # connection
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='factcheck'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)
 
-    con = get_db()
-    cur = con.cursor()
+        connected = bool(row and row[0] == 1)
 
-    # connection
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='factcheck'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)
+        # api key
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='factcheck'
+            LIMIT 1
+        """, (uid,))
+        key = cur.fetchone()
 
-    connected = bool(row and row[0] == 1)
+        con.close()
 
-    # api key
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='factcheck'
-        LIMIT 1
-    """, (uid,))
-    key = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": connected,
-        "api_key_saved": key is not None
-    })
+        return jsonify({
+            "connected": connected,
+            "api_key_saved": key is not None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] factcheck: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/factcheck/job/get")
 def factcheck_job_get():
@@ -8664,28 +8689,30 @@ def disconnect_news():
 
 @app.route("/api/status/news")
 def news_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='news'
+            LIMIT 1
+        """, (uid,))
 
-    con = get_db()
-    cur = con.cursor()
+        row = fetchone_secure(cur)
+        con.close()
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='news'
-        LIMIT 1
-    """, (uid,))
-
-    row = fetchone_secure(cur)
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
+        return jsonify({
+            "connected": bool(row and row[0] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] news: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- GOOGLE NEWS JOB GET ----------------
 
@@ -8826,28 +8853,30 @@ def trends_connect():
 
 @app.route("/api/status/trends")
 def trends_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='trends'
+            LIMIT 1
+        """, (uid,))
 
-    con = get_db()
-    cur = con.cursor()
+        row = fetchone_secure(cur)
+        con.close()
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='trends'
-        LIMIT 1
-    """, (uid,))
-
-    row = fetchone_secure(cur)
-    con.close()
-
-    return jsonify({
-        "connected": bool(row and row[0] == 1)
-    })
+        return jsonify({
+            "connected": bool(row and row[0] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] trends: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- TRENDS DISCONNECT ----------------
 
@@ -8956,38 +8985,40 @@ def devto_connect():
     con.commit()
     con.close()
 
-    return redirect("http://localhost:3000/connectors/devto")
+    return redirect(request.host_url.rstrip("/") + "/connectors/devto")
 
 # ---------------- DEVTO STATUS ----------------
 
 @app.route("/api/status/devto")
 def devto_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # API connectors have implicit credentials
+        has_credentials = True
 
-    con = get_db()
-    cur = con.cursor()
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='devto'
+            LIMIT 1
+        """, (uid,))
 
-    # API connectors have implicit credentials
-    has_credentials = True
+        row = fetchone_secure(cur)
+        con.close()
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='devto'
-        LIMIT 1
-    """, (uid,))
-
-    row = fetchone_secure(cur)
-    con.close()
-
-    return jsonify({
-        "has_credentials": has_credentials,
-        "connected": bool(row and row[0] == 1)
-    })
+        return jsonify({
+            "has_credentials": has_credentials,
+            "connected": bool(row and row[0] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] devto: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/devto/disconnect")
 def devto_disconnect():
@@ -9214,7 +9245,7 @@ def github_callback():
 
     save_token(uid, token)
 
-    return redirect("http://localhost:3000/connectors/github")
+    return redirect(request.host_url.rstrip("/") + "/connectors/github")
 
 
 @app.route("/connectors/github/disconnect")
@@ -9290,36 +9321,39 @@ def github_save_app():
 
 @app.route("/api/status/github")
 def github_status():
+    try:
+        uid = getattr(g, "user_id", None)
 
-    uid = getattr(g, "user_id", None)
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+        # credentials exist?
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='github'
+            LIMIT 1
+        """, (uid,))
+        creds = cur.fetchone()
 
-    # credentials exist?
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='github'
-        LIMIT 1
-    """, (uid,))
-    creds = cur.fetchone()
+        # connection enabled?
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='github'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)
 
-    # connection enabled?
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='github'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)
+        conn.close()
 
-    conn.close()
-
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(row and row["enabled"] == 1)
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(row and row["enabled"] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] github: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/github/job/get")
 def github_job_get():
@@ -9451,7 +9485,7 @@ def instagram_callback():
     if result.get("status") != "success":
         return jsonify(result), 400
 
-    return redirect("http://localhost:3000/connectors/instagram")
+    return redirect(request.host_url.rstrip("/") + "/connectors/instagram")
 
 @app.route("/connectors/instagram/disconnect")
 def instagram_disconnect():
@@ -9486,45 +9520,48 @@ def instagram_sync_route():
 
 @app.route("/api/status/instagram")
 def instagram_status():
-    uid = getattr(g, "user_id", None)
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
 
-    con = get_db()
-    cur = con.cursor()
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='instagram'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='instagram'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='instagram'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='instagram'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT ig_account_id
+            FROM instagram_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        ig_row = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT ig_account_id
-        FROM instagram_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    ig_row = fetchone_secure(cur)
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "ig_account_id": ig_row["ig_account_id"] if ig_row else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "ig_account_id": ig_row["ig_account_id"] if ig_row else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] instagram: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/instagram/job/get")
 def instagram_job_get():
@@ -9650,7 +9687,7 @@ def tiktok_callback():
     if result.get("status") != "success":
         return jsonify(result), 400
 
-    return redirect("http://localhost:3000/connectors/tiktok")
+    return redirect(request.host_url.rstrip("/") + "/connectors/tiktok")
 
 
 @app.route("/connectors/tiktok/disconnect")
@@ -9686,44 +9723,48 @@ def tiktok_sync_route():
 
 @app.route("/api/status/tiktok")
 def tiktok_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='tiktok'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='tiktok'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='tiktok'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='tiktok'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT advertiser_id, expires_at
-        FROM tiktok_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    tk = fetchone_secure(cur)
-    con.close()
+        cur.execute("""
+            SELECT advertiser_id, expires_at
+            FROM tiktok_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        tk = fetchone_secure(cur)
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "advertiser_id": tk["advertiser_id"] if tk else None,
-        "expires_at": tk["expires_at"] if tk else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "advertiser_id": tk["advertiser_id"] if tk else None,
+            "expires_at": tk["expires_at"] if tk else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] tiktok: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/tiktok/job/get")
@@ -9857,44 +9898,48 @@ def taboola_sync_route():
 
 @app.route("/api/status/taboola")
 def taboola_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='taboola'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='taboola'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='taboola'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='taboola'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT account_id, expires_at
-        FROM taboola_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    tb = fetchone_secure(cur)
-    con.close()
+        cur.execute("""
+            SELECT account_id, expires_at
+            FROM taboola_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        tb = fetchone_secure(cur)
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "account_id": tb["account_id"] if tb else None,
-        "expires_at": tb["expires_at"] if tb else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "account_id": tb["account_id"] if tb else None,
+            "expires_at": tb["expires_at"] if tb else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] taboola: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/taboola/job/get")
@@ -10028,44 +10073,48 @@ def outbrain_sync_route():
 
 @app.route("/api/status/outbrain")
 def outbrain_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='outbrain'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='outbrain'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='outbrain'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='outbrain'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT marketer_id, expires_at
-        FROM outbrain_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    ob = fetchone_secure(cur)
-    con.close()
+        cur.execute("""
+            SELECT marketer_id, expires_at
+            FROM outbrain_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        ob = fetchone_secure(cur)
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "marketer_id": ob["marketer_id"] if ob else None,
-        "expires_at": ob["expires_at"] if ob else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "marketer_id": ob["marketer_id"] if ob else None,
+            "expires_at": ob["expires_at"] if ob else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] outbrain: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/outbrain/job/get")
@@ -10197,43 +10246,47 @@ def similarweb_sync_route():
 
 @app.route("/api/status/similarweb")
 def similarweb_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='similarweb'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='similarweb'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='similarweb'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='similarweb'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT domain
-        FROM similarweb_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    sw = fetchone_secure(cur)
-    con.close()
+        cur.execute("""
+            SELECT domain
+            FROM similarweb_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        sw = fetchone_secure(cur)
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "domain": sw["domain"] if sw else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "domain": sw["domain"] if sw else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] similarweb: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/similarweb/job/get")
@@ -10384,50 +10437,54 @@ def bigquery_sync_route():
 
 @app.route("/api/status/bigquery")
 def bigquery_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT config_json, status
-        FROM connector_configs
-        WHERE uid=? AND connector='bigquery'
-        LIMIT 1
-    """, (uid,))
-    cfg_row = fetchone_secure(cur)
+        cur.execute("""
+            SELECT config_json, status
+            FROM connector_configs
+            WHERE uid=? AND connector='bigquery'
+            LIMIT 1
+        """, (uid,))
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='bigquery'
-        LIMIT 1
-    """, (uid,))
-    conn_row = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='bigquery'
+            LIMIT 1
+        """, (uid,))
+        conn_row = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    project_id = None
-    dataset_id = None
+        project_id = None
+        dataset_id = None
 
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            project_id = cfg.get("project_id")
-            dataset_id = cfg.get("dataset_id")
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                project_id = cfg.get("project_id")
+                dataset_id = cfg.get("dataset_id")
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-        "project_id": project_id,
-        "dataset_id": dataset_id,
-        "status": (cfg_row.get("status") if cfg_row else None)
-    })
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+            "project_id": project_id,
+            "dataset_id": dataset_id,
+            "status": (cfg_row.get("status") if cfg_row else None)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] bigquery: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/bigquery/job/get")
@@ -10545,7 +10602,7 @@ def x_callback():
     if result.get("status") != "success":
         return jsonify(result), 400
 
-    return redirect("http://localhost:3000/connectors/x")
+    return redirect(request.host_url.rstrip("/") + "/connectors/x")
 
 
 @app.route("/connectors/x/disconnect")
@@ -10581,45 +10638,49 @@ def x_sync_route():
 
 @app.route("/api/status/x")
 def x_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='x'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='x'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='x'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='x'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT username, x_user_id, expires_at
-        FROM x_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    xr = fetchone_secure(cur)
-    con.close()
+        cur.execute("""
+            SELECT username, x_user_id, expires_at
+            FROM x_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        xr = fetchone_secure(cur)
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "username": xr["username"] if xr else None,
-        "x_user_id": xr["x_user_id"] if xr else None,
-        "expires_at": xr["expires_at"] if xr else None
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "username": xr["username"] if xr else None,
+            "x_user_id": xr["x_user_id"] if xr else None,
+            "expires_at": xr["expires_at"] if xr else None
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] x: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/x/job/get")
@@ -10766,7 +10827,7 @@ def linkedin_callback():
     stored_state.pop("oauth_state_expires_at", None)
     save_connector_state(uid, "linkedin", stored_state)
 
-    return redirect("http://localhost:3000/connectors/linkedin")
+    return redirect(request.host_url.rstrip("/") + "/connectors/linkedin")
 
 
 @app.route("/connectors/linkedin/disconnect")
@@ -11000,7 +11061,7 @@ def gitlab_callback():
     con.commit()
     con.close()
 
-    return redirect("http://localhost:3000/connectors/gitlab")
+    return redirect(request.host_url.rstrip("/") + "/connectors/gitlab")
 
 @app.route("/api/status/gitlab")
 def gitlab_status():
@@ -11999,28 +12060,31 @@ def wikipedia_disconnect():
 
 @app.route("/api/status/wikipedia")
 def wikipedia_status():
+    try:
+        uid=get_uid()
 
-    uid=get_uid()
+        con=get_db()
+        cur=con.cursor()
 
-    con=get_db()
-    cur=con.cursor()
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='wikipedia'
+        """,(uid,))
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='wikipedia'
-    """,(uid,))
+        connected=bool(
+            (r:=cur.fetchone()) and r[0]==1
+        )
 
-    connected=bool(
-        (r:=cur.fetchone()) and r[0]==1
-    )
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "connected":connected,
-        "has_credentials":True
-    })
+        return jsonify({
+            "connected":connected,
+            "has_credentials":True
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] wikipedia: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/wikipedia/sync")
 def wikipedia_sync():
@@ -12258,35 +12322,38 @@ def peertube_save_config():
 
 @app.route("/api/status/peertube")
 def peertube_status():
+    try:
+        uid=get_uid()
+        con=get_db()
+        cur=con.cursor()
 
-    uid=get_uid()
-    con=get_db()
-    cur=con.cursor()
+        cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='peertube'
+        """,(uid,))
 
-    cur.execute("""
-    SELECT enabled
-    FROM google_connections
-    WHERE uid=? AND source='peertube'
-    """,(uid,))
+        connected=bool(
+            (r:=cur.fetchone()) and r[0]==1
+        )
 
-    connected=bool(
-        (r:=cur.fetchone()) and r[0]==1
-    )
+        cur.execute("""
+        SELECT 1
+        FROM connector_configs
+        WHERE uid=? AND connector='peertube'
+        """,(uid,))
 
-    cur.execute("""
-    SELECT 1
-    FROM connector_configs
-    WHERE uid=? AND connector='peertube'
-    """,(uid,))
+        has_credentials=bool(cur.fetchone())
 
-    has_credentials=bool(cur.fetchone())
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "connected":connected,
-        "has_credentials":has_credentials
-    })
+        return jsonify({
+            "connected":connected,
+            "has_credentials":has_credentials
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] peertube: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 # ---------------- MASTODON ----------------
 
 @app.route("/connectors/mastodon/sync")
@@ -12330,7 +12397,7 @@ def mastodon_sync_universal():
     """, (uid,))
     state_row = fetchone_secure(cur)
 
-    instance = "https://mastodon.social"
+    instance = "https:/mastodon.social"
 
     if state_row:
         state = json.loads(state_row[0])
@@ -12974,40 +13041,43 @@ def lemmy_save_config():
 
 @app.route("/api/status/lemmy")
 def lemmy_status():
+    try:
+        uid=get_uid()
 
-    uid=get_uid()
+        con=get_db()
+        cur=con.cursor()
 
-    con=get_db()
-    cur=con.cursor()
+        # connected
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='lemmy'
+            LIMIT 1
+        """,(uid,))
+        row=cur.fetchone()
 
-    # connected
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='lemmy'
-        LIMIT 1
-    """,(uid,))
-    row=cur.fetchone()
+        connected = bool(row and row[0]==1)
 
-    connected = bool(row and row[0]==1)
+        # credentials
+        cur.execute("""
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='lemmy'
+            LIMIT 1
+        """,(uid,))
+        cfg=cur.fetchone()
 
-    # credentials
-    cur.execute("""
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='lemmy'
-        LIMIT 1
-    """,(uid,))
-    cfg=cur.fetchone()
+        has_credentials = bool(cfg)
 
-    has_credentials = bool(cfg)
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "connected":connected,
-        "has_credentials":has_credentials
-    })
+        return jsonify({
+            "connected":connected,
+            "has_credentials":has_credentials
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] lemmy: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- OPENSTREETMAP ----------------
 
@@ -13136,27 +13206,30 @@ def osm_sync():
 
 @app.route("/api/status/openstreetmap")
 def osm_status():
+    try:
+        uid=get_uid()
+        con=get_db()
+        cur=con.cursor()
 
-    uid=get_uid()
-    con=get_db()
-    cur=con.cursor()
+        cur.execute("""
+        SELECT enabled
+        FROM google_connections
+        WHERE uid=? AND source='openstreetmap'
+        """,(uid,))
 
-    cur.execute("""
-    SELECT enabled
-    FROM google_connections
-    WHERE uid=? AND source='openstreetmap'
-    """,(uid,))
+        connected=bool(
+            (r:=cur.fetchone()) and r[0]==1
+        )
 
-    connected=bool(
-        (r:=cur.fetchone()) and r[0]==1
-    )
+        con.close()
 
-    con.close()
-
-    return jsonify({
-        "connected":connected,
-        "has_credentials":True
-    })
+        return jsonify({
+            "connected":connected,
+            "has_credentials":True
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] openstreetmap: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- NVD ----------------
 
@@ -13296,39 +13369,41 @@ def nvd_disconnect():
 
 @app.route("/api/status/nvd")
 def nvd_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # credentials
+        cur.execute("""
+            SELECT api_key
+            FROM connector_configs
+            WHERE uid=? AND connector='nvd'
+            LIMIT 1
+        """, (uid,))
+        creds = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # connection
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='nvd'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)
 
-    # credentials
-    cur.execute("""
-        SELECT api_key
-        FROM connector_configs
-        WHERE uid=? AND connector='nvd'
-        LIMIT 1
-    """, (uid,))
-    creds = cur.fetchone()
+        con.close()
 
-    # connection
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='nvd'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)
-
-    con.close()
-
-    return jsonify({
-        "has_credentials": bool(creds and creds[0]),
-        "connected": bool(row and row[0] == 1)
-    })
+        return jsonify({
+            "has_credentials": bool(creds and creds[0]),
+            "connected": bool(row and row[0] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] nvd: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/nvd/job/save", methods=["POST"])
 def nvd_job_save():
@@ -13484,7 +13559,7 @@ def pinterest_callback():
         con.close()
 
         print(f"[PINTEREST CALLBACK] Success — token saved for uid={uid}", flush=True)
-        return redirect("http://localhost:3000/connectors/pinterest?connected=1")
+        return redirect(request.host_url.rstrip("/") + "/connectors/pinterest?connected=1")
 
     except Exception as e:
         print(f"[PINTEREST CALLBACK ERROR] {str(e)}", flush=True)
@@ -13770,7 +13845,7 @@ def facebook_connect():
         "response_type": "code"
     }
 
-    auth_url = "https://www.facebook.com/v19.0/dialog/oauth?" + urlencode(params)
+    auth_url = "https:/www.facebook.com/v19.0/dialog/oauth?" + urlencode(params)
 
     return redirect(auth_url)
 
@@ -13809,7 +13884,7 @@ def facebook_callback():
 
     # Exchange code for user access token
     token_res = requests.get(
-        "https://graph.facebook.com/v19.0/oauth/access_token",
+        "https:/graph.facebook.com/v19.0/oauth/access_token",
         params={
             "client_id": app_id,
             "redirect_uri": redirect_uri,
@@ -13828,7 +13903,7 @@ def facebook_callback():
 
     # Get managed pages
     pages_res = requests.get(
-        "https://graph.facebook.com/v19.0/me/accounts",
+        "https:/graph.facebook.com/v19.0/me/accounts",
         params={"access_token": user_token},
         timeout=30
     )
@@ -13998,37 +14073,39 @@ def facebook_job_get():
 
 @app.route("/api/status/facebook")
 def facebook_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # Check saved app credentials
+        cur.execute("""
+            SELECT 1 FROM facebook_app_credentials
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        creds = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # Check page connection
+        cur.execute("""
+            SELECT 1 FROM facebook_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        conn = cur.fetchone()
 
-    # Check saved app credentials
-    cur.execute("""
-        SELECT 1 FROM facebook_app_credentials
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    creds = cur.fetchone()
+        con.close()
 
-    # Check page connection
-    cur.execute("""
-        SELECT 1 FROM facebook_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    conn = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn),
-        "has_credentials": bool(creds)
-    })
+        return jsonify({
+            "connected": bool(conn),
+            "has_credentials": bool(creds)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] facebook: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/<source>/disconnect")
 def connector_disconnect(source):
@@ -14085,7 +14162,7 @@ def facebook_ads_connect():
         "response_type": "code"
     }
 
-    auth_url = "https://www.facebook.com/v19.0/dialog/oauth?" + urlencode(params)
+    auth_url = "https:/www.facebook.com/v19.0/dialog/oauth?" + urlencode(params)
 
     return redirect(auth_url)
 
@@ -14124,7 +14201,7 @@ def facebook_ads_callback():
 
     # Exchange code for token
     token_res = requests.get(
-        "https://graph.facebook.com/v19.0/oauth/access_token",
+        "https:/graph.facebook.com/v19.0/oauth/access_token",
         params={
             "client_id": app_id,
             "redirect_uri": redirect_uri,
@@ -14142,7 +14219,7 @@ def facebook_ads_callback():
 
     # Fetch Ad Accounts
     accounts_res = requests.get(
-        "https://graph.facebook.com/v19.0/me/adaccounts",
+        "https:/graph.facebook.com/v19.0/me/adaccounts",
         params={
             "access_token": user_token,
             "fields": "id,name,account_status,currency,timezone_name"
@@ -14190,37 +14267,39 @@ def facebook_ads_callback():
 
 @app.route("/api/status/facebook_ads")
 def facebook_ads_status():
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
 
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+        # Check saved app credentials
+        cur.execute("""
+            SELECT 1 FROM facebook_app_credentials
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        creds = cur.fetchone()
 
-    con = get_db()
-    cur = con.cursor()
+        # Check ads connection
+        cur.execute("""
+            SELECT 1 FROM facebook_ads_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        conn = cur.fetchone()
 
-    # Check saved app credentials
-    cur.execute("""
-        SELECT 1 FROM facebook_app_credentials
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    creds = cur.fetchone()
+        con.close()
 
-    # Check ads connection
-    cur.execute("""
-        SELECT 1 FROM facebook_ads_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    conn = cur.fetchone()
-
-    con.close()
-
-    return jsonify({
-        "connected": bool(conn),
-        "has_credentials": bool(creds)
-    })
+        return jsonify({
+            "connected": bool(conn),
+            "has_credentials": bool(creds)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] facebook_ads: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- FACEBOOK ADS DISCONNECT ----------------
 
@@ -15057,20 +15136,24 @@ def get_active_destination(uid, source):
 
 @app.route("/api/status/ga4")
 def ga4_status():
-    uid = getattr(g, "user_id", None)
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='ga4'
-        LIMIT 1
-    """, (uid,))
-    row = fetchone_secure(cur)  # Dict
-    con.close()
-    return jsonify({
-        "connected": bool(row and row["enabled"] == 1)  # Use key
-    })
+    try:
+        uid = getattr(g, "user_id", None)
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='ga4'
+            LIMIT 1
+        """, (uid,))
+        row = fetchone_secure(cur)  # Dict
+        con.close()
+        return jsonify({
+            "connected": bool(row and row["enabled"] == 1)  # Use key
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] ga4: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/<source>/job/save", methods=["POST"])
 def universal_job_save(source):
@@ -15226,7 +15309,7 @@ def whatsapp_save_app():
         return jsonify({"error": "access_token, waba_id, and phone_number_id are required"}), 400
         
     # Validate credentials with Meta Graph API
-    url = f"https://graph.facebook.com/v18.0/{waba_id}"
+    url = f"https:/graph.facebook.com/v18.0/{waba_id}"
 
     response = requests.get(
         url,
@@ -15276,19 +15359,23 @@ def whatsapp_save_app():
 
 @app.route("/api/status/whatsapp")
 def whatsapp_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM whatsapp_connections WHERE uid=?", (uid,))
-    row = cur.fetchone()
-    con.close()
-    
-    if row:
-        return jsonify({"connected": True, "has_credentials": True})
-    return jsonify({"connected": False, "has_credentials": False})
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM whatsapp_connections WHERE uid=?", (uid,))
+        row = cur.fetchone()
+        con.close()
+        
+        if row:
+            return jsonify({"connected": True, "has_credentials": True})
+        return jsonify({"connected": False, "has_credentials": False})
+    except Exception as e:
+        print(f"[STATUS ERROR] whatsapp: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/whatsapp/sync")
 def whatsapp_sync_route():
@@ -15829,44 +15916,48 @@ def chartbeat_sync_route():
 
 @app.route("/api/status/chartbeat")
 def chartbeat_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='chartbeat'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='chartbeat'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='chartbeat'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='chartbeat'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT host
-        FROM chartbeat_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    cb = fetchone_secure(cur)
+        cur.execute("""
+            SELECT host
+            FROM chartbeat_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        cb = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected":       bool(conn and conn["enabled"] == 1),
-        "host":            cb["host"] if cb else None,
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected":       bool(conn and conn["enabled"] == 1),
+            "host":            cb["host"] if cb else None,
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] chartbeat: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/chartbeat/job/get")
@@ -15981,35 +16072,39 @@ def api_slack_disconnect():
 
 @app.route("/api/status/slack")
 def slack_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='slack'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='slack'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='slack'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='slack'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1)
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] slack: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/slack/job/get")
 def slack_job_get():
@@ -16127,45 +16222,49 @@ def stripe_sync_route():
 
 @app.route("/api/status/stripe")
 def stripe_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='stripe'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='stripe'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='stripe'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='stripe'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT account_id, display_name
-        FROM stripe_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    stripe_conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT account_id, display_name
+            FROM stripe_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        stripe_conn = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1),
-        "account_id": stripe_conn["account_id"] if stripe_conn else None,
-        "display_name": stripe_conn["display_name"] if stripe_conn else None,
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1),
+            "account_id": stripe_conn["account_id"] if stripe_conn else None,
+            "display_name": stripe_conn["display_name"] if stripe_conn else None,
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] stripe: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/stripe/job/get")
@@ -16287,45 +16386,49 @@ def socialinsider_sync_route():
 
 @app.route("/api/status/socialinsider")
 def socialinsider_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='socialinsider'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='socialinsider'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='socialinsider'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='socialinsider'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT platform, handle
-        FROM socialinsider_connections
-        WHERE uid=?
-        LIMIT 1
-    """, (uid,))
-    si = fetchone_secure(cur)
+        cur.execute("""
+            SELECT platform, handle
+            FROM socialinsider_connections
+            WHERE uid=?
+            LIMIT 1
+        """, (uid,))
+        si = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected":       bool(conn and conn["enabled"] == 1),
-        "platform":        si["platform"] if si else None,
-        "handle":          si["handle"] if si else None,
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected":       bool(conn and conn["enabled"] == 1),
+            "platform":        si["platform"] if si else None,
+            "handle":          si["handle"] if si else None,
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] socialinsider: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/socialinsider/job/get")
@@ -16456,54 +16559,58 @@ def aws_rds_sync_route():
 
 @app.route("/api/status/aws_rds")
 def aws_rds_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='aws_rds'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='aws_rds'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='aws_rds'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='aws_rds'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
 
-    # Decode config to surface engine/host in status response
-    engine = None
-    host   = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg    = json.loads(cfg_row["config_json"])
-            engine = cfg.get("engine")
-            host   = cfg.get("host")
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        # Decode config to surface engine/host in status response
+        engine = None
+        host   = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg    = json.loads(cfg_row["config_json"])
+                engine = cfg.get("engine")
+                host   = cfg.get("host")
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected":       bool(conn_row and conn_row["enabled"] == 1),
-        "engine":          engine,
-        "host":            host,
-    })
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected":       bool(conn_row and conn_row["enabled"] == 1),
+            "engine":          engine,
+            "host":            host,
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] aws_rds: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/aws_rds/job/get")
@@ -16631,55 +16738,59 @@ def dynamodb_sync_route():
 
 @app.route("/api/status/dynamodb")
 def dynamodb_status():
-    uid = getattr(g, "user_id", None)
-    if not uid:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='dynamodb'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='dynamodb'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='dynamodb'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='dynamodb'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
 
-    region = None
-    access_key = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            region = cfg.get("region")
-            raw_access_key = cfg.get("access_key")
-            if raw_access_key:
-                access_key = f"{raw_access_key[:4]}{'*' * max(len(raw_access_key) - 8, 4)}{raw_access_key[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        region = None
+        access_key = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                region = cfg.get("region")
+                raw_access_key = cfg.get("access_key")
+                if raw_access_key:
+                    access_key = f"{raw_access_key[:4]}{'*' * max(len(raw_access_key) - 8, 4)}{raw_access_key[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row["enabled"] == 1),
-        "region": region,
-        "access_key": access_key,
-    })
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row["enabled"] == 1),
+            "region": region,
+            "access_key": access_key,
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] dynamodb: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/dynamodb/job/get")
@@ -16803,53 +16914,57 @@ def _notion_sync():
 
 @app.route("/api/status/notion")
 def _notion_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='notion'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='notion'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='notion'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='notion'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
 
-    access_token = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            raw_token = cfg.get("access_token")
-            if raw_token:
-                access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        access_token = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                raw_token = cfg.get("access_token")
+                if raw_token:
+                    access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "access_token": access_token,
-        }
-    )
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "access_token": access_token,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] notion: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/notion/job/get")
 def get_notion_job():
@@ -16973,53 +17088,57 @@ def hubspot_sync():
 
 @app.route("/api/status/hubspot")
 def hubspot_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='hubspot'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='hubspot'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='hubspot'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='hubspot'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
 
-    access_token = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            raw_token = cfg.get("access_token")
-            if raw_token:
-                access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        access_token = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                raw_token = cfg.get("access_token")
+                if raw_token:
+                    access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "access_token": access_token,
-        }
-    )
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "access_token": access_token,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] hubspot: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/hubspot/job/get")
@@ -17123,16 +17242,20 @@ def _zendesk_sync():
 
 @app.route("/api/status/zendesk")
 def _zendesk_status():
-    uid = getattr(g, "user_id", None)
-    if not uid: return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='zendesk'", (uid,))
-    creds = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='zendesk'", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid: return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='zendesk'", (uid,))
+        creds = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='zendesk'", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] zendesk: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/zendesk/job/get")
 def _zendesk_job_get():
@@ -17202,16 +17325,20 @@ def _intercom_sync():
 
 @app.route("/api/status/intercom")
 def _intercom_status():
-    uid = getattr(g, "user_id", None)
-    if not uid: return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='intercom'", (uid,))
-    creds = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='intercom'", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid: return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='intercom'", (uid,))
+        creds = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='intercom'", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] intercom: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/intercom/job/get")
 def _intercom_job_get():
@@ -17303,35 +17430,39 @@ def _shopify_sync():
 
 @app.route("/api/status/shopify")
 def _shopify_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
+        con = get_db()
+        cur = con.cursor()
 
-    cur.execute("""
-        SELECT 1
-        FROM connector_configs
-        WHERE uid=? AND connector='shopify'
-        LIMIT 1
-    """, (uid,))
-    creds = fetchone_secure(cur)
+        cur.execute("""
+            SELECT 1
+            FROM connector_configs
+            WHERE uid=? AND connector='shopify'
+            LIMIT 1
+        """, (uid,))
+        creds = fetchone_secure(cur)
 
-    cur.execute("""
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='shopify'
-        LIMIT 1
-    """, (uid,))
-    conn = fetchone_secure(cur)
+        cur.execute("""
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='shopify'
+            LIMIT 1
+        """, (uid,))
+        conn = fetchone_secure(cur)
 
-    con.close()
+        con.close()
 
-    return jsonify({
-        "has_credentials": bool(creds),
-        "connected": bool(conn and conn["enabled"] == 1)
-    })
+        return jsonify({
+            "has_credentials": bool(creds),
+            "connected": bool(conn and conn["enabled"] == 1)
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] shopify: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/shopify/job/get")
@@ -17424,16 +17555,20 @@ def _mailchimp_sync():
 
 @app.route("/api/status/mailchimp")
 def _mailchimp_status():
-    uid = getattr(g, "user_id", None)
-    if not uid: return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='mailchimp'", (uid,))
-    creds = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='mailchimp'", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid: return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='mailchimp'", (uid,))
+        creds = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='mailchimp'", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] mailchimp: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/mailchimp/job/get")
 def _mailchimp_job_get():
@@ -17504,16 +17639,20 @@ def _twilio_sync():
 
 @app.route("/api/status/twilio")
 def _twilio_status():
-    uid = getattr(g, "user_id", None)
-    if not uid: return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='twilio'", (uid,))
-    creds = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='twilio'", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = getattr(g, "user_id", None)
+        if not uid: return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM connector_configs WHERE uid=? AND connector='twilio'", (uid,))
+        creds = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='twilio'", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(creds), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] twilio: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/twilio/job/get")
 def _twilio_job_get():
@@ -17609,59 +17748,63 @@ def airtable_sync():
 
 @app.route("/api/status/airtable")
 def airtable_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='airtable'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='airtable'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='airtable'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='airtable'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
 
-    access_token = None
-    base_id = None
-    table_name = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            base_id = cfg.get("base_id")
-            table_name = cfg.get("table_name")
-            raw_token = cfg.get("access_token")
-            if raw_token:
-                access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
+        access_token = None
+        base_id = None
+        table_name = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                base_id = cfg.get("base_id")
+                table_name = cfg.get("table_name")
+                raw_token = cfg.get("access_token")
+                if raw_token:
+                    access_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "access_token": access_token,
-            "base_id": base_id,
-            "table_name": table_name,
-        }
-    )
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "access_token": access_token,
+                "base_id": base_id,
+                "table_name": table_name,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] airtable: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/airtable/job/get")
@@ -17785,53 +17928,57 @@ def pipedrive_sync():
  
 @app.route("/api/status/pipedrive")
 def pipedrive_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
- 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='pipedrive'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
- 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='pipedrive'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
- 
-    api_token = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            raw_token = cfg.get("api_token")
-            if raw_token:
-                api_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
- 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "api_token": api_token,
-        }
-    )
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='pipedrive'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='pipedrive'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+
+        api_token = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                raw_token = cfg.get("api_token")
+                if raw_token:
+                    api_token = f"{raw_token[:4]}{'*' * max(len(raw_token) - 8, 4)}{raw_token[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
+
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "api_token": api_token,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] pipedrive: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/pipedrive/job/get")
@@ -17957,56 +18104,60 @@ def freshdesk_sync():
  
 @app.route("/api/status/freshdesk")
 def freshdesk_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
- 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='freshdesk'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
- 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='freshdesk'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
- 
-    api_key = None
-    domain = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            domain = cfg.get("domain")
-            raw_key = cfg.get("api_key")
-            if raw_key:
-                api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
- 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "api_key": api_key,
-            "domain": domain,
-        }
-    )
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='freshdesk'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='freshdesk'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+
+        api_key = None
+        domain = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                domain = cfg.get("domain")
+                raw_key = cfg.get("api_key")
+                if raw_key:
+                    api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
+
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "api_key": api_key,
+                "domain": domain,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] freshdesk: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/freshdesk/job/get")
@@ -18131,53 +18282,57 @@ def klaviyo_sync():
  
 @app.route("/api/status/klaviyo")
 def klaviyo_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
- 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='klaviyo'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
- 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='klaviyo'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
- 
-    api_key = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            raw_key = cfg.get("api_key")
-            if raw_key:
-                api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
- 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "api_key": api_key,
-        }
-    )
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='klaviyo'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='klaviyo'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+
+        api_key = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                raw_key = cfg.get("api_key")
+                if raw_key:
+                    api_key = f"{raw_key[:4]}{'*' * max(len(raw_key) - 8, 4)}{raw_key[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
+
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "api_key": api_key,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] klaviyo: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/klaviyo/job/get")
@@ -18303,58 +18458,62 @@ def amplitude_sync():
  
 @app.route("/api/status/amplitude")
 def amplitude_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
- 
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        """
-        SELECT config_json
-        FROM connector_configs
-        WHERE uid=? AND connector='amplitude'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
- 
-    cur.execute(
-        """
-        SELECT enabled
-        FROM google_connections
-        WHERE uid=? AND source='amplitude'
-        LIMIT 1
-        """,
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
- 
-    api_key = None
-    secret_key = None
-    if cfg_row and cfg_row.get("config_json"):
-        try:
-            cfg = json.loads(cfg_row["config_json"])
-            raw_api_key = cfg.get("api_key")
-            raw_secret_key = cfg.get("secret_key")
-            if raw_api_key:
-                api_key = f"{raw_api_key[:4]}{'*' * max(len(raw_api_key) - 8, 4)}{raw_api_key[-4:]}"
-            if raw_secret_key:
-                secret_key = f"{raw_secret_key[:4]}{'*' * max(len(raw_secret_key) - 8, 4)}{raw_secret_key[-4:]}"
-        except Exception:
-            import traceback; traceback.print_exc()
-            print('Exception caught', flush=True)
- 
-    return jsonify(
-        {
-            "has_credentials": bool(cfg_row),
-            "connected": bool(conn_row and conn_row.get("enabled") == 1),
-            "api_key": api_key,
-            "secret_key": secret_key,
-        }
-    )
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT config_json
+            FROM connector_configs
+            WHERE uid=? AND connector='amplitude'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+
+        cur.execute(
+            """
+            SELECT enabled
+            FROM google_connections
+            WHERE uid=? AND source='amplitude'
+            LIMIT 1
+            """,
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+
+        api_key = None
+        secret_key = None
+        if cfg_row and cfg_row.get("config_json"):
+            try:
+                cfg = json.loads(cfg_row["config_json"])
+                raw_api_key = cfg.get("api_key")
+                raw_secret_key = cfg.get("secret_key")
+                if raw_api_key:
+                    api_key = f"{raw_api_key[:4]}{'*' * max(len(raw_api_key) - 8, 4)}{raw_api_key[-4:]}"
+                if raw_secret_key:
+                    secret_key = f"{raw_secret_key[:4]}{'*' * max(len(raw_secret_key) - 8, 4)}{raw_secret_key[-4:]}"
+            except Exception:
+                import traceback; traceback.print_exc()
+                print('Exception caught', flush=True)
+
+        return jsonify(
+            {
+                "has_credentials": bool(cfg_row),
+                "connected": bool(conn_row and conn_row.get("enabled") == 1),
+                "api_key": api_key,
+                "secret_key": secret_key,
+            }
+        )
+    except Exception as e:
+        print(f"[STATUS ERROR] amplitude: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/amplitude/job/get")
@@ -18449,17 +18608,21 @@ def salesforce_sync():
 
 @app.route("/api/status/salesforce")
 def status_salesforce():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='salesforce' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='salesforce' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='salesforce' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='salesforce' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] salesforce: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/salesforce/job/get")
 def salesforce_job_get():
@@ -18526,17 +18689,21 @@ def jira_sync():
 
 @app.route("/api/status/jira")
 def status_jira():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='jira' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='jira' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='jira' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='jira' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] jira: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/jira/job/get")
 def jira_job_get():
@@ -18603,17 +18770,21 @@ def zoho_crm_sync():
 
 @app.route("/api/status/zoho_crm")
 def status_zoho_crm():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='zoho_crm' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='zoho_crm' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='zoho_crm' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='zoho_crm' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] zoho_crm: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/zoho_crm/job/get")
 def zoho_crm_job_get():
@@ -18680,17 +18851,21 @@ def paypal_sync():
 
 @app.route("/api/status/paypal")
 def status_paypal():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='paypal' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='paypal' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='paypal' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='paypal' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] paypal: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/connectors/paypal/job/get")
 def paypal_job_get():
@@ -18754,17 +18929,21 @@ def asana_sync():
  
 @app.route("/api/status/asana")
 def status_asana():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='asana' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='asana' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='asana' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='asana' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] asana: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/asana/job/get")
 def asana_job_get():
@@ -18829,17 +19008,21 @@ def sendgrid_sync():
  
 @app.route("/api/status/sendgrid")
 def status_sendgrid():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='sendgrid' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='sendgrid' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='sendgrid' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='sendgrid' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] sendgrid: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/sendgrid/job/get")
 def sendgrid_job_get():
@@ -18908,17 +19091,21 @@ def tableau_sync():
 
 @app.route("/api/status/tableau")
 def status_tableau():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='tableau' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='tableau' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='tableau' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='tableau' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] tableau: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/tableau/job/get")
@@ -18991,17 +19178,21 @@ def power_bi_sync():
 
 @app.route("/api/status/power_bi")
 def status_power_bi():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='power_bi' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='power_bi' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='power_bi' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='power_bi' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] power_bi: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/power_bi/job/get")
@@ -19074,17 +19265,21 @@ def workday_sync():
 
 @app.route("/api/status/workday")
 def status_workday():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='workday' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='workday' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='workday' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='workday' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] workday: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/workday/job/get")
@@ -19157,17 +19352,21 @@ def ebay_sync():
 
 @app.route("/api/status/ebay")
 def status_ebay():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='ebay' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='ebay' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='ebay' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='ebay' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] ebay: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/ebay/job/get")
@@ -19236,17 +19435,21 @@ def mixpanel_sync():
  
 @app.route("/api/status/mixpanel")
 def status_mixpanel():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='mixpanel' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='mixpanel' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='mixpanel' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='mixpanel' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] mixpanel: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/mixpanel/job/get")
 def mixpanel_job_get():
@@ -19310,17 +19513,21 @@ def monday_sync():
  
 @app.route("/api/status/monday")
 def status_monday():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='monday' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='monday' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='monday' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='monday' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] monday: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/monday/job/get")
 def monday_job_get():
@@ -19385,17 +19592,21 @@ def clickup_sync():
  
 @app.route("/api/status/clickup")
 def status_clickup():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='clickup' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='clickup' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='clickup' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='clickup' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] clickup: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/clickup/job/get")
 def clickup_job_get():
@@ -19460,17 +19671,21 @@ def helpscout_sync():
  
 @app.route("/api/status/helpscout")
 def status_helpscout():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='helpscout' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='helpscout' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='helpscout' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='helpscout' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] helpscout: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/helpscout/job/get")
 def helpscout_job_get():
@@ -19647,17 +19862,21 @@ def okta_save_app_api():
 
 @app.route("/api/status/okta")
 def okta_status_api():
-    uid = get_uid()
-    if not uid: return jsonify({"error":"unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='okta' LIMIT 1", (uid,))
-    row = cur.fetchone()
-    con.close()
-    if not row:
-        return jsonify({"connected": False, "has_credentials": False})
-    status, config_json = row
-    return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    try:
+        uid = get_uid()
+        if not uid: return jsonify({"error":"unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='okta' LIMIT 1", (uid,))
+        row = cur.fetchone()
+        con.close()
+        if not row:
+            return jsonify({"connected": False, "has_credentials": False})
+        status, config_json = row
+        return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    except Exception as e:
+        print(f"[STATUS ERROR] okta: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 # ================= AUTH0 =================
@@ -19690,17 +19909,21 @@ def auth0_save_app_api():
 
 @app.route("/api/status/auth0")
 def auth0_status_api():
-    uid = get_uid()
-    if not uid: return jsonify({"error":"unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='auth0' LIMIT 1", (uid,))
-    row = cur.fetchone()
-    con.close()
-    if not row:
-        return jsonify({"connected": False, "has_credentials": False})
-    status, config_json = row
-    return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    try:
+        uid = get_uid()
+        if not uid: return jsonify({"error":"unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='auth0' LIMIT 1", (uid,))
+        row = cur.fetchone()
+        con.close()
+        if not row:
+            return jsonify({"connected": False, "has_credentials": False})
+        status, config_json = row
+        return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    except Exception as e:
+        print(f"[STATUS ERROR] auth0: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 # ================= CLOUDFLARE =================
@@ -19733,17 +19956,21 @@ def cloudflare_save_app_api():
 
 @app.route("/api/status/cloudflare")
 def cloudflare_status_api():
-    uid = get_uid()
-    if not uid: return jsonify({"error":"unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='cloudflare' LIMIT 1", (uid,))
-    row = cur.fetchone()
-    con.close()
-    if not row:
-        return jsonify({"connected": False, "has_credentials": False})
-    status, config_json = row
-    return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    try:
+        uid = get_uid()
+        if not uid: return jsonify({"error":"unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='cloudflare' LIMIT 1", (uid,))
+        row = cur.fetchone()
+        con.close()
+        if not row:
+            return jsonify({"connected": False, "has_credentials": False})
+        status, config_json = row
+        return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    except Exception as e:
+        print(f"[STATUS ERROR] cloudflare: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 # ================= SENTRY =================
@@ -19776,17 +20003,21 @@ def sentry_save_app_api():
 
 @app.route("/api/status/sentry")
 def sentry_status_api():
-    uid = get_uid()
-    if not uid: return jsonify({"error":"unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='sentry' LIMIT 1", (uid,))
-    row = cur.fetchone()
-    con.close()
-    if not row:
-        return jsonify({"connected": False, "has_credentials": False})
-    status, config_json = row
-    return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    try:
+        uid = get_uid()
+        if not uid: return jsonify({"error":"unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT status, config_json FROM connector_configs WHERE uid=? AND connector='sentry' LIMIT 1", (uid,))
+        row = cur.fetchone()
+        con.close()
+        if not row:
+            return jsonify({"connected": False, "has_credentials": False})
+        status, config_json = row
+        return jsonify({"connected": status == "connected", "has_credentials": bool(config_json), "status": status})
+    except Exception as e:
+        print(f"[STATUS ERROR] sentry: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- QUICKBOOKS ----------------
 @app.route("/connectors/quickbooks/save_app", methods=["POST"])
@@ -19812,14 +20043,18 @@ def qb_disconnect():
 
 @app.route("/api/status/quickbooks")
 def qb_status():
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM quickbooks_config LIMIT 1")
-    has_creds = bool(cur.fetchone())
-    cur.execute("SELECT 1 FROM quickbooks_auth LIMIT 1")
-    connected = bool(cur.fetchone())
-    con.close()
-    return jsonify({"has_credentials": has_creds, "connected": connected})
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM quickbooks_config LIMIT 1")
+        has_creds = bool(cur.fetchone())
+        cur.execute("SELECT 1 FROM quickbooks_auth LIMIT 1")
+        connected = bool(cur.fetchone())
+        con.close()
+        return jsonify({"has_credentials": has_creds, "connected": connected})
+    except Exception as e:
+        print(f"[STATUS ERROR] quickbooks: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- XERO ----------------
 @app.route("/connectors/xero/save_app", methods=["POST"])
@@ -19845,33 +20080,41 @@ def xero_disconnect():
 
 @app.route("/api/status/xero")
 def xero_status_route():
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM xero_config LIMIT 1")
-    has_creds = bool(cur.fetchone())
-    cur.execute("SELECT tenant_name FROM xero_auth LIMIT 1")
-    row = cur.fetchone()
-    con.close()
-    return jsonify({"has_credentials": has_creds, "connected": bool(row), "tenant_name": row[0] if row else None})
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM xero_config LIMIT 1")
+        has_creds = bool(cur.fetchone())
+        cur.execute("SELECT tenant_name FROM xero_auth LIMIT 1")
+        row = cur.fetchone()
+        con.close()
+        return jsonify({"has_credentials": has_creds, "connected": bool(row), "tenant_name": row[0] if row else None})
+    except Exception as e:
+        print(f"[STATUS ERROR] xero: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 @app.route("/api/status/google_gmail")
 @app.route("/api/status/gmail")
 def gmail_status():
-    uid = get_uid()
-    if not uid: return jsonify({"error":"unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    # Check if we have an account for this user and source with BOTH tokens
-    cur.execute("""
-        SELECT 1 FROM google_accounts 
-        WHERE uid=? AND source='gmail' 
-        AND access_token IS NOT NULL AND access_token != ''
-        AND refresh_token IS NOT NULL AND refresh_token != ''
-        LIMIT 1
-    """, (uid,))
-    row = cur.fetchone()
-    con.close()
-    return jsonify({"connected": bool(row)})
+    try:
+        uid = get_uid()
+        if not uid: return jsonify({"error":"unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        # Check if we have an account for this user and source with BOTH tokens
+        cur.execute("""
+            SELECT 1 FROM google_accounts 
+            WHERE uid=? AND source='gmail' 
+            AND access_token IS NOT NULL AND access_token != ''
+            AND refresh_token IS NOT NULL AND refresh_token != ''
+            LIMIT 1
+        """, (uid,))
+        row = cur.fetchone()
+        con.close()
+        return jsonify({"connected": bool(row)})
+    except Exception as e:
+        print(f"[STATUS ERROR] gmail: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- AMAZON SELLER ----------------
 @app.route("/connectors/amazon_seller/save_app", methods=["POST"])
@@ -19897,14 +20140,18 @@ def amz_disconnect():
 
 @app.route("/api/status/amazon_seller")
 def amz_status():
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM amazon_seller_config LIMIT 1")
-    has_creds = bool(cur.fetchone())
-    cur.execute("SELECT 1 FROM amazon_seller_auth LIMIT 1")
-    connected = bool(cur.fetchone())
-    con.close()
-    return jsonify({"has_credentials": has_creds, "connected": connected})
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM amazon_seller_config LIMIT 1")
+        has_creds = bool(cur.fetchone())
+        cur.execute("SELECT 1 FROM amazon_seller_auth LIMIT 1")
+        connected = bool(cur.fetchone())
+        con.close()
+        return jsonify({"has_credentials": has_creds, "connected": connected})
+    except Exception as e:
+        print(f"[STATUS ERROR] amazon_seller: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # ---------------- NEW RELIC ----------------
 @app.route("/connectors/newrelic/save_app", methods=["POST"])
@@ -19922,12 +20169,16 @@ def nr_disconnect():
 
 @app.route("/api/status/newrelic")
 def nr_status():
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT 1 FROM newrelic_auth LIMIT 1")
-    connected = bool(cur.fetchone())
-    con.close()
-    return jsonify({"has_credentials": connected, "connected": connected})
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT 1 FROM newrelic_auth LIMIT 1")
+        connected = bool(cur.fetchone())
+        con.close()
+        return jsonify({"has_credentials": connected, "connected": connected})
+    except Exception as e:
+        print(f"[STATUS ERROR] newrelic: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 # OPENAI
 @app.route("/connectors/openai/save_app", methods=["POST"])
@@ -19963,17 +20214,21 @@ def openai_sync():
  
 @app.route("/api/status/openai")
 def status_openai():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='openai' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='openai' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='openai' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='openai' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] openai: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/openai/job/get")
 def openai_job_get():
@@ -20038,17 +20293,21 @@ def huggingface_sync():
  
 @app.route("/api/status/huggingface")
 def status_huggingface():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='huggingface' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='huggingface' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='huggingface' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='huggingface' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] huggingface: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/huggingface/job/get")
 def huggingface_job_get():
@@ -20113,17 +20372,21 @@ def airflow_sync():
  
 @app.route("/api/status/airflow")
 def status_airflow():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='airflow' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='airflow' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='airflow' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='airflow' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] airflow: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/airflow/job/get")
 def airflow_job_get():
@@ -20188,17 +20451,21 @@ def kafka_sync():
  
 @app.route("/api/status/kafka")
 def status_kafka():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='kafka' LIMIT 1", (uid,))
-    cfg_row = fetchone_secure(cur)
-    cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='kafka' LIMIT 1", (uid,))
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT config_json FROM connector_configs WHERE uid=? AND connector='kafka' LIMIT 1", (uid,))
+        cfg_row = fetchone_secure(cur)
+        cur.execute("SELECT enabled FROM google_connections WHERE uid=? AND source='kafka' LIMIT 1", (uid,))
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({"has_credentials": bool(cfg_row), "connected": bool(conn_row and conn_row.get("enabled") == 1)})
+    except Exception as e:
+        print(f"[STATUS ERROR] kafka: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
 @app.route("/connectors/kafka/job/get")
 def kafka_job_get():
@@ -20283,26 +20550,30 @@ def _dbt_sync():
  
 @app.route("/api/status/dbt")
 def _dbt_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='dbt' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='dbt' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='dbt' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='dbt' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] dbt: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/dbt/job/get")
@@ -20396,26 +20667,30 @@ def _typeform_sync():
  
 @app.route("/api/status/typeform")
 def _typeform_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='typeform' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='typeform' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='typeform' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='typeform' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] typeform: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/typeform/job/get")
@@ -20509,26 +20784,30 @@ def _surveymonkey_sync():
  
 @app.route("/api/status/surveymonkey")
 def _surveymonkey_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='surveymonkey' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='surveymonkey' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='surveymonkey' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='surveymonkey' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] surveymonkey: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/surveymonkey/job/get")
@@ -20622,26 +20901,30 @@ def _pinecone_sync():
  
 @app.route("/api/status/pinecone")
 def _pinecone_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='pinecone' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='pinecone' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='pinecone' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='pinecone' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] pinecone: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
  
  
 @app.route("/connectors/pinecone/job/get")
@@ -20734,26 +21017,30 @@ def _bitbucket_sync():
 
 @app.route("/api/status/bitbucket")
 def _bitbucket_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='bitbucket' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='bitbucket' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='bitbucket' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='bitbucket' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] bitbucket: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/bitbucket/job/get")
@@ -20846,26 +21133,30 @@ def _vercel_sync():
 
 @app.route("/api/status/vercel")
 def _vercel_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='vercel' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='vercel' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='vercel' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='vercel' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] vercel: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/vercel/job/get")
@@ -20962,26 +21253,30 @@ def _netlify_sync():
 
 @app.route("/api/status/netlify")
 def _netlify_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='netlify' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='netlify' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='netlify' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='netlify' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] netlify: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/netlify/job/get")
@@ -21078,26 +21373,30 @@ def _linear_sync():
 
 @app.route("/api/status/linear")
 def _linear_status():
-    uid = get_uid()
-    if not uid:
-        return jsonify({"error": "unauthorized"}), 401
-    con = get_db()
-    cur = con.cursor()
-    cur.execute(
-        "SELECT config_json FROM connector_configs WHERE uid=? AND connector='linear' LIMIT 1",
-        (uid,),
-    )
-    cfg_row = fetchone_secure(cur)
-    cur.execute(
-        "SELECT enabled FROM google_connections WHERE uid=? AND source='linear' LIMIT 1",
-        (uid,),
-    )
-    conn_row = fetchone_secure(cur)
-    con.close()
-    return jsonify({
-        "has_credentials": bool(cfg_row),
-        "connected": bool(conn_row and conn_row.get("enabled") == 1),
-    })
+    try:
+        uid = get_uid()
+        if not uid:
+            return jsonify({"error": "unauthorized"}), 401
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "SELECT config_json FROM connector_configs WHERE uid=? AND connector='linear' LIMIT 1",
+            (uid,),
+        )
+        cfg_row = fetchone_secure(cur)
+        cur.execute(
+            "SELECT enabled FROM google_connections WHERE uid=? AND source='linear' LIMIT 1",
+            (uid,),
+        )
+        conn_row = fetchone_secure(cur)
+        con.close()
+        return jsonify({
+            "has_credentials": bool(cfg_row),
+            "connected": bool(conn_row and conn_row.get("enabled") == 1),
+        })
+    except Exception as e:
+        print(f"[STATUS ERROR] linear: {e}", flush=True)
+        return jsonify({"connected": False, "error": "missing credentials or configuration"})
 
 
 @app.route("/connectors/linear/job/get")

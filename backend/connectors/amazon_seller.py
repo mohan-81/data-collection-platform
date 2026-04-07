@@ -11,6 +11,9 @@ from flask import redirect, request, jsonify
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "identity.db")
 
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/connectors/amazon_seller/callback"
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -38,7 +41,7 @@ def connect_amazon_seller():
         
     # Amazon Login with Amazon (LWA) setup
     client_id = row['client_id']
-    redirect_uri = "http://localhost:4000/connectors/amazon_seller/callback"
+    redirect_uri = get_redirect_uri()
     
     # NOTE: In production, you'd use the Amazon marketplace-specific Auth URL
     auth_url = (
@@ -68,7 +71,7 @@ def callback_amazon_seller():
         "code": spapi_oauth_code,
         "client_id": config['client_id'],
         "client_secret": config['client_secret'],
-        "redirect_uri": "http://localhost:4000/connectors/amazon_seller/callback"
+        "redirect_uri": get_redirect_uri()
     }
     
     res = requests.post(token_url, data=payload)

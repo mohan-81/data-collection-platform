@@ -1,6 +1,7 @@
 import sys
 import os
 import datetime
+from urllib.parse import urlparse
 
 # Add project root to PYTHONPATH
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -8,13 +9,15 @@ sys.path.append(BASE_DIR)
 import requests
 import sqlite3
 from functools import wraps
+from backend import api_server as backend_api
 
 from flask import (
     Flask,
     render_template,
     redirect,
     jsonify,
-    request
+    request,
+    make_response
 )
 
 # ================= CORE SETUP =================
@@ -27,6 +30,59 @@ app = Flask(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "..", "identity.db")
+APP_PORT = int(os.environ.get("PORT", "7860"))
+BACKEND_ENDPOINT_PREFIX = "__backend__."
+LOCAL_API_HOSTS = {"localhost:7860", "127.0.0.1:7860"}
+
+
+def _normalized_methods(rule):
+    return frozenset(
+        method for method in rule.methods
+        if method not in {"HEAD", "OPTIONS"}
+    )
+
+
+def _merge_backend_hooks(target_app, source_app):
+    for func in source_app.before_request_funcs.get(None, []):
+        target_app.before_request(func)
+
+    for func in source_app.after_request_funcs.get(None, []):
+        target_app.after_request(func)
+
+    for func in source_app.teardown_request_funcs.get(None, []):
+        target_app.teardown_request(func)
+
+
+def _existing_rule_signatures(flask_app):
+    return {
+        (rule.rule, _normalized_methods(rule))
+        for rule in flask_app.url_map.iter_rules()
+        if rule.endpoint != "static"
+    }
+
+
+def _merge_backend_routes(target_app, source_app):
+    existing_signatures = _existing_rule_signatures(target_app)
+
+    for rule in source_app.url_map.iter_rules():
+        if rule.endpoint == "static":
+            continue
+
+        signature = (rule.rule, _normalized_methods(rule))
+        if signature in existing_signatures:
+            continue
+
+        endpoint = f"{BACKEND_ENDPOINT_PREFIX}{rule.endpoint}"
+        target_app.add_url_rule(
+            rule.rule,
+            endpoint=endpoint,
+            view_func=source_app.view_functions[rule.endpoint],
+            defaults=rule.defaults,
+            methods=sorted(rule.methods),
+            provide_automatic_options=rule.provide_automatic_options,
+        )
+_merge_backend_hooks(app, backend_api.app)
+_merge_backend_routes(app, backend_api.app)
 
 # ================= AUTO COOKIE FORWARD =================
 
@@ -34,23 +90,109 @@ _original_get = requests.get
 _original_post = requests.post
 
 
+class _LocalResponse:
+    def __init__(self, response):
+        self._response = response
+        self.status_code = response.status_code
+        self.headers = list(response.headers.items())  # List of pairs to capture duplicates like Set-Cookie
+        self.text = response.get_data(as_text=True)
+        self.content = response.get_data()
+
+    def json(self):
+        return self._response.get_json()
+
+
+def finalize_response(r):
+    try:
+        data = r.json()
+        resp = make_response(jsonify(data), r.status_code)
+    except Exception:
+        resp = make_response(r.text, r.status_code)
+
+    print(f"[LOGIN FLOW] Response from backend: {r.status_code}", flush=True)
+    for key, value in r.headers:
+        if key.lower() == "set-cookie":
+            print(f"[LOGIN FLOW] Set-Cookie from backend: {value}", flush=True)
+            resp.headers.add("Set-Cookie", value)
+        elif key.lower() in ("content-type", "location"):
+            resp.headers[key] = value
+
+    return resp
+
+
+def _should_dispatch_locally(url):
+    if url.startswith("/"):
+        return True
+    parsed = urlparse(url)
+    return parsed.scheme in {"http", "https"} and parsed.netloc in LOCAL_API_HOSTS
+
+
+def _dispatch_local_request(method, url, *args, **kwargs):
+    parsed = urlparse(url)
+    query_string = kwargs.pop("params", None)
+    json_body = kwargs.pop("json", None)
+    data = kwargs.pop("data", None)
+    headers = dict(kwargs.pop("headers", {}) or {})
+    cookies = kwargs.pop("cookies", None)
+
+    kwargs.pop("timeout", None)
+    kwargs.pop("allow_redirects", None)
+
+    if cookies is None:
+        try:
+            cookies = request.cookies
+            print(f"[COOKIE RECEIVED] Local dispatch for {url}", flush=True)
+            print(f"[COOKIE RECEIVED] Incoming cookies: {cookies}", flush=True)
+        except RuntimeError:
+            cookies = {}
+
+    path = parsed.path or "/"
+    if parsed.query and query_string is None:
+        query_string = parsed.query
+
+    with backend_api.app.test_client() as client:
+        # Pass cookies into the test_client context
+        if cookies:
+            for k, v in cookies.items():
+                # We use localhost as default domain for internal dispatch
+                client.set_cookie(k, v)
+        
+        # Ensure Cookie header is also set for absolute safety
+        if cookies and not headers.get("Cookie"):
+            headers["Cookie"] = "; ".join(f"{k}={v}" for k, v in cookies.items())
+
+        response = client.open(
+            path=path,
+            method=method.upper(),
+            query_string=query_string,
+            headers=headers,
+            json=json_body,
+            data=data,
+        )
+
+    print(f"[COOKIE FORWARDED] Outgoing response headers from local dispatch: {response.headers}", flush=True)
+    return _LocalResponse(response)
+
+
 def forwarded_get(url, *args, **kwargs):
-    if "localhost:4000" in url:
+    if _should_dispatch_locally(url):
         kwargs.setdefault("cookies", request.cookies)
         kwargs.setdefault(
             "headers",
             {"Cookie": request.headers.get("Cookie", "")}
         )
+        return _dispatch_local_request("GET", url, *args, **kwargs)
     return _original_get(url, *args, **kwargs)
 
 
 def forwarded_post(url, *args, **kwargs):
-    if "localhost:4000" in url:
+    if _should_dispatch_locally(url):
         kwargs.setdefault("cookies", request.cookies)
         kwargs.setdefault(
             "headers",
             {"Cookie": request.headers.get("Cookie", "")}
         )
+        return _dispatch_local_request("POST", url, *args, **kwargs)
     return _original_post(url, *args, **kwargs)
 
 
@@ -63,7 +205,7 @@ requests.post = forwarded_post
 def get_google_status(source):
 
     r = requests.get(
-        f"http://localhost:4000/api/status/{source}",
+        f"/api/status/{source}",
         cookies=request.cookies
     )
 
@@ -74,20 +216,9 @@ def get_google_status(source):
         return False
     
 def logged_in():
-    try:
-        if "segmento_session" not in request.cookies:
-            return False
-
-        r = requests.get(
-            "http://localhost:4000/auth/me",
-            cookies=request.cookies,
-            timeout=2
-        )
-
-        return r.status_code == 200
-
-    except:
-        return False
+    is_logged = "segmento_session" in request.cookies
+    print(f"[AUTH CHECK] Status: {'Logged In' if is_logged else 'Logged Out'}", flush=True)
+    return is_logged
     
 def require_login(f):
     @wraps(f)
@@ -129,7 +260,7 @@ def inject_auth_status():
 def ui_logout():
 
     requests.get(
-        "http://localhost:4000/auth/logout",
+        "/auth/logout",
         cookies=request.cookies
     )
 
@@ -159,7 +290,7 @@ def connectors():
 
 # ================= PROXY UTILITIES =================
 
-IDENTITY = "http://localhost:4000"
+IDENTITY = ""
 
 
 def proxy_get(path, **kwargs):
@@ -203,7 +334,7 @@ def connector_job_save(source):
 @require_login
 def ui_recover_connector_data(source):
     r = proxy_post(f"/connectors/{source}/recover", json=request.get_json(silent=True) or {})
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= CONNECTOR ROUTES =================
 # ================= SOCIAL INSIDER ========================
@@ -218,49 +349,49 @@ def socialinsider_page():
 @require_login
 def socialinsider_connect():
     r = proxy_get("/connectors/socialinsider/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/sync")
 @require_login
 def socialinsider_sync():
     r = connector_sync("socialinsider")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/status")
 @require_login
 def socialinsider_status_proxy():
     r = connector_status("socialinsider")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/job/get")
 @require_login
 def socialinsider_job_get_proxy():
     r = connector_job_get("socialinsider")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/job/save", methods=["POST"])
 @require_login
 def socialinsider_job_save_proxy():
     r = connector_job_save("socialinsider")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/save_app", methods=["POST"])
 @require_login
 def socialinsider_save_app_proxy():
     r = proxy_post("/connectors/socialinsider/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/socialinsider/disconnect")
 @require_login
 def socialinsider_disconnect():
     r = connector_disconnect("socialinsider")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= STATUS APIs =================
 
@@ -268,12 +399,12 @@ def socialinsider_disconnect():
 def generic_google_status(source):
 
     r = requests.get(
-        f"http://localhost:4000/api/status/{source}",
+        f"/api/status/{source}",
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "error": r.text,
@@ -284,30 +415,30 @@ def generic_google_status(source):
 def ui_save_job(source):
 
     r = requests.post(
-        f"http://localhost:4000/google/job/save/{source}",
+        f"/google/job/save/{source}",
         json=request.json
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/<source>/job/get")
 def ui_get_job(source):
 
     r = requests.get(
-        f"http://localhost:4000/google/job/get/{source}"
+        f"/google/job/get/{source}"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/<source>/disconnect")
 def ui_disconnect(source):
 
     r = requests.get(
-        f"http://localhost:4000/connectors/{source}/disconnect",
+        f"/connectors/{source}/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= GITHUB ========================
 
@@ -319,7 +450,7 @@ def github_page():
 
 @app.route("/connectors/github/connect")
 def github_connect():
-    return redirect("http://localhost:4000/github/connect")
+    return redirect(request.host_url.rstrip("/") + "/github/connect")
 
 @app.route("/connectors/github/sync")
 def github_sync():
@@ -374,12 +505,12 @@ def github_job_save_proxy():
 def github_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/github/save_app",
+        "/connectors/github/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= INSTAGRAM ========================
 
@@ -390,7 +521,7 @@ def instagram_page():
 
 @app.route("/connectors/instagram/connect")
 def instagram_connect():
-    return redirect("http://localhost:4000/instagram/connect")
+    return redirect(request.host_url.rstrip("/") + "/instagram/connect")
 
 @app.route("/connectors/instagram/sync")
 def instagram_sync():
@@ -412,12 +543,12 @@ def instagram_job_save_proxy():
 def instagram_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/instagram/save_app",
+        "/connectors/instagram/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/instagram/disconnect")
 def instagram_disconnect():
@@ -433,7 +564,7 @@ def tiktok_page():
 
 @app.route("/connectors/tiktok/connect")
 def tiktok_connect():
-    return redirect("http://localhost:4000/connectors/tiktok/connect")
+    return redirect(request.host_url.rstrip("/") + "/connectors/tiktok/connect")
 
 @app.route("/connectors/tiktok/sync")
 def tiktok_sync():
@@ -454,11 +585,11 @@ def tiktok_job_save_proxy():
 @app.route("/connectors/tiktok/save_app", methods=["POST"])
 def tiktok_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/tiktok/save_app",
+        "/connectors/tiktok/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/tiktok/disconnect")
 def tiktok_disconnect():
@@ -475,7 +606,7 @@ def taboola_page():
 @app.route("/connectors/taboola/connect")
 def taboola_connect():
     r = proxy_get("/connectors/taboola/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/taboola/sync")
 def taboola_sync():
@@ -496,11 +627,11 @@ def taboola_job_save_proxy():
 @app.route("/connectors/taboola/save_app", methods=["POST"])
 def taboola_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/taboola/save_app",
+        "/connectors/taboola/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/taboola/disconnect")
 def taboola_disconnect():
@@ -517,7 +648,7 @@ def outbrain_page():
 @app.route("/connectors/outbrain/connect")
 def outbrain_connect():
     r = proxy_get("/connectors/outbrain/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/outbrain/sync")
 def outbrain_sync():
@@ -538,11 +669,11 @@ def outbrain_job_save_proxy():
 @app.route("/connectors/outbrain/save_app", methods=["POST"])
 def outbrain_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/outbrain/save_app",
+        "/connectors/outbrain/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/outbrain/disconnect")
 def outbrain_disconnect():
@@ -559,7 +690,7 @@ def similarweb_page():
 @app.route("/connectors/similarweb/connect")
 def similarweb_connect():
     r = proxy_get("/connectors/similarweb/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/similarweb/sync")
 def similarweb_sync():
@@ -580,11 +711,11 @@ def similarweb_job_save_proxy():
 @app.route("/connectors/similarweb/save_app", methods=["POST"])
 def similarweb_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/similarweb/save_app",
+        "/connectors/similarweb/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/similarweb/disconnect")
 def similarweb_disconnect():
@@ -600,7 +731,7 @@ def x_page():
 
 @app.route("/connectors/x/connect")
 def x_connect():
-    return redirect("http://localhost:4000/connectors/x/connect")
+    return redirect(request.host_url.rstrip("/") + "/connectors/x/connect")
 
 @app.route("/connectors/x/sync")
 def x_sync():
@@ -621,11 +752,11 @@ def x_job_save_proxy():
 @app.route("/connectors/x/save_app", methods=["POST"])
 def x_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/x/save_app",
+        "/connectors/x/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/x/disconnect")
 def x_disconnect():
@@ -641,7 +772,7 @@ def linkedin_page():
 
 @app.route("/connectors/linkedin/connect")
 def linkedin_connect():
-    return redirect("http://localhost:4000/connectors/linkedin/connect")
+    return redirect(request.host_url.rstrip("/") + "/connectors/linkedin/connect")
 
 @app.route("/connectors/linkedin/sync")
 def linkedin_sync():
@@ -662,11 +793,11 @@ def linkedin_job_save_proxy():
 @app.route("/connectors/linkedin/save_app", methods=["POST"])
 def linkedin_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/linkedin/save_app",
+        "/connectors/linkedin/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/linkedin/disconnect")
 def linkedin_disconnect():
@@ -683,7 +814,7 @@ def slack_page():
 @app.route("/connectors/slack/connect")
 def slack_connect():
     r = proxy_get("/connectors/slack/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/slack/sync")
 def slack_sync():
@@ -699,7 +830,7 @@ def slack_job_get_proxy():
     r = connector_job_get("slack")
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({
             "error": "invalid_response",
@@ -714,11 +845,11 @@ def slack_job_save_proxy():
 @app.route("/connectors/slack/save_app", methods=["POST"])
 def slack_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/slack/save_app",
+        "/connectors/slack/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/slack/disconnect")
 def slack_disconnect():
@@ -739,27 +870,27 @@ def whatsapp_connect():
 @app.route("/connectors/whatsapp/disconnect")
 def whatsapp_disconnect():
     r = requests.get(
-        "http://localhost:4000/connectors/whatsapp/disconnect",
+        "/connectors/whatsapp/disconnect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/whatsapp/save_app", methods=["POST"])
 def whatsapp_save_config_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/whatsapp/save_app",
+        "/connectors/whatsapp/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/whatsapp/sync")
 def whatsapp_sync():
     r = requests.get(
-        "http://localhost:4000/connectors/whatsapp/sync",
+        "/connectors/whatsapp/sync",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= REDDIT ========================
 
@@ -772,42 +903,42 @@ def reddit_page():
 def reddit_connect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/reddit/connect",
+        "/connectors/reddit/connect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/reddit/disconnect")
 def reddit_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/reddit/disconnect",
+        "/connectors/reddit/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/reddit/save_config", methods=["POST"])
 def reddit_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/reddit/save_config",
+        "/connectors/reddit/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/reddit/sync")
 def reddit_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/reddit/sync",
+        "/connectors/reddit/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ---------- Reddit Dashboard ----------
 
@@ -819,32 +950,32 @@ def reddit_dashboard():
 def reddit_status():
 
     r = requests.get(
-        "http://localhost:4000/api/status/reddit",
+        "/api/status/reddit",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/reddit/job/get")
 def reddit_job_get():
 
     r = requests.get(
-        "http://localhost:4000/connectors/reddit/job/get",
+        "/connectors/reddit/job/get",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/reddit/job/save", methods=["POST"])
 def reddit_job_save():
 
     r = requests.post(
-        "http://localhost:4000/connectors/reddit/job/save",
+        "/connectors/reddit/job/save",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ---------- Reddit Data API ----------
 
@@ -884,7 +1015,7 @@ def medium_page():
 def medium_connect_proxy():
 
     requests.get(
-        "http://localhost:4000/connectors/medium/connect",
+        "/connectors/medium/connect",
         cookies=request.cookies
     )
 
@@ -894,13 +1025,13 @@ def medium_connect_proxy():
 def medium_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/medium/save_config",
+        "/connectors/medium/save_config",
         json=request.json,
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "error": "identity_server_error",
@@ -911,11 +1042,11 @@ def medium_save_config_proxy():
 def medium_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/medium/sync",
+        "/connectors/medium/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/medium")
 def medium_dashboard():
@@ -927,11 +1058,11 @@ def medium_dashboard():
 def medium_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/medium",
+        "/api/status/medium",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/medium/data/posts")
 def medium_data():
@@ -959,48 +1090,48 @@ def gitlab_page():
 def gitlab_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/gitlab/save_app",
+        "/connectors/gitlab/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/gitlab")
 def gitlab_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/gitlab",
+        "/api/status/gitlab",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/gitlab/job/get")
 def gitlab_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/gitlab/job/get",
+        "/connectors/gitlab/job/get",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/gitlab/job/save", methods=["POST"])
 def gitlab_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/gitlab/job/save",
+        "/connectors/gitlab/job/save",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/gitlab/connect")
 def gitlab_connect():
-    return redirect("http://localhost:4000/gitlab/connect")
+    return redirect("/gitlab/connect")
 
 
 @app.route("/connectors/gitlab/sync")
@@ -1008,12 +1139,12 @@ def gitlab_sync():
 
     try:
         r = requests.get(
-            "http://localhost:4000/connectors/gitlab/sync",
+            "/connectors/gitlab/sync",
             cookies=request.cookies,
             timeout=300
         )
 
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -1062,17 +1193,17 @@ def devto_page():
 def devto_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/devto",
+        "/api/status/devto",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/devto/connect")
 def devto_connect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/devto/connect",
+        "/connectors/devto/connect",
         cookies=request.cookies
     )
 
@@ -1083,22 +1214,22 @@ def devto_connect():
 def devto_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/devto/disconnect",
+        "/connectors/devto/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/devto/sync")
 def devto_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/devto/sync",
+        "/connectors/devto/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/dashboard/devto")
@@ -1109,23 +1240,23 @@ def devto_dashboard():
 def devto_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/devto/job/get",
+        "/connectors/devto/job/get",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/devto/job/save", methods=["POST"])
 def devto_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/devto/job/save",
+        "/connectors/devto/job/save",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= STACKOVERFLOW =================
 
@@ -1138,19 +1269,19 @@ def stackoverflow_page():
 def stackoverflow_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/stackoverflow/save_config",
+        "/connectors/stackoverflow/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # CONNECT
 @app.route("/connectors/stackoverflow/connect")
 def stackoverflow_connect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/stackoverflow/connect",
+        "/connectors/stackoverflow/connect",
         cookies=request.cookies
     )
 
@@ -1165,11 +1296,11 @@ def stackoverflow_connect():
 def stackoverflow_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/stackoverflow/disconnect",
+        "/connectors/stackoverflow/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 # MANUAL SYNC
@@ -1177,11 +1308,11 @@ def stackoverflow_disconnect():
 def stackoverflow_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/stackoverflow/sync",
+        "/connectors/stackoverflow/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/dashboard/stackoverflow")
@@ -1195,11 +1326,11 @@ def stackoverflow_dashboard():
 def stackoverflow_status():
 
     r = requests.get(
-        "http://localhost:4000/api/status/stackoverflow",
+        "/api/status/stackoverflow",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 # ---------- DATA APIs ----------
@@ -1270,13 +1401,13 @@ def hackernews_page():
 
 @app.route("/connectors/hackernews/connect")
 def hackernews_connect():
-    requests.get("http://localhost:4000/connectors/hackernews/connect")
+    requests.get("/connectors/hackernews/connect")
     return redirect("/connectors/hackernews")
 
 @app.route("/connectors/hackernews/sync")
 def hackernews_sync():
-    r = requests.get("http://localhost:4000/connectors/hackernews/sync")
-    return jsonify(r.json())
+    r = requests.get("/connectors/hackernews/sync")
+    return finalize_response(r)
 
 @app.route("/dashboard/hackernews")
 def hackernews_dashboard():
@@ -1331,13 +1462,13 @@ def nvd_page():
 def nvd_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/nvd/save_config",
+        "/connectors/nvd/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "error": "identity_server returned non-json",
@@ -1350,7 +1481,7 @@ def nvd_save_config_proxy():
 def nvd_connect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/nvd/connect",
+        "/connectors/nvd/connect",
         cookies=request.cookies
     )
 
@@ -1364,11 +1495,11 @@ def nvd_connect():
 def nvd_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/nvd/sync",
+        "/connectors/nvd/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/nvd")
 def nvd_dashboard():
@@ -1380,9 +1511,9 @@ def nvd_dashboard():
 @app.route("/api/status/nvd")
 def nvd_status():
 
-    r = requests.get("http://localhost:4000/api/status/nvd")
+    r = requests.get("/api/status/nvd")
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ---------- DATA API ----------
 
@@ -1416,18 +1547,18 @@ def discord_page():
 def discord_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/discord/save_config",
+        "/connectors/discord/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/discord/connect")
 def discord_connect_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/discord/connect"
+        "/connectors/discord/connect"
     )
 
     if r.status_code != 200:
@@ -1439,31 +1570,31 @@ def discord_connect_proxy():
 def discord_disconnect_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/discord/disconnect",
+        "/connectors/discord/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/discord/sync")
 def discord_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/discord/sync",
+        "/connectors/discord/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/status/discord")
 def discord_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/discord",
+        "/api/status/discord",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= TELEGRAM =================
 
@@ -1476,7 +1607,7 @@ def telegram_page():
 def telegram_connect_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/telegram/connect",
+        "/connectors/telegram/connect",
         cookies=request.cookies
     )
 
@@ -1489,20 +1620,20 @@ def telegram_connect_proxy():
 def telegram_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/telegram/disconnect"
+        "/connectors/telegram/disconnect"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/telegram/sync")
 def telegram_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/telegram/sync"
+        "/connectors/telegram/sync"
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify({"error": "sync failed"}), 500
 
@@ -1517,11 +1648,11 @@ def telegram_dashboard():
 def telegram_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/telegram",
+        "/api/status/telegram",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DATA APIs --------
 
@@ -1545,7 +1676,7 @@ def telegram_channels():
 def telegram_messages(cid):
 
     # Trigger sync before fetch
-    requests.get("http://localhost:4000/connectors/telegram/sync")
+    requests.get("/connectors/telegram/sync")
 
     conn = sqlite3.connect("../identity.db")
     conn.row_factory = sqlite3.Row
@@ -1569,12 +1700,12 @@ def telegram_messages(cid):
 def telegram_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/telegram/save_config",
+        "/connectors/telegram/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= TUMBLR =================
 
@@ -1587,7 +1718,7 @@ def tumblr_page():
 def tumblr_connect_proxy():
 
     r=requests.get(
-        "http://localhost:4000/connectors/tumblr/connect",
+        "/connectors/tumblr/connect",
         cookies=request.cookies
     )
 
@@ -1597,13 +1728,13 @@ def tumblr_connect_proxy():
 def tumblr_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/tumblr/save_config",
+        "/connectors/tumblr/save_config",
         json=request.json,
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "error": "identity_server error",
@@ -1614,11 +1745,11 @@ def tumblr_save_config_proxy():
 def tumblr_sync_proxy():
 
     r=requests.get(
-        "http://localhost:4000/connectors/tumblr/sync",
+        "/connectors/tumblr/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/tumblr")
 def tumblr_dashboard():
@@ -1628,11 +1759,11 @@ def tumblr_dashboard():
 def tumblr_disconnect_proxy():
 
     r=requests.get(
-        "http://localhost:4000/connectors/tumblr/disconnect",
+        "/connectors/tumblr/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- STATUS --------
 
@@ -1640,11 +1771,11 @@ def tumblr_disconnect_proxy():
 def tumblr_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/tumblr",
+        "/api/status/tumblr",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DATA APIs --------
 
@@ -1695,7 +1826,7 @@ def mastodon_page():
 def mastodon_connect_proxy():
 
     requests.get(
-        "http://localhost:4000/connectors/mastodon/connect",
+        "/connectors/mastodon/connect",
         cookies=request.cookies
     )
 
@@ -1704,18 +1835,18 @@ def mastodon_connect_proxy():
 @app.route("/connectors/mastodon/disconnect")
 def mastodon_disconnect():
     r = requests.get(
-        "http://localhost:4000/connectors/mastodon/disconnect",
+        "/connectors/mastodon/disconnect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/mastodon/sync")
 def mastodon_sync():
     r = requests.get(
-        "http://localhost:4000/connectors/mastodon/sync",
+        "/connectors/mastodon/sync",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/mastodon")
 def mastodon_dashboard():
@@ -1728,12 +1859,12 @@ def mastodon_dashboard():
 def mastodon_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/mastodon",
+        "/api/status/mastodon",
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "error": "identity_server failure",
@@ -1785,12 +1916,12 @@ def mastodon_tags():
 def mastodon_save_config_proxy():
 
     r=requests.post(
-        "http://localhost:4000/connectors/mastodon/save_config",
+        "/connectors/mastodon/save_config",
         json=request.json,
         cookies=request.cookies
     )
 
-    return jsonify(r.json()),r.status_code
+    return finalize_response(r)
 
 # ================= LEMMY =================
 
@@ -1803,7 +1934,7 @@ def lemmy_page():
 def lemmy_connect_proxy():
 
     requests.get(
-        "http://localhost:4000/connectors/lemmy/connect",
+        "/connectors/lemmy/connect",
         cookies=request.cookies
     )
 
@@ -1813,11 +1944,11 @@ def lemmy_connect_proxy():
 def lemmy_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/lemmy/sync",
+        "/connectors/lemmy/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/lemmy")
 def lemmy_dashboard():
@@ -1830,12 +1961,12 @@ def lemmy_dashboard():
 def lemmy_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/lemmy",
+        "/api/status/lemmy",
         cookies=request.cookies
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify({
             "connected": False,
@@ -1907,12 +2038,12 @@ def lemmy_users():
 def lemmy_save_config_proxy():
 
     r=requests.post(
-        "http://localhost:4000/connectors/lemmy/save_config",
+        "/connectors/lemmy/save_config",
         json=request.json,
         cookies=request.cookies
     )
 
-    return jsonify(r.json()),r.status_code
+    return finalize_response(r)
 
 # ================= PINTEREST =================
 
@@ -1924,27 +2055,27 @@ def pinterest_page():
 
 @app.route("/connectors/pinterest/connect")
 def pinterest_connect():
-    return redirect("http://localhost:4000/connectors/pinterest/connect")
+    return redirect("/connectors/pinterest/connect")
 
 @app.route("/connectors/pinterest/sync")
 def pinterest_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/pinterest/sync",
+        "/connectors/pinterest/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/pinterest/disconnect")
 def pinterest_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/pinterest/disconnect",
+        "/connectors/pinterest/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/pinterest")
 def pinterest_dashboard():
@@ -1957,11 +2088,11 @@ def pinterest_dashboard():
 def pinterest_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/pinterest",
+        "/api/status/pinterest",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DATA --------
 
@@ -2006,12 +2137,12 @@ def pinterest_pins():
 def pinterest_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/pinterest/save_app",
+        "/connectors/pinterest/save_app",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/pinterest/callback")
@@ -2029,7 +2160,7 @@ def pinterest_callback_proxy():
         return "Authorization failed: no code returned from Pinterest.", 400
 
     r = requests.get(
-        f"http://localhost:4000/pinterest/callback?code={code}&state={state}",
+        f"/pinterest/callback?code={code}&state={state}",
         cookies=request.cookies,
         allow_redirects=False
     )
@@ -2052,7 +2183,7 @@ def twitch_page():
 def twitch_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/twitch/connect",
+        "/connectors/twitch/connect",
         cookies=request.cookies
     )
 
@@ -2061,38 +2192,38 @@ def twitch_connect():
 
 @app.route("/connectors/twitch/disconnect")
 def twitch_disconnect():
-    requests.get("http://localhost:4000/connectors/twitch/disconnect")
+    requests.get("/connectors/twitch/disconnect")
     return redirect("/connectors/twitch")
 
 @app.route("/connectors/twitch/sync")
 def twitch_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/twitch/sync"
+        "/connectors/twitch/sync"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/status/twitch")
 def twitch_status():
 
     r=requests.get(
-        "http://localhost:4000/api/status/twitch",
+        "/api/status/twitch",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/twitch/save_config",methods=["POST"])
 def twitch_save_config_proxy():
 
     r=requests.post(
-        "http://localhost:4000/connectors/twitch/save_config",
+        "/connectors/twitch/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()),r.status_code
+    return finalize_response(r)
 
 # ================= PEERTUBE =================
 
@@ -2105,7 +2236,7 @@ def peertube_page():
 def peertube_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/peertube/connect",
+        "/connectors/peertube/connect",
         cookies=request.cookies
     )
 
@@ -2115,21 +2246,21 @@ def peertube_connect():
 def peertube_disconnect_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/peertube/disconnect",
+        "/connectors/peertube/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/peertube/sync")
 def peertube_sync_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/peertube/sync",
+        "/connectors/peertube/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/dashboard/peertube")
@@ -2143,11 +2274,11 @@ def peertube_dashboard():
 def peertube_status():
 
     r=requests.get(
-        "http://localhost:4000/api/status/peertube",
+        "/api/status/peertube",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DATA --------
 
@@ -2192,12 +2323,12 @@ def peertube_channels():
 def peertube_save_proxy():
 
     r=requests.post(
-        "http://localhost:4000/connectors/peertube/save_config",
+        "/connectors/peertube/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()),r.status_code
+    return finalize_response(r)
 
 # ================= OPENSTREETMAP =================
 
@@ -2210,7 +2341,7 @@ def osm_page():
 def ui_osm_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/openstreetmap/connect",
+        "/connectors/openstreetmap/connect",
         cookies=request.cookies
     )
 
@@ -2220,7 +2351,7 @@ def ui_osm_connect():
 def ui_osm_disconnect():
 
     requests.get(
-        "http://localhost:4000/connectors/openstreetmap/disconnect",
+        "/connectors/openstreetmap/disconnect",
         cookies=request.cookies
     )
 
@@ -2230,11 +2361,11 @@ def ui_osm_disconnect():
 def ui_osm_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/openstreetmap/sync",
+        "/connectors/openstreetmap/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/openstreetmap")
 def osm_dashboard():
@@ -2247,11 +2378,11 @@ def osm_dashboard():
 def osm_status_proxy():
 
     r = requests.get(
-        "http://localhost:4000/api/status/openstreetmap",
+        "/api/status/openstreetmap",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DATA --------
 
@@ -2305,7 +2436,7 @@ def wikipedia_page():
 def ui_wikipedia_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/wikipedia/connect",
+        "/connectors/wikipedia/connect",
         cookies=request.cookies
     )
 
@@ -2317,7 +2448,7 @@ def ui_wikipedia_connect():
 def ui_wikipedia_disconnect():
 
     requests.get(
-        "http://localhost:4000/connectors/wikipedia/disconnect",
+        "/connectors/wikipedia/disconnect",
         cookies=request.cookies
     )
 
@@ -2329,11 +2460,11 @@ def ui_wikipedia_disconnect():
 def ui_wikipedia_sync():
 
     r=requests.get(
-        "http://localhost:4000/connectors/wikipedia/sync",
+        "/connectors/wikipedia/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- STATUS (Unified Pattern) --------
 
@@ -2341,11 +2472,11 @@ def ui_wikipedia_sync():
 def wikipedia_status_proxy():
 
     r=requests.get(
-        "http://localhost:4000/api/status/wikipedia",
+        "/api/status/wikipedia",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DASHBOARD --------
 
@@ -2426,7 +2557,7 @@ def producthunt_page():
 def ui_producthunt_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/producthunt/connect",
+        "/connectors/producthunt/connect",
         cookies=request.cookies
     )
 
@@ -2438,11 +2569,11 @@ def ui_producthunt_connect():
 def ui_producthunt_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/producthunt/disconnect",
+        "/connectors/producthunt/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # -------- SYNC --------
@@ -2451,11 +2582,11 @@ def ui_producthunt_disconnect():
 def ui_producthunt_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/producthunt/sync",
+        "/connectors/producthunt/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # -------- STATUS (STANDARDIZED) --------
@@ -2464,11 +2595,11 @@ def ui_producthunt_sync():
 def ui_producthunt_status():
 
     r=requests.get(
-        "http://localhost:4000/api/status/producthunt",
+        "/api/status/producthunt",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # -------- DASHBOARD --------
 
@@ -2483,33 +2614,33 @@ def producthunt_dashboard():
 def ui_producthunt_posts():
 
     r = requests.get(
-        "http://localhost:4000/producthunt/data/posts",
+        "/producthunt/data/posts",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/api/producthunt/topics")
 def ui_producthunt_topics():
 
     r = requests.get(
-        "http://localhost:4000/producthunt/data/topics",
+        "/producthunt/data/topics",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/producthunt/save_config",methods=["POST"])
 def ui_producthunt_save():
 
     r=requests.post(
-        "http://localhost:4000/connectors/producthunt/save_config",
+        "/connectors/producthunt/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= DISCOURSE =================
 
@@ -2522,7 +2653,7 @@ def discourse_page():
 def ui_discourse_connect():
 
     requests.get(
-        "http://localhost:4000/connectors/discourse/connect",
+        "/connectors/discourse/connect",
         cookies=request.cookies
     )
 
@@ -2532,32 +2663,32 @@ def ui_discourse_connect():
 def discourse_status():
 
     r=requests.get(
-        "http://localhost:4000/api/status/discourse",
+        "/api/status/discourse",
         cookies=request.cookies
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/discourse/disconnect")
 def ui_discourse_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/discourse/disconnect",
+        "/connectors/discourse/disconnect",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/discourse/sync")
 def ui_discourse_sync():
 
     r = requests.get(
-        "http://localhost:4000/connectors/discourse/sync",
+        "/connectors/discourse/sync",
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/dashboard/discourse")
 def discourse_dashboard():
@@ -2567,14 +2698,14 @@ def discourse_dashboard():
 def ui_discourse_topics():
 
     r = requests.get(
-        "http://127.0.0.1:4000/discourse/data/topics",
+        "/discourse/data/topics",
         headers={
             "Cookie": request.headers.get("Cookie", "")
         }
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify([])
 
@@ -2583,14 +2714,14 @@ def ui_discourse_topics():
 def ui_discourse_categories():
 
     r = requests.get(
-        "http://127.0.0.1:4000/discourse/data/categories",
+        "/discourse/data/categories",
         headers={
             "Cookie": request.headers.get("Cookie", "")
         }
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify([])
 
@@ -2605,7 +2736,7 @@ def gmail_page():
 # Redirect to Identity Server OAuth
 @app.route("/connectors/gmail/connect")
 def gmail_connect():
-    return redirect("http://localhost:4000/google/connect?source=gmail")
+    return redirect("/google/connect?source=gmail")
 
 
 # After OAuth redirect comes back here
@@ -2619,7 +2750,7 @@ def gmail_callback():
 
     # Forward to identity server
     r = requests.get(
-        f"http://localhost:4000/google/callback?code={code}&source=gmail"
+        f"/google/callback?code={code}&source=gmail"
     )
 
     if r.status_code != 200:
@@ -2634,12 +2765,12 @@ def gmail_callback():
 def gmail_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/gmail",
+        "/google/sync/gmail",
         timeout=120
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify({"status": "error"}), 500
 
@@ -2647,9 +2778,9 @@ def gmail_sync():
 @app.route("/connectors/gmail/disconnect")
 def gmail_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/gmail")
+    r = requests.get("/google/disconnect/gmail")
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/status/gmail")
 def gmail_status():
@@ -2692,11 +2823,11 @@ def gmail_status():
 @app.route("/connectors/gmail/save_app", methods=["POST"])
 def gmail_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/gmail/save_app",
+        "/connectors/gmail/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/gmail/data/<table>")
 def gmail_data(table):
@@ -2739,19 +2870,19 @@ def drive_page():
 
 @app.route("/connectors/drive/connect")
 def drive_connect():
-    return redirect("http://localhost:4000/google/connect?source=drive")
+    return redirect("/google/connect?source=drive")
 
 @app.route("/connectors/drive/sync")
 def drive_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/drive",
+        "/google/sync/drive",
         timeout=120
     )
 
     # Safe handling
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify({
             "status": "error",
@@ -2806,18 +2937,18 @@ def drive_status():
 @app.route("/connectors/drive/save_app", methods=["POST"])
 def drive_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/drive/save_app",
+        "/connectors/drive/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/drive/disconnect")
 def drive_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/drive")
+    r = requests.get("/google/disconnect/drive")
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/drive/data/files")
 def drive_files_data():
@@ -2841,12 +2972,12 @@ def drive_files_data():
 @app.route("/connectors/drive/job/get")
 def drive_job_get_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/drive/job/get",
+        "/connectors/drive/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "exists": False,
@@ -2857,11 +2988,11 @@ def drive_job_get_proxy():
 @app.route("/connectors/drive/job/save", methods=["POST"])
 def drive_job_save_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/drive/job/save",
+        "/connectors/drive/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= GOOGLE CALENDAR ========================
 
@@ -2872,35 +3003,35 @@ def calendar_page():
 
 @app.route("/connectors/calendar/connect")
 def calendar_connect():
-    return redirect("http://localhost:4000/google/connect?source=calendar")
+    return redirect("/google/connect?source=calendar")
 
 @app.route("/connectors/calendar/save_app", methods=["POST"])
 def calendar_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/calendar/save_app",
+        "/connectors/calendar/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/calendar/disconnect")
 def calendar_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/calendar")
+    r = requests.get("/google/disconnect/calendar")
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/calendar/sync")
 def calendar_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/calendar",
+        "/google/sync/calendar",
         timeout=180
     )
 
     # Safe JSON handling
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except Exception as e:
         return jsonify({
             "status": "error",
@@ -2955,20 +3086,20 @@ def calendar_status():
 @app.route("/connectors/calendar/job/get")
 def calendar_job_get_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/calendar/job/get",
+        "/connectors/calendar/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/calendar/job/save", methods=["POST"])
 def calendar_job_save_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/calendar/job/save",
+        "/connectors/calendar/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/calendar/data/<table>")
 def calendar_data(table):
@@ -3011,59 +3142,59 @@ def sheets_page():
 
 @app.route("/connectors/sheets/connect")
 def sheets_connect():
-    return redirect("http://localhost:4000/google/connect?source=sheets")
+    return redirect("/google/connect?source=sheets")
 
 @app.route("/connectors/sheets/save_app", methods=["POST"])
 def sheets_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/sheets/save_app",
+        "/connectors/sheets/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sheets/disconnect")
 def sheets_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/sheets"
+        "/google/disconnect/sheets"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/sheets/job/get")
 def sheets_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/sheets/job/get",
+        "/connectors/sheets/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/sheets/job/save", methods=["POST"])
 def sheets_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/sheets/job/save",
+        "/connectors/sheets/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sheets/sync")
 def sheets_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/sheets",
+        "/google/sync/sheets",
         timeout=120
     )
 
     # Safe JSON handling
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except Exception as e:
         return jsonify({
             "status": "error",
@@ -3146,33 +3277,33 @@ def forms_page():
 def forms_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/forms",
+        "/google/sync/forms",
         timeout=180
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/forms/connect")
 def forms_connect():
-    return redirect("http://localhost:4000/google/connect?source=forms")
+    return redirect("/google/connect?source=forms")
 
 @app.route("/connectors/forms/save_app", methods=["POST"])
 def forms_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/forms/save_app",
+        "/connectors/forms/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/forms/disconnect")
 def forms_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/forms"
+        "/google/disconnect/forms"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/forms")
 def forms_dashboard():
@@ -3220,23 +3351,23 @@ def forms_status():
 def forms_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/forms/job/get",
+        "/connectors/forms/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/forms/job/save", methods=["POST"])
 def forms_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/forms/job/save",
+        "/connectors/forms/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/forms/data/<table>")
 def forms_data(table):
@@ -3280,33 +3411,33 @@ def contacts_page():
 
 @app.route("/connectors/contacts/connect")
 def contacts_connect():
-    return redirect("http://localhost:4000/google/connect?source=contacts")
+    return redirect("/google/connect?source=contacts")
 
 @app.route("/connectors/contacts/save_app", methods=["POST"])
 def contacts_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/contacts/save_app",
+        "/connectors/contacts/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/contacts/disconnect")
 def contacts_disconnect():
     r = requests.get(
-        "http://localhost:4000/google/disconnect/contacts"
+        "/google/disconnect/contacts"
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/contacts/sync")
 def contacts_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/contacts",
+        "/google/sync/contacts",
         timeout=180
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/contacts")
 def contacts_dashboard():
@@ -3373,23 +3504,23 @@ def contacts_data():
 def contacts_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/contacts/job/get",
+        "/connectors/contacts/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/contacts/job/save", methods=["POST"])
 def contacts_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/contacts/job/save",
+        "/connectors/contacts/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= GOOGLE TASKS ========================
 
@@ -3400,36 +3531,36 @@ def tasks_page():
 
 @app.route("/connectors/tasks/connect")
 def tasks_connect():
-    return redirect("http://localhost:4000/google/connect?source=tasks")
+    return redirect("/google/connect?source=tasks")
 
 @app.route("/connectors/tasks/save_app", methods=["POST"])
 def tasks_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/tasks/save_app",
+        "/connectors/tasks/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/tasks/disconnect")
 def tasks_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/tasks"
+        "/google/disconnect/tasks"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/tasks/sync")
 def tasks_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/tasks",
+        "/google/sync/tasks",
         timeout=180
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except Exception as e:
         return jsonify({
             "status": "error",
@@ -3486,23 +3617,23 @@ def tasks_status():
 def tasks_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/tasks/job/get",
+        "/connectors/tasks/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/tasks/job/save", methods=["POST"])
 def tasks_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/tasks/job/save",
+        "/connectors/tasks/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/tasks/data/<table>")
 def tasks_data(table):
@@ -3545,60 +3676,60 @@ def ga4_page():
 
 @app.route("/connectors/ga4/connect")
 def ga4_connect():
-    return redirect("http://localhost:4000/google/connect?source=ga4")
+    return redirect("/google/connect?source=ga4")
 
 @app.route("/connectors/ga4/save_app", methods=["POST"])
 def ga4_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/ga4/save_app",
+        "/connectors/ga4/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/ga4/disconnect")
 def ga4_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/ga4"
+        "/google/disconnect/ga4"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/ga4/job/get")
 def ga4_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/ga4/job/get",
+        "/connectors/ga4/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/ga4/job/save", methods=["POST"])
 def ga4_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/ga4/job/save",
+        "/connectors/ga4/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/ga4/sync")
 def ga4_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/ga4",
+        "/google/sync/ga4",
         timeout=180
     )
 
     try:
-        return jsonify(r.json())
+        return finalize_response(r)
     except:
         return jsonify({
             "status": "error",
@@ -3685,27 +3816,27 @@ def gsc_page():
 
 @app.route("/connectors/search-console/connect")
 def search_console_connect():
-    return redirect("http://localhost:4000/google/connect?source=search-console")
+    return redirect("/google/connect?source=search-console")
 
 @app.route("/connectors/search-console/save_app", methods=["POST"])
 def search_console_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/search-console/save_app",
+        "/connectors/search-console/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/search-console/disconnect")
 def search_console_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/search-console"
+        "/google/disconnect/search-console"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/search-console/sync")
 def ui_gsc_sync():
@@ -3714,14 +3845,14 @@ def ui_gsc_sync():
     sync_type = request.args.get("sync_type", "incremental")
 
     r = requests.get(
-        "http://localhost:4000/connectors/search-console/sync",
+        "/connectors/search-console/sync",
         params={
             "site": site,
             "sync_type": sync_type
         }
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/search-console")
 def gsc_dashboard():
@@ -3789,27 +3920,27 @@ def youtube_page():
 
 @app.route("/connectors/youtube/connect")
 def youtube_connect():
-    return redirect("http://localhost:4000/google/connect?source=youtube")
+    return redirect("/google/connect?source=youtube")
 
 @app.route("/connectors/youtube/save_app", methods=["POST"])
 def youtube_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/youtube/save_app",
+        "/connectors/youtube/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/youtube/disconnect")
 def youtube_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/youtube"
+        "/google/disconnect/youtube"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/api/status/youtube")
 def youtube_status():
@@ -3848,12 +3979,12 @@ def youtube_status():
 def youtube_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/youtube/job/get",
+        "/connectors/youtube/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "exists": False,
@@ -3865,12 +3996,12 @@ def youtube_job_get_proxy():
 def youtube_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/youtube/job/save",
+        "/connectors/youtube/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/youtube/sync")
 def ui_youtube_sync():
@@ -3878,11 +4009,11 @@ def ui_youtube_sync():
     sync_type = request.args.get("sync_type", "incremental")
 
     r = requests.get(
-        "http://localhost:4000/connectors/youtube/sync",
+        "/connectors/youtube/sync",
         params={"sync_type": sync_type}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/youtube")
 def youtube_dashboard():
@@ -3932,9 +4063,9 @@ def trends_page():
 @app.route("/connectors/trends/disconnect")
 def trends_disconnect():
 
-    r = requests.get("http://localhost:4000/google/disconnect/trends")
+    r = requests.get("/google/disconnect/trends")
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/trends/sync")
 def ui_trends_sync():
@@ -3943,23 +4074,23 @@ def ui_trends_sync():
     sync_type = request.args.get("sync_type", "daily")
 
     r = requests.get(
-        "http://localhost:4000/connectors/trends/sync",
+        "/connectors/trends/sync",
         params={
             "keyword": keyword,
             "sync_type": sync_type
         }
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/trends/connect", methods=["POST"])
 def ui_trends_connect():
 
     r = requests.get(
-        "http://localhost:4000/connectors/trends/connect"
+        "/connectors/trends/connect"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/dashboard/trends")
 def trends_dashboard():
@@ -4004,22 +4135,22 @@ def trends_data(table):
 def trends_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/trends/job/get",
+        "/connectors/trends/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/trends/job/save", methods=["POST"])
 def trends_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/trends/job/save",
+        "/connectors/trends/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= GOOGLE NEWS ========================
 
@@ -4032,19 +4163,19 @@ def news_page():
 @app.route("/connectors/news/connect", methods=["POST"])
 def news_connect():
     r = requests.post(
-        "http://localhost:4000/connectors/news/connect",
+        "/connectors/news/connect",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/news/disconnect", methods=["POST"])
 def news_disconnect():
     r = requests.post(
-        "http://localhost:4000/connectors/news/disconnect",
+        "/connectors/news/disconnect",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/news/sync")
@@ -4054,7 +4185,7 @@ def news_sync():
     sync_type = request.args.get("sync_type", "incremental")
 
     r = requests.get(
-        "http://localhost:4000/connectors/news/sync",
+        "/connectors/news/sync",
         params={
             "keyword": keyword,
             "sync_type": sync_type
@@ -4062,35 +4193,35 @@ def news_sync():
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/news/job/get")
 def news_job_get_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/news/job/get",
+        "/connectors/news/job/get",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/news/job/save", methods=["POST"])
 def news_job_save_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/news/job/save",
+        "/connectors/news/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/api/status/news")
 def news_status_proxy():
     r = requests.get(
-        "http://localhost:4000/api/status/news",
+        "/api/status/news",
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= GOOGLE BOOKS ========================
 
@@ -4102,14 +4233,14 @@ def books_page():
 
 @app.route("/connectors/books/connect")
 def ui_books_connect():
-    r = requests.get("http://localhost:4000/connectors/books/connect")
-    return jsonify(r.json())
+    r = requests.get("/connectors/books/connect")
+    return finalize_response(r)
 
 
 @app.route("/connectors/books/disconnect")
 def ui_books_disconnect():
-    r = requests.get("http://localhost:4000/connectors/books/disconnect")
-    return jsonify(r.json())
+    r = requests.get("/connectors/books/disconnect")
+    return finalize_response(r)
 
 
 @app.route("/connectors/books/sync")
@@ -4119,29 +4250,29 @@ def ui_books_sync():
     sync_type = request.args.get("sync_type", "incremental")
 
     r = requests.get(
-        "http://localhost:4000/connectors/books/sync",
+        "/connectors/books/sync",
         params={
             "query": query,
             "sync_type": sync_type
         }
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/books/job/get")
 def ui_books_job_get():
-    r = requests.get("http://localhost:4000/connectors/books/job/get")
-    return jsonify(r.json())
+    r = requests.get("/connectors/books/job/get")
+    return finalize_response(r)
 
 
 @app.route("/connectors/books/job/save", methods=["POST"])
 def ui_books_job_save():
     r = requests.post(
-        "http://localhost:4000/connectors/books/job/save",
+        "/connectors/books/job/save",
         json=request.json
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/dashboard/books")
@@ -4151,8 +4282,8 @@ def books_dashboard():
 
 @app.route("/api/status/books")
 def books_status():
-    r = requests.get("http://localhost:4000/api/status/books")
-    return jsonify(r.json())
+    r = requests.get("/api/status/books")
+    return finalize_response(r)
 
 
 @app.route("/api/books/data")
@@ -4185,57 +4316,57 @@ def webfonts_page():
 @app.route("/connectors/webfonts/connect")
 def webfonts_connect():
     r = requests.get(
-        "http://localhost:4000/connectors/webfonts/connect",
+        "/connectors/webfonts/connect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/webfonts/disconnect")
 def webfonts_disconnect():
     r = requests.get(
-        "http://localhost:4000/connectors/webfonts/disconnect",
+        "/connectors/webfonts/disconnect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/webfonts/sync")
 def webfonts_sync():
     r = requests.get(
-        "http://localhost:4000/connectors/webfonts/sync",
+        "/connectors/webfonts/sync",
         cookies=request.cookies,
         timeout=180
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/webfonts/job/get")
 def webfonts_job_get_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/webfonts/job/get",
+        "/connectors/webfonts/job/get",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/webfonts/job/save", methods=["POST"])
 def webfonts_job_save_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/webfonts/job/save",
+        "/connectors/webfonts/job/save",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/api/status/webfonts")
 def webfonts_status():
     r = requests.get(
-        "http://localhost:4000/api/status/webfonts",
+        "/api/status/webfonts",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/api/webfonts/data")
@@ -4261,12 +4392,12 @@ def webfonts_data():
 def webfonts_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/webfonts/save_config",
+        "/connectors/webfonts/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= GOOGLE PAGESPEED ========================
 
@@ -4292,14 +4423,14 @@ def pagespeed_sync():
     try:
 
         r = requests.post(
-            "http://localhost:4000/google/sync/pagespeed",
+            "/google/sync/pagespeed",
             json={
                 "urls": [url]
             },
             timeout=600
         )
 
-        return jsonify(r.json())
+        return finalize_response(r)
 
     except Exception as e:
 
@@ -4373,47 +4504,47 @@ def pagespeed_data():
 @app.route("/connectors/pagespeed/connect")
 def pagespeed_connect_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/pagespeed/connect",
+        "/connectors/pagespeed/connect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/pagespeed/disconnect")
 def pagespeed_disconnect_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/pagespeed/disconnect",
+        "/connectors/pagespeed/disconnect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 @app.route("/connectors/pagespeed/save_config", methods=["POST"])
 def pagespeed_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/pagespeed/save_config",
+        "/connectors/pagespeed/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/pagespeed/job/get")
 def pagespeed_job_get_proxy():
     r = requests.get(
-        "http://localhost:4000/connectors/pagespeed/job/get",
+        "/connectors/pagespeed/job/get",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/pagespeed/job/save", methods=["POST"])
 def pagespeed_job_save_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/pagespeed/job/save",
+        "/connectors/pagespeed/job/save",
         json=request.get_json(),
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ================= GOOGLE CLOUD STORAGE =================
 
@@ -4427,7 +4558,7 @@ def gcs_page():
 @app.route("/connectors/gcs/connect")
 def gcs_connect():
     return redirect(
-        "http://localhost:4000/google/connect?source=gcs"
+        "/google/connect?source=gcs"
     )
 
 # ---- SYNC ----
@@ -4437,11 +4568,11 @@ def gcs_sync():
     sync_type = request.args.get("sync_type","incremental")
 
     r = requests.get(
-        "http://localhost:4000/google/sync/gcs",
+        "/google/sync/gcs",
         params={"sync_type": sync_type}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 # ---- DASHBOARD ----
 @app.route("/dashboard/gcs")
@@ -4521,40 +4652,40 @@ def gcs_status():
 def gcs_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/gcs"
+        "/google/disconnect/gcs"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/gcs/job/get")
 def gcs_job_get_proxy():
 
     r = requests.get(
-        "http://localhost:4000/connectors/gcs/job/get",
+        "/connectors/gcs/job/get",
         headers={"Cookie": request.headers.get("Cookie","")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/gcs/job/save", methods=["POST"])
 def gcs_job_save_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/gcs/job/save",
+        "/connectors/gcs/job/save",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie","")}
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/gcs/save_app",methods=["POST"])
 def gcs_save_app_proxy():
     r=requests.post(
-        "http://localhost:4000/connectors/gcs/save_app",
+        "/connectors/gcs/save_app",
         json=request.get_json(),
         headers={"Cookie":request.headers.get("Cookie","")}
     )
-    return jsonify(r.json()),r.status_code
+    return finalize_response(r)
 
 # ================= GOOGLE CLASSROOM =================
 
@@ -4567,28 +4698,28 @@ def classroom_page():
 @app.route("/connectors/classroom/connect")
 def classroom_connect():
     return redirect(
-        "http://localhost:4000/google/connect?source=classroom"
+        "/google/connect?source=classroom"
     )
 
 @app.route("/connectors/classroom/save_app", methods=["POST"])
 def classroom_save_app_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/classroom/save_app",
+        "/connectors/classroom/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie","")}
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/classroom/disconnect")
 def classroom_disconnect():
 
     r = requests.get(
-        "http://localhost:4000/google/disconnect/classroom"
+        "/google/disconnect/classroom"
     )
 
-    return jsonify(r.json())
+    return finalize_response(r)
 
 
 # ---- SYNC ----
@@ -4596,7 +4727,7 @@ def classroom_disconnect():
 def classroom_sync():
 
     r = requests.get(
-        "http://localhost:4000/google/sync/classroom",
+        "/google/sync/classroom",
         timeout=300
     )
 
@@ -4763,18 +4894,18 @@ def factcheck_page():
 @app.route("/connectors/factcheck/connect")
 def factcheck_connect():
     r = requests.get(
-        "http://localhost:4000/connectors/factcheck/connect",
+        "/connectors/factcheck/connect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/factcheck/disconnect")
 def factcheck_disconnect():
     r = requests.get(
-        "http://localhost:4000/connectors/factcheck/disconnect",
+        "/connectors/factcheck/disconnect",
         cookies=request.cookies
     )
-    return jsonify(r.json())
+    return finalize_response(r)
 
 @app.route("/connectors/factcheck/sync")
 def factcheck_sync():
@@ -4791,7 +4922,7 @@ def factcheck_sync():
     try:
 
         r = requests.get(
-            "http://127.0.0.1:4000/googlefactcheck/sync/claims",
+            "/googlefactcheck/sync/claims",
             params={
                 "q": query,
                 "limit": 200
@@ -4867,12 +4998,12 @@ def factcheck_claims():
 def factcheck_save_config_proxy():
 
     r = requests.post(
-        "http://localhost:4000/connectors/factcheck/save_config",
+        "/connectors/factcheck/save_config",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= FACEBOOK PAGES=================
 
@@ -4884,7 +5015,7 @@ def facebook_page():
 
 @app.route("/connectors/facebook/connect")
 def facebook_connect():
-    return redirect("http://localhost:4000/connectors/facebook/connect")
+    return redirect("/connectors/facebook/connect")
 
 
 @app.route("/connectors/facebook/disconnect")
@@ -4904,18 +5035,18 @@ def facebook_status():
 @app.route("/connectors/facebook/save_app", methods=["POST"])
 def facebook_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/facebook/save_app",
+        "/connectors/facebook/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/facebook/job/get")
 def facebook_job_get_proxy():
     r = connector_job_get("facebook")
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "exists": False,
@@ -4926,7 +5057,7 @@ def facebook_job_get_proxy():
 @app.route("/connectors/facebook/job/save", methods=["POST"])
 def facebook_job_save_proxy():
     r = connector_job_save("facebook")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= FACEBOOK ADS =================
 
@@ -4937,7 +5068,7 @@ def facebook_ads_page():
 
 @app.route("/connectors/facebook_ads/connect")
 def facebook_ads_connect():
-    return redirect("http://localhost:4000/connectors/facebook_ads/connect")
+    return redirect("/connectors/facebook_ads/connect")
 
 @app.route("/connectors/facebook_ads/disconnect")
 def facebook_ads_disconnect():
@@ -4957,7 +5088,7 @@ def facebook_ads_job_get_proxy():
     r = connector_job_get("facebook_ads")
 
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except:
         return jsonify({
             "exists": False,
@@ -4968,16 +5099,16 @@ def facebook_ads_job_get_proxy():
 @app.route("/connectors/facebook_ads/job/save", methods=["POST"])
 def facebook_ads_job_save_proxy():
     r = connector_job_save("facebook_ads")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/facebook_ads/save_app", methods=["POST"])
 def facebook_ads_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/facebook_ads/save_app",
+        "/connectors/facebook_ads/save_app",
         json=request.get_json(),
         headers={"Cookie": request.headers.get("Cookie", "")}
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= CHARTBEAT =================
 
@@ -4990,24 +5121,24 @@ def chartbeat_page():
 @app.route("/connectors/chartbeat/save_app", methods=["POST"])
 def chartbeat_save_app_proxy():
     r = requests.post(
-        "http://localhost:4000/connectors/chartbeat/save_app",
+        "/connectors/chartbeat/save_app",
         json=request.get_json(),
         cookies=request.cookies,
         headers={"Cookie": request.headers.get("Cookie", "")},
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/chartbeat/connect")
 def chartbeat_connect():
     r = proxy_get("/connectors/chartbeat/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/chartbeat/disconnect")
 def chartbeat_disconnect():
     r = connector_disconnect("chartbeat")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/chartbeat/sync")
@@ -5024,7 +5155,7 @@ def chartbeat_status():
 def chartbeat_job_get_proxy():
     r = connector_job_get("chartbeat")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({
             "exists": False,
@@ -5036,7 +5167,7 @@ def chartbeat_job_get_proxy():
 @app.route("/connectors/chartbeat/job/save", methods=["POST"])
 def chartbeat_job_save_proxy():
     r = connector_job_save("chartbeat")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= STRIPE =================
 
@@ -5050,35 +5181,35 @@ def stripe_page():
 @require_login
 def stripe_save_app_proxy():
     r = proxy_post("/connectors/stripe/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/stripe/connect")
 @require_login
 def stripe_connect_proxy():
     r = proxy_get("/connectors/stripe/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/stripe/disconnect")
 @require_login
 def stripe_disconnect_proxy():
     r = connector_disconnect("stripe")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/stripe/sync")
 @require_login
 def stripe_sync_proxy():
     r = connector_sync("stripe")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/stripe/status")
 @require_login
 def stripe_status_proxy():
     r = connector_status("stripe")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/stripe/job/get")
@@ -5086,7 +5217,7 @@ def stripe_status_proxy():
 def stripe_job_get_proxy():
     r = connector_job_get("stripe")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5095,37 +5226,37 @@ def stripe_job_get_proxy():
 @require_login
 def stripe_job_save_proxy():
     r = connector_job_save("stripe")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= DESTINATION =================
 
 @app.route("/destination/save", methods=["POST"])
 def destination_save_proxy():
     r = requests.post(
-        "http://localhost:4000/destination/save",
+        "/destination/save",
         json=request.get_json(),
         cookies=request.cookies   
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/destination/list/<source>")
 def destination_list_proxy(source):
     r = requests.get(
-        f"http://localhost:4000/destination/list/{source}",
+        f"/destination/list/{source}",
         cookies=request.cookies  
     )
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/destination/activate", methods=["POST"])
 def activate_destination_proxy():
 
     r = requests.post(
-        "http://localhost:4000/destination/activate",
+        "/destination/activate",
         json=request.get_json(),
         cookies=request.cookies
     )
 
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= BIGQUERY DESTINATION ========================
 
@@ -5139,49 +5270,49 @@ def bigquery_page():
 @require_login
 def bigquery_connect_proxy():
     r = proxy_get("/connectors/bigquery/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/disconnect")
 @require_login
 def bigquery_disconnect_proxy():
     r = connector_disconnect("bigquery")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/sync")
 @require_login
 def bigquery_sync_proxy():
     r = connector_sync("bigquery")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/status")
 @require_login
 def bigquery_status_proxy():
     r = connector_status("bigquery")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/job/get")
 @require_login
 def bigquery_job_get_proxy():
     r = connector_job_get("bigquery")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/job/save", methods=["POST"])
 @require_login
 def bigquery_job_save_proxy():
     r = connector_job_save("bigquery")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bigquery/save_app", methods=["POST"])
 @require_login
 def bigquery_save_app_proxy():
     r = proxy_post("/connectors/bigquery/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= AWS RDS =================
 
@@ -5195,35 +5326,35 @@ def aws_rds_page():
 @require_login
 def aws_rds_save_app_proxy():
     r = proxy_post("/connectors/aws_rds/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/aws_rds/connect")
 @require_login
 def aws_rds_connect_proxy():
     r = proxy_get("/connectors/aws_rds/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/aws_rds/disconnect")
 @require_login
 def aws_rds_disconnect_proxy():
     r = connector_disconnect("aws_rds")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/aws_rds/sync")
 @require_login
 def aws_rds_sync_proxy():
     r = connector_sync("aws_rds")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/aws_rds/status")
 @require_login
 def aws_rds_status_proxy():
     r = connector_status("aws_rds")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/aws_rds/job/get")
@@ -5231,7 +5362,7 @@ def aws_rds_status_proxy():
 def aws_rds_job_get_proxy():
     r = connector_job_get("aws_rds")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5240,7 +5371,7 @@ def aws_rds_job_get_proxy():
 @require_login
 def aws_rds_job_save_proxy():
     r = connector_job_save("aws_rds")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= AWS DYNAMODB =================
 
@@ -5254,35 +5385,35 @@ def dynamodb_page():
 @require_login
 def dynamodb_save_app_proxy():
     r = proxy_post("/connectors/dynamodb/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dynamodb/connect")
 @require_login
 def dynamodb_connect_proxy():
     r = proxy_get("/connectors/dynamodb/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dynamodb/disconnect")
 @require_login
 def dynamodb_disconnect_proxy():
     r = connector_disconnect("dynamodb")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dynamodb/sync")
 @require_login
 def dynamodb_sync_proxy():
     r = connector_sync("dynamodb")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dynamodb/status")
 @require_login
 def dynamodb_status_proxy():
     r = connector_status("dynamodb")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dynamodb/job/get")
@@ -5290,7 +5421,7 @@ def dynamodb_status_proxy():
 def dynamodb_job_get_proxy():
     r = connector_job_get("dynamodb")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5299,7 +5430,7 @@ def dynamodb_job_get_proxy():
 @require_login
 def dynamodb_job_save_proxy():
     r = connector_job_save("dynamodb")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= NOTION ========================
 
@@ -5313,21 +5444,21 @@ def notion_page():
 @require_login
 def notion_connect():
     r = proxy_get("/connectors/notion/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/notion/sync")
 @require_login
 def notion_sync():
     r = connector_sync("notion")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/notion")
 @require_login
 def notion_status_proxy():
     r = connector_status("notion")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/notion/job/get")
@@ -5335,7 +5466,7 @@ def notion_status_proxy():
 def notion_job_get_proxy():
     r = connector_job_get("notion")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5344,21 +5475,21 @@ def notion_job_get_proxy():
 @require_login
 def notion_job_save_proxy():
     r = connector_job_save("notion")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/notion/save_app", methods=["POST"])
 @require_login
 def notion_save_app_proxy():
     r = proxy_post("/connectors/notion/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/notion/disconnect")
 @require_login
 def notion_disconnect():
     r = connector_disconnect("notion")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= HUBSPOT ========================
@@ -5373,21 +5504,21 @@ def hubspot_page():
 @require_login
 def hubspot_connect_proxy():
     r = proxy_get("/connectors/hubspot/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/hubspot/sync")
 @require_login
 def hubspot_sync_proxy():
     r = connector_sync("hubspot")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/hubspot")
 @require_login
 def hubspot_status_proxy():
     r = connector_status("hubspot")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/hubspot/job/get")
@@ -5395,7 +5526,7 @@ def hubspot_status_proxy():
 def hubspot_job_get_proxy():
     r = connector_job_get("hubspot")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5404,21 +5535,21 @@ def hubspot_job_get_proxy():
 @require_login
 def hubspot_job_save_proxy():
     r = connector_job_save("hubspot")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/hubspot/save_app", methods=["POST"])
 @require_login
 def hubspot_save_app_proxy():
     r = proxy_post("/connectors/hubspot/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/hubspot/disconnect")
 @require_login
 def hubspot_disconnect_proxy():
     r = connector_disconnect("hubspot")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= AIRTABLE ========================
@@ -5433,21 +5564,21 @@ def airtable_page():
 @require_login
 def airtable_connect_proxy():
     r = proxy_get("/connectors/airtable/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/airtable/sync")
 @require_login
 def airtable_sync_proxy():
     r = connector_sync("airtable")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/airtable")
 @require_login
 def airtable_status_proxy():
     r = connector_status("airtable")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/airtable/job/get")
@@ -5455,7 +5586,7 @@ def airtable_status_proxy():
 def airtable_job_get_proxy():
     r = connector_job_get("airtable")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5464,14 +5595,14 @@ def airtable_job_get_proxy():
 @require_login
 def airtable_job_save_proxy():
     r = connector_job_save("airtable")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/airtable/save_app", methods=["POST"])
 @require_login
 def airtable_save_app_proxy():
     r = proxy_post("/connectors/airtable/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/airtable/disconnect")
@@ -5493,21 +5624,21 @@ def zendesk_page():
 @require_login
 def zendesk_connect():
     r = proxy_get("/connectors/zendesk/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zendesk/sync")
 @require_login
 def zendesk_sync():
     r = connector_sync("zendesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/zendesk")
 @require_login
 def zendesk_status_proxy():
     r = connector_status("zendesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zendesk/job/get")
@@ -5515,7 +5646,7 @@ def zendesk_status_proxy():
 def zendesk_job_get_proxy():
     r = connector_job_get("zendesk")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5524,21 +5655,21 @@ def zendesk_job_get_proxy():
 @require_login
 def zendesk_job_save_proxy():
     r = connector_job_save("zendesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zendesk/save_app", methods=["POST"])
 @require_login
 def zendesk_save_app_proxy():
     r = proxy_post("/connectors/zendesk/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zendesk/disconnect")
 @require_login
 def zendesk_disconnect():
     r = connector_disconnect("zendesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= INTERCOM ========================
@@ -5553,21 +5684,21 @@ def intercom_page():
 @require_login
 def intercom_connect():
     r = proxy_get("/connectors/intercom/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/intercom/sync")
 @require_login
 def intercom_sync():
     r = connector_sync("intercom")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/intercom")
 @require_login
 def intercom_status_proxy():
     r = connector_status("intercom")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/intercom/job/get")
@@ -5575,7 +5706,7 @@ def intercom_status_proxy():
 def intercom_job_get_proxy():
     r = connector_job_get("intercom")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5584,21 +5715,21 @@ def intercom_job_get_proxy():
 @require_login
 def intercom_job_save_proxy():
     r = connector_job_save("intercom")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/intercom/save_app", methods=["POST"])
 @require_login
 def intercom_save_app_proxy():
     r = proxy_post("/connectors/intercom/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/intercom/disconnect")
 @require_login
 def intercom_disconnect():
     r = connector_disconnect("intercom")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= MAILCHIMP ========================
@@ -5613,21 +5744,21 @@ def mailchimp_page():
 @require_login
 def mailchimp_connect():
     r = proxy_get("/connectors/mailchimp/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mailchimp/sync")
 @require_login
 def mailchimp_sync():
     r = connector_sync("mailchimp")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/mailchimp")
 @require_login
 def mailchimp_status_proxy():
     r = connector_status("mailchimp")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mailchimp/job/get")
@@ -5635,7 +5766,7 @@ def mailchimp_status_proxy():
 def mailchimp_job_get_proxy():
     r = connector_job_get("mailchimp")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5644,21 +5775,21 @@ def mailchimp_job_get_proxy():
 @require_login
 def mailchimp_job_save_proxy():
     r = connector_job_save("mailchimp")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mailchimp/save_app", methods=["POST"])
 @require_login
 def mailchimp_save_app_proxy():
     r = proxy_post("/connectors/mailchimp/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mailchimp/disconnect")
 @require_login
 def mailchimp_disconnect():
     r = connector_disconnect("mailchimp")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= TWILIO ========================
@@ -5673,21 +5804,21 @@ def twilio_page():
 @require_login
 def twilio_connect():
     r = proxy_get("/connectors/twilio/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/twilio/sync")
 @require_login
 def twilio_sync():
     r = connector_sync("twilio")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/twilio")
 @require_login
 def twilio_status_proxy():
     r = connector_status("twilio")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/twilio/job/get")
@@ -5695,7 +5826,7 @@ def twilio_status_proxy():
 def twilio_job_get_proxy():
     r = connector_job_get("twilio")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5704,21 +5835,21 @@ def twilio_job_get_proxy():
 @require_login
 def twilio_job_save_proxy():
     r = connector_job_save("twilio")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/twilio/save_app", methods=["POST"])
 @require_login
 def twilio_save_app_proxy():
     r = proxy_post("/connectors/twilio/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/twilio/disconnect")
 @require_login
 def twilio_disconnect():
     r = connector_disconnect("twilio")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= SHOPIFY ========================
@@ -5733,21 +5864,21 @@ def shopify_page():
 @require_login
 def shopify_connect():
     r = proxy_get("/connectors/shopify/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/shopify/sync")
 @require_login
 def shopify_sync():
     r = connector_sync("shopify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/shopify/status")
 @require_login
 def shopify_status_proxy():
     r = connector_status("shopify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/shopify/job/get")
@@ -5755,7 +5886,7 @@ def shopify_status_proxy():
 def shopify_job_get_proxy():
     r = connector_job_get("shopify")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5764,21 +5895,21 @@ def shopify_job_get_proxy():
 @require_login
 def shopify_job_save_proxy():
     r = connector_job_save("shopify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/shopify/save_app", methods=["POST"])
 @require_login
 def shopify_save_app_proxy():
     r = proxy_post("/connectors/shopify/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/shopify/disconnect")
 @require_login
 def shopify_disconnect():
     r = connector_disconnect("shopify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ---------------- PIPEDRIVE ----------------
 
@@ -5792,21 +5923,21 @@ def pipedrive_page():
 @require_login
 def pipedrive_connect_proxy():
     r = proxy_get("/connectors/pipedrive/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pipedrive/sync")
 @require_login
 def pipedrive_sync_proxy():
     r = connector_sync("pipedrive")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/pipedrive")
 @require_login
 def pipedrive_status_proxy():
     r = connector_status("pipedrive")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pipedrive/job/get")
@@ -5814,7 +5945,7 @@ def pipedrive_status_proxy():
 def pipedrive_job_get_proxy():
     r = connector_job_get("pipedrive")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5823,21 +5954,21 @@ def pipedrive_job_get_proxy():
 @require_login
 def pipedrive_job_save_proxy():
     r = connector_job_save("pipedrive")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pipedrive/save_app", methods=["POST"])
 @require_login
 def pipedrive_save_app_proxy():
     r = proxy_post("/connectors/pipedrive/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pipedrive/disconnect")
 @require_login
 def pipedrive_disconnect_proxy():
     r = proxy_get("/connectors/pipedrive/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ---------------- FRESHDESK ----------------
@@ -5852,21 +5983,21 @@ def freshdesk_page():
 @require_login
 def freshdesk_connect_proxy():
     r = proxy_get("/connectors/freshdesk/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/freshdesk/sync")
 @require_login
 def freshdesk_sync_proxy():
     r = connector_sync("freshdesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/freshdesk")
 @require_login
 def freshdesk_status_proxy():
     r = connector_status("freshdesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/freshdesk/job/get")
@@ -5874,7 +6005,7 @@ def freshdesk_status_proxy():
 def freshdesk_job_get_proxy():
     r = connector_job_get("freshdesk")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5883,21 +6014,21 @@ def freshdesk_job_get_proxy():
 @require_login
 def freshdesk_job_save_proxy():
     r = connector_job_save("freshdesk")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/freshdesk/save_app", methods=["POST"])
 @require_login
 def freshdesk_save_app_proxy():
     r = proxy_post("/connectors/freshdesk/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/freshdesk/disconnect")
 @require_login
 def freshdesk_disconnect_proxy():
     r = proxy_get("/connectors/freshdesk/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ---------------- KLAVIYO ----------------
@@ -5912,21 +6043,21 @@ def klaviyo_page():
 @require_login
 def klaviyo_connect_proxy():
     r = proxy_get("/connectors/klaviyo/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/klaviyo/sync")
 @require_login
 def klaviyo_sync_proxy():
     r = connector_sync("klaviyo")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/klaviyo")
 @require_login
 def klaviyo_status_proxy():
     r = connector_status("klaviyo")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/klaviyo/job/get")
@@ -5934,7 +6065,7 @@ def klaviyo_status_proxy():
 def klaviyo_job_get_proxy():
     r = connector_job_get("klaviyo")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -5943,21 +6074,21 @@ def klaviyo_job_get_proxy():
 @require_login
 def klaviyo_job_save_proxy():
     r = connector_job_save("klaviyo")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/klaviyo/save_app", methods=["POST"])
 @require_login
 def klaviyo_save_app_proxy():
     r = proxy_post("/connectors/klaviyo/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/klaviyo/disconnect")
 @require_login
 def klaviyo_disconnect_proxy():
     r = proxy_get("/connectors/klaviyo/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ---------------- AMPLITUDE ----------------
@@ -5972,21 +6103,21 @@ def amplitude_page():
 @require_login
 def amplitude_connect_proxy():
     r = proxy_get("/connectors/amplitude/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/amplitude/sync")
 @require_login
 def amplitude_sync_proxy():
     r = connector_sync("amplitude")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/amplitude")
 @require_login
 def amplitude_status_proxy():
     r = connector_status("amplitude")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/amplitude/job/get")
@@ -5994,7 +6125,7 @@ def amplitude_status_proxy():
 def amplitude_job_get_proxy():
     r = connector_job_get("amplitude")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6003,21 +6134,21 @@ def amplitude_job_get_proxy():
 @require_login
 def amplitude_job_save_proxy():
     r = connector_job_save("amplitude")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/amplitude/save_app", methods=["POST"])
 @require_login
 def amplitude_save_app_proxy():
     r = proxy_post("/connectors/amplitude/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/amplitude/disconnect")
 @require_login
 def amplitude_disconnect_proxy():
     r = proxy_get("/connectors/amplitude/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # SALESFORCE ROUTES
 @app.route("/connectors/salesforce")
@@ -6030,21 +6161,21 @@ def salesforce_page():
 @require_login
 def salesforce_connect_proxy():
     r = proxy_get("/connectors/salesforce/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/salesforce/sync")
 @require_login
 def salesforce_sync_proxy():
     r = connector_sync("salesforce")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/salesforce")
 @require_login
 def salesforce_status_proxy():
     r = connector_status("salesforce")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/salesforce/job/get")
@@ -6052,7 +6183,7 @@ def salesforce_status_proxy():
 def salesforce_job_get_proxy():
     r = connector_job_get("salesforce")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6061,21 +6192,21 @@ def salesforce_job_get_proxy():
 @require_login
 def salesforce_job_save_proxy():
     r = connector_job_save("salesforce")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/salesforce/save_app", methods=["POST"])
 @require_login
 def salesforce_save_app_proxy():
     r = proxy_post("/connectors/salesforce/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/salesforce/disconnect")
 @require_login
 def salesforce_disconnect_proxy():
     r = proxy_get("/connectors/salesforce/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # JIRA ROUTES
 
@@ -6089,21 +6220,21 @@ def jira_page():
 @require_login
 def jira_connect_proxy():
     r = proxy_get("/connectors/jira/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/jira/sync")
 @require_login
 def jira_sync_proxy():
     r = connector_sync("jira")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/jira")
 @require_login
 def jira_status_proxy():
     r = connector_status("jira")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/jira/job/get")
@@ -6111,7 +6242,7 @@ def jira_status_proxy():
 def jira_job_get_proxy():
     r = connector_job_get("jira")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6120,21 +6251,21 @@ def jira_job_get_proxy():
 @require_login
 def jira_job_save_proxy():
     r = connector_job_save("jira")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/jira/save_app", methods=["POST"])
 @require_login
 def jira_save_app_proxy():
     r = proxy_post("/connectors/jira/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/jira/disconnect")
 @require_login
 def jira_disconnect_proxy():
     r = proxy_get("/connectors/jira/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ZOHO CRM ROUTES
 @app.route("/connectors/zoho_crm")
@@ -6147,21 +6278,21 @@ def zoho_crm_page():
 @require_login
 def zoho_crm_connect_proxy():
     r = proxy_get("/connectors/zoho_crm/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zoho_crm/sync")
 @require_login
 def zoho_crm_sync_proxy():
     r = connector_sync("zoho_crm")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/zoho_crm")
 @require_login
 def zoho_crm_status_proxy():
     r = connector_status("zoho_crm")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zoho_crm/job/get")
@@ -6169,7 +6300,7 @@ def zoho_crm_status_proxy():
 def zoho_crm_job_get_proxy():
     r = connector_job_get("zoho_crm")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6178,21 +6309,21 @@ def zoho_crm_job_get_proxy():
 @require_login
 def zoho_crm_job_save_proxy():
     r = connector_job_save("zoho_crm")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zoho_crm/save_app", methods=["POST"])
 @require_login
 def zoho_crm_save_app_proxy():
     r = proxy_post("/connectors/zoho_crm/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/zoho_crm/disconnect")
 @require_login
 def zoho_crm_disconnect_proxy():
     r = proxy_get("/connectors/zoho_crm/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # PAYPAL ROUTES
 
@@ -6206,21 +6337,21 @@ def paypal_page():
 @require_login
 def paypal_connect_proxy():
     r = proxy_get("/connectors/paypal/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/paypal/sync")
 @require_login
 def paypal_sync_proxy():
     r = connector_sync("paypal")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/paypal")
 @require_login
 def paypal_status_proxy():
     r = connector_status("paypal")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/paypal/job/get")
@@ -6228,7 +6359,7 @@ def paypal_status_proxy():
 def paypal_job_get_proxy():
     r = connector_job_get("paypal")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6237,21 +6368,21 @@ def paypal_job_get_proxy():
 @require_login
 def paypal_job_save_proxy():
     r = connector_job_save("paypal")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/paypal/save_app", methods=["POST"])
 @require_login
 def paypal_save_app_proxy():
     r = proxy_post("/connectors/paypal/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/paypal/disconnect")
 @require_login
 def paypal_disconnect_proxy():
     r = proxy_get("/connectors/paypal/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/asana")
 @require_login
@@ -6263,21 +6394,21 @@ def asana_page():
 @require_login
 def asana_connect_proxy():
     r = proxy_get("/connectors/asana/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/asana/sync")
 @require_login
 def asana_sync_proxy():
     r = connector_sync("asana")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/asana")
 @require_login
 def asana_status_proxy():
     r = connector_status("asana")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/asana/job/get")
@@ -6285,7 +6416,7 @@ def asana_status_proxy():
 def asana_job_get_proxy():
     r = connector_job_get("asana")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6294,21 +6425,21 @@ def asana_job_get_proxy():
 @require_login
 def asana_job_save_proxy():
     r = connector_job_save("asana")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/asana/save_app", methods=["POST"])
 @require_login
 def asana_save_app_proxy():
     r = proxy_post("/connectors/asana/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/asana/disconnect")
 @require_login
 def asana_disconnect_proxy():
     r = proxy_get("/connectors/asana/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/tableau")
@@ -6321,21 +6452,21 @@ def tableau_page():
 @require_login
 def tableau_connect_proxy():
     r = proxy_get("/connectors/tableau/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/tableau/sync")
 @require_login
 def tableau_sync_proxy():
     r = connector_sync("tableau")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/tableau")
 @require_login
 def tableau_status_proxy():
     r = connector_status("tableau")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/tableau/job/get")
@@ -6343,7 +6474,7 @@ def tableau_status_proxy():
 def tableau_job_get_proxy():
     r = connector_job_get("tableau")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6352,21 +6483,21 @@ def tableau_job_get_proxy():
 @require_login
 def tableau_job_save_proxy():
     r = connector_job_save("tableau")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/tableau/save_app", methods=["POST"])
 @require_login
 def tableau_save_app_proxy():
     r = proxy_post("/connectors/tableau/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/tableau/disconnect")
 @require_login
 def tableau_disconnect_proxy():
     r = proxy_get("/connectors/tableau/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/power_bi")
@@ -6379,21 +6510,21 @@ def power_bi_page():
 @require_login
 def power_bi_connect_proxy():
     r = proxy_get("/connectors/power_bi/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/power_bi/sync")
 @require_login
 def power_bi_sync_proxy():
     r = connector_sync("power_bi")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/power_bi")
 @require_login
 def power_bi_status_proxy():
     r = connector_status("power_bi")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/power_bi/job/get")
@@ -6401,7 +6532,7 @@ def power_bi_status_proxy():
 def power_bi_job_get_proxy():
     r = connector_job_get("power_bi")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6410,21 +6541,21 @@ def power_bi_job_get_proxy():
 @require_login
 def power_bi_job_save_proxy():
     r = connector_job_save("power_bi")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/power_bi/save_app", methods=["POST"])
 @require_login
 def power_bi_save_app_proxy():
     r = proxy_post("/connectors/power_bi/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/power_bi/disconnect")
 @require_login
 def power_bi_disconnect_proxy():
     r = proxy_get("/connectors/power_bi/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/workday")
@@ -6437,21 +6568,21 @@ def workday_page():
 @require_login
 def workday_connect_proxy():
     r = proxy_get("/connectors/workday/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/workday/sync")
 @require_login
 def workday_sync_proxy():
     r = connector_sync("workday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/workday")
 @require_login
 def workday_status_proxy():
     r = connector_status("workday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/workday/job/get")
@@ -6459,7 +6590,7 @@ def workday_status_proxy():
 def workday_job_get_proxy():
     r = connector_job_get("workday")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6468,21 +6599,21 @@ def workday_job_get_proxy():
 @require_login
 def workday_job_save_proxy():
     r = connector_job_save("workday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/workday/save_app", methods=["POST"])
 @require_login
 def workday_save_app_proxy():
     r = proxy_post("/connectors/workday/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/workday/disconnect")
 @require_login
 def workday_disconnect_proxy():
     r = proxy_get("/connectors/workday/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/ebay")
@@ -6495,21 +6626,21 @@ def ebay_page():
 @require_login
 def ebay_connect_proxy():
     r = proxy_get("/connectors/ebay/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/ebay/sync")
 @require_login
 def ebay_sync_proxy():
     r = connector_sync("ebay")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/ebay")
 @require_login
 def ebay_status_proxy():
     r = connector_status("ebay")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/ebay/job/get")
@@ -6517,7 +6648,7 @@ def ebay_status_proxy():
 def ebay_job_get_proxy():
     r = connector_job_get("ebay")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6526,21 +6657,21 @@ def ebay_job_get_proxy():
 @require_login
 def ebay_job_save_proxy():
     r = connector_job_save("ebay")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/ebay/save_app", methods=["POST"])
 @require_login
 def ebay_save_app_proxy():
     r = proxy_post("/connectors/ebay/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/ebay/disconnect")
 @require_login
 def ebay_disconnect_proxy():
     r = proxy_get("/connectors/ebay/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sendgrid")
 @require_login
@@ -6552,21 +6683,21 @@ def sendgrid_page():
 @require_login
 def sendgrid_connect_proxy():
     r = proxy_get("/connectors/sendgrid/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/sendgrid/sync")
 @require_login
 def sendgrid_sync_proxy():
     r = connector_sync("sendgrid")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/sendgrid")
 @require_login
 def sendgrid_status_proxy():
     r = connector_status("sendgrid")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/sendgrid/job/get")
@@ -6574,7 +6705,7 @@ def sendgrid_status_proxy():
 def sendgrid_job_get_proxy():
     r = connector_job_get("sendgrid")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6582,21 +6713,21 @@ def sendgrid_job_get_proxy():
 @require_login
 def sendgrid_job_save_proxy():
     r = connector_job_save("sendgrid")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/sendgrid/save_app", methods=["POST"])
 @require_login
 def sendgrid_save_app_proxy():
     r = proxy_post("/connectors/sendgrid/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/sendgrid/disconnect")
 @require_login
 def sendgrid_disconnect_proxy():
     r = proxy_get("/connectors/sendgrid/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/mixpanel")
 @require_login
@@ -6607,21 +6738,21 @@ def mixpanel_page():
 @require_login
 def mixpanel_connect_proxy():
     r = proxy_get("/connectors/mixpanel/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mixpanel/sync")
 @require_login
 def mixpanel_sync_proxy():
     r = connector_sync("mixpanel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/mixpanel")
 @require_login
 def mixpanel_status_proxy():
     r = connector_status("mixpanel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mixpanel/job/get")
@@ -6629,7 +6760,7 @@ def mixpanel_status_proxy():
 def mixpanel_job_get_proxy():
     r = connector_job_get("mixpanel")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6638,21 +6769,21 @@ def mixpanel_job_get_proxy():
 @require_login
 def mixpanel_job_save_proxy():
     r = connector_job_save("mixpanel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mixpanel/save_app", methods=["POST"])
 @require_login
 def mixpanel_save_app_proxy():
     r = proxy_post("/connectors/mixpanel/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/mixpanel/disconnect")
 @require_login
 def mixpanel_disconnect_proxy():
     r = proxy_get("/connectors/mixpanel/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/monday")
 @require_login
@@ -6663,26 +6794,26 @@ def monday_page():
 @require_login
 def monday_connect_proxy():
     r = proxy_get("/connectors/monday/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/monday/sync")
 @require_login
 def monday_sync_proxy():
     r = connector_sync("monday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/monday")
 @require_login
 def monday_status_proxy():
     r = connector_status("monday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/monday/job/get")
 @require_login
 def monday_job_get_proxy():
     r = connector_job_get("monday")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6690,19 +6821,19 @@ def monday_job_get_proxy():
 @require_login
 def monday_job_save_proxy():
     r = connector_job_save("monday")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/monday/save_app", methods=["POST"])
 @require_login
 def monday_save_app_proxy():
     r = proxy_post("/connectors/monday/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/monday/disconnect")
 @require_login
 def monday_disconnect_proxy():
     r = proxy_get("/connectors/monday/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/clickup")
 @require_login
@@ -6713,26 +6844,26 @@ def clickup_page():
 @require_login
 def clickup_connect_proxy():
     r = proxy_get("/connectors/clickup/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/clickup/sync")
 @require_login
 def clickup_sync_proxy():
     r = connector_sync("clickup")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/clickup")
 @require_login
 def clickup_status_proxy():
     r = connector_status("clickup")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/clickup/job/get")
 @require_login
 def clickup_job_get_proxy():
     r = connector_job_get("clickup")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6740,19 +6871,19 @@ def clickup_job_get_proxy():
 @require_login
 def clickup_job_save_proxy():
     r = connector_job_save("clickup")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/clickup/save_app", methods=["POST"])
 @require_login
 def clickup_save_app_proxy():
     r = proxy_post("/connectors/clickup/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/clickup/disconnect")
 @require_login
 def clickup_disconnect_proxy():
     r = proxy_get("/connectors/clickup/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/helpscout")
 @require_login
@@ -6763,26 +6894,26 @@ def helpscout_page():
 @require_login
 def helpscout_connect_proxy():
     r = proxy_get("/connectors/helpscout/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/helpscout/sync")
 @require_login
 def helpscout_sync_proxy():
     r = connector_sync("helpscout")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/helpscout")
 @require_login
 def helpscout_status_proxy():
     r = connector_status("helpscout")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/helpscout/job/get")
 @require_login
 def helpscout_job_get_proxy():
     r = connector_job_get("helpscout")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -6790,19 +6921,19 @@ def helpscout_job_get_proxy():
 @require_login
 def helpscout_job_save_proxy():
     r = connector_job_save("helpscout")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/helpscout/save_app", methods=["POST"])
 @require_login
 def helpscout_save_app_proxy():
     r = proxy_post("/connectors/helpscout/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/helpscout/disconnect")
 @require_login
 def helpscout_disconnect_proxy():
     r = proxy_get("/connectors/helpscout/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= LOOKER =================
 
@@ -6815,43 +6946,43 @@ def looker_page():
 @require_login
 def looker_connect():
     r = proxy_get("/connectors/looker/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/looker/sync")
 @require_login
 def looker_sync():
     r = connector_sync("looker")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/looker")
 @require_login
 def looker_status_proxy():
     r = connector_status("looker")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/looker/job/get")
 @require_login
 def looker_job_get_proxy():
     r = connector_job_get("looker")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/looker/job/save", methods=["POST"])
 @require_login
 def looker_job_save_proxy():
     r = connector_job_save("looker")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/looker/save_app", methods=["POST"])
 @require_login
 def looker_save_app_proxy():
     r = proxy_post("/connectors/looker/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/looker/disconnect")
 @require_login
 def looker_disconnect():
     r = connector_disconnect("looker")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= SUPERSET =================
@@ -6865,43 +6996,43 @@ def superset_page():
 @require_login
 def superset_connect():
     r = proxy_get("/connectors/superset/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/superset/sync")
 @require_login
 def superset_sync():
     r = connector_sync("superset")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/superset")
 @require_login
 def superset_status_proxy():
     r = connector_status("superset")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/superset/job/get")
 @require_login
 def superset_job_get_proxy():
     r = connector_job_get("superset")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/superset/job/save", methods=["POST"])
 @require_login
 def superset_job_save_proxy():
     r = connector_job_save("superset")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/superset/save_app", methods=["POST"])
 @require_login
 def superset_save_app_proxy():
     r = proxy_post("/connectors/superset/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/superset/disconnect")
 @require_login
 def superset_disconnect():
     r = connector_disconnect("superset")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= AZURE_BLOB =================
@@ -6915,43 +7046,43 @@ def azure_blob_page():
 @require_login
 def azure_blob_connect():
     r = proxy_get("/connectors/azure_blob/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/azure_blob/sync")
 @require_login
 def azure_blob_sync():
     r = connector_sync("azure_blob")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/azure_blob")
 @require_login
 def azure_blob_status_proxy():
     r = connector_status("azure_blob")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/azure_blob/job/get")
 @require_login
 def azure_blob_job_get_proxy():
     r = connector_job_get("azure_blob")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/azure_blob/job/save", methods=["POST"])
 @require_login
 def azure_blob_job_save_proxy():
     r = connector_job_save("azure_blob")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/azure_blob/save_app", methods=["POST"])
 @require_login
 def azure_blob_save_app_proxy():
     r = proxy_post("/connectors/azure_blob/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/azure_blob/disconnect")
 @require_login
 def azure_blob_disconnect():
     r = connector_disconnect("azure_blob")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= DATADOG =================
@@ -6965,43 +7096,43 @@ def datadog_page():
 @require_login
 def datadog_connect():
     r = proxy_get("/connectors/datadog/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/datadog/sync")
 @require_login
 def datadog_sync():
     r = connector_sync("datadog")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/datadog")
 @require_login
 def datadog_status_proxy():
     r = connector_status("datadog")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/datadog/job/get")
 @require_login
 def datadog_job_get_proxy():
     r = connector_job_get("datadog")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/datadog/job/save", methods=["POST"])
 @require_login
 def datadog_job_save_proxy():
     r = connector_job_save("datadog")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/datadog/save_app", methods=["POST"])
 @require_login
 def datadog_save_app_proxy():
     r = proxy_post("/connectors/datadog/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/datadog/disconnect")
 @require_login
 def datadog_disconnect():
     r = connector_disconnect("datadog")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 
@@ -7016,43 +7147,43 @@ def okta_page():
 @require_login
 def okta_connect():
     r = proxy_get("/connectors/okta/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/okta/sync")
 @require_login
 def okta_sync():
     r = connector_sync("okta")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/okta")
 @require_login
 def okta_status_proxy():
     r = connector_status("okta")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/okta/job/get")
 @require_login
 def okta_job_get_proxy():
     r = connector_job_get("okta")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/okta/job/save", methods=["POST"])
 @require_login
 def okta_job_save_proxy():
     r = connector_job_save("okta")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/okta/save_app", methods=["POST"])
 @require_login
 def okta_save_app_proxy():
     r = proxy_post("/connectors/okta/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/okta/disconnect")
 @require_login
 def okta_disconnect():
     r = connector_disconnect("okta")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= AUTH0 =================
@@ -7066,43 +7197,43 @@ def auth0_page():
 @require_login
 def auth0_connect():
     r = proxy_get("/connectors/auth0/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/auth0/sync")
 @require_login
 def auth0_sync():
     r = connector_sync("auth0")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/auth0")
 @require_login
 def auth0_status_proxy():
     r = connector_status("auth0")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/auth0/job/get")
 @require_login
 def auth0_job_get_proxy():
     r = connector_job_get("auth0")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/auth0/job/save", methods=["POST"])
 @require_login
 def auth0_job_save_proxy():
     r = connector_job_save("auth0")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/auth0/save_app", methods=["POST"])
 @require_login
 def auth0_save_app_proxy():
     r = proxy_post("/connectors/auth0/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/auth0/disconnect")
 @require_login
 def auth0_disconnect():
     r = connector_disconnect("auth0")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= CLOUDFLARE =================
@@ -7116,43 +7247,43 @@ def cloudflare_page():
 @require_login
 def cloudflare_connect():
     r = proxy_get("/connectors/cloudflare/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/cloudflare/sync")
 @require_login
 def cloudflare_sync():
     r = connector_sync("cloudflare")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/cloudflare")
 @require_login
 def cloudflare_status_proxy():
     r = connector_status("cloudflare")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/cloudflare/job/get")
 @require_login
 def cloudflare_job_get_proxy():
     r = connector_job_get("cloudflare")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/cloudflare/job/save", methods=["POST"])
 @require_login
 def cloudflare_job_save_proxy():
     r = connector_job_save("cloudflare")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/cloudflare/save_app", methods=["POST"])
 @require_login
 def cloudflare_save_app_proxy():
     r = proxy_post("/connectors/cloudflare/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/cloudflare/disconnect")
 @require_login
 def cloudflare_disconnect():
     r = connector_disconnect("cloudflare")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= SENTRY =================
@@ -7166,43 +7297,43 @@ def sentry_page():
 @require_login
 def sentry_connect():
     r = proxy_get("/connectors/sentry/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sentry/sync")
 @require_login
 def sentry_sync():
     r = connector_sync("sentry")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/sentry")
 @require_login
 def sentry_status_proxy():
     r = connector_status("sentry")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sentry/job/get")
 @require_login
 def sentry_job_get_proxy():
     r = connector_job_get("sentry")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sentry/job/save", methods=["POST"])
 @require_login
 def sentry_job_save_proxy():
     r = connector_job_save("sentry")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sentry/save_app", methods=["POST"])
 @require_login
 def sentry_save_app_proxy():
     r = proxy_post("/connectors/sentry/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/sentry/disconnect")
 @require_login
 def sentry_disconnect():
     r = connector_disconnect("sentry")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= QUICKBOOKS =================
@@ -7216,36 +7347,36 @@ def quickbooks_page():
 @require_login
 def quickbooks_connect():
     r = proxy_get("/connectors/quickbooks/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/quickbooks/callback")
 def quickbooks_callback():
     r = proxy_get(f"/connectors/quickbooks/callback?{request.query_string.decode()}")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/quickbooks/sync")
 @require_login
 def quickbooks_sync():
     r = connector_sync("quickbooks")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/quickbooks")
 @require_login
 def quickbooks_status_proxy():
     r = connector_status("quickbooks")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/quickbooks/save_app", methods=["POST"])
 @require_login
 def quickbooks_save_app_proxy():
     r = proxy_post("/connectors/quickbooks/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/quickbooks/disconnect")
 @require_login
 def quickbooks_disconnect():
     r = connector_disconnect("quickbooks")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= XERO =================
 
@@ -7258,36 +7389,36 @@ def xero_page():
 @require_login
 def xero_connect():
     r = proxy_get("/connectors/xero/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/xero/callback")
 def xero_callback():
     r = proxy_get(f"/connectors/xero/callback?{request.query_string.decode()}")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/xero/sync")
 @require_login
 def xero_sync():
     r = connector_sync("xero")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/xero")
 @require_login
 def xero_status_proxy():
     r = connector_status("xero")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/xero/save_app", methods=["POST"])
 @require_login
 def xero_save_app_proxy():
     r = proxy_post("/connectors/xero/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/xero/disconnect")
 @require_login
 def xero_disconnect():
     r = connector_disconnect("xero")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= AMAZON SELLER =================
 
@@ -7300,36 +7431,36 @@ def amazon_seller_page():
 @require_login
 def amazon_seller_connect():
     r = proxy_get("/connectors/amazon_seller/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/amazon_seller/callback")
 def amazon_seller_callback():
     r = proxy_get(f"/connectors/amazon_seller/callback?{request.query_string.decode()}")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/amazon_seller/sync")
 @require_login
 def amazon_seller_sync():
     r = connector_sync("amazon_seller")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/amazon_seller")
 @require_login
 def amazon_seller_status_proxy():
     r = connector_status("amazon_seller")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/amazon_seller/save_app", methods=["POST"])
 @require_login
 def amazon_seller_save_app_proxy():
     r = proxy_post("/connectors/amazon_seller/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/amazon_seller/disconnect")
 @require_login
 def amazon_seller_disconnect():
     r = connector_disconnect("amazon_seller")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= NEW RELIC =================
 
@@ -7342,25 +7473,25 @@ def newrelic_page():
 @require_login
 def newrelic_sync():
     r = connector_sync("newrelic")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/newrelic")
 @require_login
 def newrelic_status_proxy():
     r = connector_status("newrelic")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/newrelic/save_app", methods=["POST"])
 @require_login
 def newrelic_save_app_proxy():
     r = proxy_post("/connectors/newrelic/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/newrelic/disconnect")
 @require_login
 def newrelic_disconnect():
     r = connector_disconnect("newrelic")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # OPENAI
 @app.route("/connectors/openai")
@@ -7372,26 +7503,26 @@ def openai_page():
 @require_login
 def openai_connect_proxy():
     r = proxy_get("/connectors/openai/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/openai/sync")
 @require_login
 def openai_sync_proxy():
     r = connector_sync("openai")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/openai")
 @require_login
 def openai_status_proxy():
     r = connector_status("openai")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/openai/job/get")
 @require_login
 def openai_job_get_proxy():
     r = connector_job_get("openai")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7399,19 +7530,19 @@ def openai_job_get_proxy():
 @require_login
 def openai_job_save_proxy():
     r = connector_job_save("openai")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/openai/save_app", methods=["POST"])
 @require_login
 def openai_save_app_proxy():
     r = proxy_post("/connectors/openai/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/openai/disconnect")
 @require_login
 def openai_disconnect_proxy():
     r = proxy_get("/connectors/openai/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # HUGGINGFACE
@@ -7424,26 +7555,26 @@ def huggingface_page():
 @require_login
 def huggingface_connect_proxy():
     r = proxy_get("/connectors/huggingface/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/huggingface/sync")
 @require_login
 def huggingface_sync_proxy():
     r = connector_sync("huggingface")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/huggingface")
 @require_login
 def huggingface_status_proxy():
     r = connector_status("huggingface")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/huggingface/job/get")
 @require_login
 def huggingface_job_get_proxy():
     r = connector_job_get("huggingface")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7451,19 +7582,19 @@ def huggingface_job_get_proxy():
 @require_login
 def huggingface_job_save_proxy():
     r = connector_job_save("huggingface")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/huggingface/save_app", methods=["POST"])
 @require_login
 def huggingface_save_app_proxy():
     r = proxy_post("/connectors/huggingface/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/huggingface/disconnect")
 @require_login
 def huggingface_disconnect_proxy():
     r = proxy_get("/connectors/huggingface/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # AIRFLOW
@@ -7476,26 +7607,26 @@ def airflow_page():
 @require_login
 def airflow_connect_proxy():
     r = proxy_get("/connectors/airflow/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/airflow/sync")
 @require_login
 def airflow_sync_proxy():
     r = connector_sync("airflow")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/airflow")
 @require_login
 def airflow_status_proxy():
     r = connector_status("airflow")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/airflow/job/get")
 @require_login
 def airflow_job_get_proxy():
     r = connector_job_get("airflow")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7503,19 +7634,19 @@ def airflow_job_get_proxy():
 @require_login
 def airflow_job_save_proxy():
     r = connector_job_save("airflow")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/airflow/save_app", methods=["POST"])
 @require_login
 def airflow_save_app_proxy():
     r = proxy_post("/connectors/airflow/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/airflow/disconnect")
 @require_login
 def airflow_disconnect_proxy():
     r = proxy_get("/connectors/airflow/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # KAFKA
@@ -7528,26 +7659,26 @@ def kafka_page():
 @require_login
 def kafka_connect_proxy():
     r = proxy_get("/connectors/kafka/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/kafka/sync")
 @require_login
 def kafka_sync_proxy():
     r = connector_sync("kafka")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/api/status/kafka")
 @require_login
 def kafka_status_proxy():
     r = connector_status("kafka")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/kafka/job/get")
 @require_login
 def kafka_job_get_proxy():
     r = connector_job_get("kafka")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7555,19 +7686,19 @@ def kafka_job_get_proxy():
 @require_login
 def kafka_job_save_proxy():
     r = connector_job_save("kafka")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/kafka/save_app", methods=["POST"])
 @require_login
 def kafka_save_app_proxy():
     r = proxy_post("/connectors/kafka/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/connectors/kafka/disconnect")
 @require_login
 def kafka_disconnect_proxy():
     r = proxy_get("/connectors/kafka/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= DBT ========================
 
@@ -7581,21 +7712,21 @@ def dbt_page():
 @require_login
 def dbt_connect_proxy():
     r = proxy_get("/connectors/dbt/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dbt/sync")
 @require_login
 def dbt_sync_proxy():
     r = connector_sync("dbt")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/dbt")
 @require_login
 def dbt_status_proxy():
     r = connector_status("dbt")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dbt/job/get")
@@ -7603,7 +7734,7 @@ def dbt_status_proxy():
 def dbt_job_get_proxy():
     r = connector_job_get("dbt")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7612,21 +7743,21 @@ def dbt_job_get_proxy():
 @require_login
 def dbt_job_save_proxy():
     r = connector_job_save("dbt")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dbt/save_app", methods=["POST"])
 @require_login
 def dbt_save_app_proxy():
     r = proxy_post("/connectors/dbt/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/dbt/disconnect")
 @require_login
 def dbt_disconnect_proxy():
     r = proxy_get("/connectors/dbt/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= TYPEFORM ========================
@@ -7641,21 +7772,21 @@ def typeform_page():
 @require_login
 def typeform_connect_proxy():
     r = proxy_get("/connectors/typeform/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/typeform/sync")
 @require_login
 def typeform_sync_proxy():
     r = connector_sync("typeform")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/typeform")
 @require_login
 def typeform_status_proxy():
     r = connector_status("typeform")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/typeform/job/get")
@@ -7663,7 +7794,7 @@ def typeform_status_proxy():
 def typeform_job_get_proxy():
     r = connector_job_get("typeform")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7672,21 +7803,21 @@ def typeform_job_get_proxy():
 @require_login
 def typeform_job_save_proxy():
     r = connector_job_save("typeform")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/typeform/save_app", methods=["POST"])
 @require_login
 def typeform_save_app_proxy():
     r = proxy_post("/connectors/typeform/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/typeform/disconnect")
 @require_login
 def typeform_disconnect_proxy():
     r = proxy_get("/connectors/typeform/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= SURVEYMONKEY ========================
@@ -7701,21 +7832,21 @@ def surveymonkey_page():
 @require_login
 def surveymonkey_connect_proxy():
     r = proxy_get("/connectors/surveymonkey/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/surveymonkey/sync")
 @require_login
 def surveymonkey_sync_proxy():
     r = connector_sync("surveymonkey")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/surveymonkey")
 @require_login
 def surveymonkey_status_proxy():
     r = connector_status("surveymonkey")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/surveymonkey/job/get")
@@ -7723,7 +7854,7 @@ def surveymonkey_status_proxy():
 def surveymonkey_job_get_proxy():
     r = connector_job_get("surveymonkey")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7732,21 +7863,21 @@ def surveymonkey_job_get_proxy():
 @require_login
 def surveymonkey_job_save_proxy():
     r = connector_job_save("surveymonkey")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/surveymonkey/save_app", methods=["POST"])
 @require_login
 def surveymonkey_save_app_proxy():
     r = proxy_post("/connectors/surveymonkey/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/surveymonkey/disconnect")
 @require_login
 def surveymonkey_disconnect_proxy():
     r = proxy_get("/connectors/surveymonkey/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= PINECONE ========================
@@ -7761,21 +7892,21 @@ def pinecone_page():
 @require_login
 def pinecone_connect_proxy():
     r = proxy_get("/connectors/pinecone/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pinecone/sync")
 @require_login
 def pinecone_sync_proxy():
     r = connector_sync("pinecone")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/pinecone")
 @require_login
 def pinecone_status_proxy():
     r = connector_status("pinecone")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pinecone/job/get")
@@ -7783,7 +7914,7 @@ def pinecone_status_proxy():
 def pinecone_job_get_proxy():
     r = connector_job_get("pinecone")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7792,21 +7923,21 @@ def pinecone_job_get_proxy():
 @require_login
 def pinecone_job_save_proxy():
     r = connector_job_save("pinecone")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pinecone/save_app", methods=["POST"])
 @require_login
 def pinecone_save_app_proxy():
     r = proxy_post("/connectors/pinecone/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/pinecone/disconnect")
 @require_login
 def pinecone_disconnect_proxy():
     r = proxy_get("/connectors/pinecone/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= NETLIFY ========================
 
@@ -7820,21 +7951,21 @@ def netlify_page():
 @require_login
 def netlify_connect_proxy():
     r = proxy_get("/connectors/netlify/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/netlify/sync")
 @require_login
 def netlify_sync_proxy():
     r = connector_sync("netlify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/netlify")
 @require_login
 def netlify_status_proxy():
     r = connector_status("netlify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/netlify/job/get")
@@ -7842,7 +7973,7 @@ def netlify_status_proxy():
 def netlify_job_get_proxy():
     r = connector_job_get("netlify")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7851,21 +7982,21 @@ def netlify_job_get_proxy():
 @require_login
 def netlify_job_save_proxy():
     r = connector_job_save("netlify")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/netlify/save_app", methods=["POST"])
 @require_login
 def netlify_save_app_proxy():
     r = proxy_post("/connectors/netlify/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/netlify/disconnect")
 @require_login
 def netlify_disconnect_proxy():
     r = proxy_get("/connectors/netlify/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 # ================= LINEAR ========================
@@ -7880,21 +8011,21 @@ def linear_page():
 @require_login
 def linear_connect_proxy():
     r = proxy_get("/connectors/linear/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/linear/sync")
 @require_login
 def linear_sync_proxy():
     r = connector_sync("linear")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/linear")
 @require_login
 def linear_status_proxy():
     r = connector_status("linear")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/linear/job/get")
@@ -7902,7 +8033,7 @@ def linear_status_proxy():
 def linear_job_get_proxy():
     r = connector_job_get("linear")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7911,21 +8042,21 @@ def linear_job_get_proxy():
 @require_login
 def linear_job_save_proxy():
     r = connector_job_save("linear")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/linear/save_app", methods=["POST"])
 @require_login
 def linear_save_app_proxy():
     r = proxy_post("/connectors/linear/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/linear/disconnect")
 @require_login
 def linear_disconnect_proxy():
     r = proxy_get("/connectors/linear/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= BITBUCKET ========================
 
@@ -7939,21 +8070,21 @@ def bitbucket_page():
 @require_login
 def bitbucket_connect_proxy():
     r = proxy_get("/connectors/bitbucket/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bitbucket/sync")
 @require_login
 def bitbucket_sync_proxy():
     r = connector_sync("bitbucket")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/bitbucket")
 @require_login
 def bitbucket_status_proxy():
     r = connector_status("bitbucket")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bitbucket/job/get")
@@ -7961,7 +8092,7 @@ def bitbucket_status_proxy():
 def bitbucket_job_get_proxy():
     r = connector_job_get("bitbucket")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -7970,21 +8101,21 @@ def bitbucket_job_get_proxy():
 @require_login
 def bitbucket_job_save_proxy():
     r = connector_job_save("bitbucket")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bitbucket/save_app", methods=["POST"])
 @require_login
 def bitbucket_save_app_proxy():
     r = proxy_post("/connectors/bitbucket/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/bitbucket/disconnect")
 @require_login
 def bitbucket_disconnect_proxy():
     r = proxy_get("/connectors/bitbucket/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= VERCEL ========================
 
@@ -7998,21 +8129,21 @@ def vercel_page():
 @require_login
 def vercel_connect_proxy():
     r = proxy_get("/connectors/vercel/connect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/vercel/sync")
 @require_login
 def vercel_sync_proxy():
     r = connector_sync("vercel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/api/status/vercel")
 @require_login
 def vercel_status_proxy():
     r = connector_status("vercel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/vercel/job/get")
@@ -8020,7 +8151,7 @@ def vercel_status_proxy():
 def vercel_job_get_proxy():
     r = connector_job_get("vercel")
     try:
-        return jsonify(r.json()), r.status_code
+        return finalize_response(r)
     except Exception:
         return jsonify({"exists": False, "sync_type": "incremental", "schedule_time": None}), 200
 
@@ -8029,21 +8160,21 @@ def vercel_job_get_proxy():
 @require_login
 def vercel_job_save_proxy():
     r = connector_job_save("vercel")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/vercel/save_app", methods=["POST"])
 @require_login
 def vercel_save_app_proxy():
     r = proxy_post("/connectors/vercel/save_app", json=request.get_json())
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 
 @app.route("/connectors/vercel/disconnect")
 @require_login
 def vercel_disconnect_proxy():
     r = proxy_get("/connectors/vercel/disconnect")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= AI COMPANION ==========================
 
@@ -8051,20 +8182,21 @@ def vercel_disconnect_proxy():
 @require_login
 def ai_chats():
     r = proxy_get("/ai/chats")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/ai/chat/<chat_id>", methods=["GET"])
 @require_login
 def ai_chat_history(chat_id):
     r = proxy_get(f"/ai/chat/{chat_id}")
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 @app.route("/ai/chat", methods=["POST"])
 @require_login
 def ai_chat_message():
     r = proxy_post("/ai/chat", json=request.get_json(silent=True) or {})
-    return jsonify(r.json()), r.status_code
+    return finalize_response(r)
 
 # ================= MAIN ==========================
 if __name__ == "__main__":
-    app.run(port=3000, debug=True)
+    app.run(host="0.0.0.0", port=APP_PORT, debug=True, threaded=True)
+

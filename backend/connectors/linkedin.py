@@ -3,6 +3,7 @@ import json
 import sqlite3
 import time
 from urllib.parse import quote, urlencode
+from flask import request
 
 import requests
 
@@ -18,6 +19,9 @@ TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 API_BASE = "https://api.linkedin.com"
 DEFAULT_SCOPES = ["r_ads", "r_ads_reporting", "offline_access"]
 DEFAULT_LINKEDIN_VERSION = "202503"
+
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/linkedin/callback"
 
 
 def get_db():
@@ -164,7 +168,7 @@ def get_linkedin_auth_url(uid, state):
         raise Exception("LinkedIn app not configured")
 
     client_id = cfg.get("client_id")
-    redirect_uri = cfg.get("scopes")
+    redirect_uri = get_redirect_uri()
     scopes = DEFAULT_SCOPES
     if not client_id or not redirect_uri:
         raise Exception("Missing LinkedIn client_id or redirect_uri")
@@ -401,7 +405,7 @@ def _exchange_code_for_token(uid, code):
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": redirect_uri,
+        "redirect_uri": get_redirect_uri(),
         "client_id": client_id,
         "client_secret": client_secret,
     }

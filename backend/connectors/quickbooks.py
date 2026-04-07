@@ -11,6 +11,9 @@ from flask import redirect, request, jsonify
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "identity.db")
 
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/connectors/quickbooks/callback"
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -36,7 +39,7 @@ def connect_quickbooks():
         return redirect("/connectors/quickbooks?error=missing_creds")
         
     client_id = row['client_id']
-    redirect_uri = "http://localhost:4000/connectors/quickbooks/callback"
+    redirect_uri = get_redirect_uri()
     scope = "com.intuit.quickbooks.accounting openid profile email"
     
     # Intuit Authorization URL
@@ -68,7 +71,7 @@ def callback_quickbooks():
     payload = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": "http://localhost:4000/connectors/quickbooks/callback"
+        "redirect_uri": get_redirect_uri()
     }
     
     res = requests.post(token_url, data=payload, auth=auth)

@@ -15,7 +15,7 @@ DB = "identity.db"
 UPLOAD_DIR = "uploads/company_logos"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-UI_BASE_URL = os.getenv("UI_BASE_URL", "http://localhost:3000")
+# UI_BASE_URL removed in favor of dynamic request.host_url
 
 # DB CONNECTION
 def get_db():
@@ -40,7 +40,8 @@ def build_login_redirect(error_code, next_path="", auth_required=""):
     if auth_required == "1":
         params.append("auth_required=1")
 
-    return f"{UI_BASE_URL}/login?{'&'.join(params)}"
+    ui_url = request.host_url.rstrip("/")
+    return f"{ui_url}/login?{'&'.join(params)}"
 
 # ================= Signup =================
 @auth.route("/auth/signup", methods=["POST"])
@@ -150,9 +151,10 @@ def signup():
     con.commit()
     con.close()
 
+    ui_url = request.host_url.rstrip("/")
     resp = make_response(jsonify({
         "success": True,
-        "redirect": f"{UI_BASE_URL}{next_url}"
+        "redirect": f"{ui_url}{next_url}"
     }))
 
     resp.set_cookie(
@@ -246,7 +248,8 @@ def login():
     con.close()
 
     safe_next = sanitize_next_path(next_url)
-    resp = make_response(redirect(f"{UI_BASE_URL}{safe_next}"))
+    ui_url = request.host_url.rstrip("/")
+    resp = make_response(redirect(f"{ui_url}{safe_next}"))
 
     resp.set_cookie(
         "segmento_session",

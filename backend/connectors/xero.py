@@ -11,6 +11,9 @@ from flask import redirect, request, jsonify
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "identity.db")
 
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/connectors/xero/callback"
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -36,7 +39,7 @@ def connect_xero():
         return redirect("/connectors/xero?error=missing_creds")
         
     client_id = row['client_id']
-    redirect_uri = "http://localhost:4000/connectors/xero/callback"
+    redirect_uri = get_redirect_uri()
     scope = "offline_access accounting.contacts accounting.transactions accounting.settings"
     
     # Xero Authorization URL
@@ -67,7 +70,7 @@ def callback_xero():
     payload = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": "http://localhost:4000/connectors/xero/callback"
+        "redirect_uri": get_redirect_uri()
     }
     
     res = requests.post(token_url, data=payload, auth=auth)

@@ -368,6 +368,8 @@
             </script>
 
             <script>
+            <script src="/static/js/connector_manager.js"></script>
+            <script>
                 (function () {
                     const toastStack = document.getElementById('issueToastStack');
                     const panel = document.getElementById('issueCenterPanel');
@@ -545,6 +547,13 @@
                                 });
                             }
 
+                            // Trigger global UI update if a connector action succeeds
+                            if (response.ok && (url.includes('/save_app') || url.includes('/disconnect') || url.includes('/connect'))) {
+                                if (window.connectorManager) {
+                                    window.connectorManager.refreshStatus();
+                                }
+                            }
+
                             return response;
                         } catch (err) {
                             pushIssue({
@@ -556,6 +565,7 @@
                             throw err;
                         }
                     };
+
 
                     window.addEventListener('unhandledrejection', (event) => {
                         const reason = event?.reason;

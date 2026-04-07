@@ -18,6 +18,9 @@ TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/"
 BUSINESS_BASE = "https://business-api.tiktok.com/open_api/v1.3"
 DEFAULT_SCOPES = "user.info.basic,video.list,ads.read"
 
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/tiktok/callback"
+
 
 def get_db():
     con = sqlite3.connect(DB, timeout=60, check_same_thread=False)
@@ -103,7 +106,7 @@ def get_tiktok_auth_url(uid):
     if not cfg:
         raise Exception("TikTok app not configured")
 
-    redirect_uri = cfg.get("scopes")
+    redirect_uri = get_redirect_uri()
     scopes = DEFAULT_SCOPES
 
     params = {
@@ -125,7 +128,7 @@ def _exchange_code_for_token(uid, code):
         "client_secret": cfg["client_secret"],
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": cfg.get("scopes"),
+        "redirect_uri": get_redirect_uri(),
     }
 
     res = _request_with_retry(

@@ -1,3 +1,4 @@
+from flask import request
 import requests
 import sqlite3
 import datetime
@@ -11,6 +12,9 @@ load_dotenv()
 DB = "identity.db"
 
 API = "https://gitlab.com/api/v4"
+
+def get_redirect_uri():
+    return request.host_url.rstrip("/") + "/gitlab/callback"
 
 
 # ---------------- DB ----------------
@@ -95,7 +99,7 @@ def get_auth_url(uid):
 
     params = {
         "client_id": app["client_id"],
-        "redirect_uri": "http://localhost:4000/gitlab/callback",
+        "redirect_uri": get_redirect_uri(),
         "response_type": "code",
         "scope": "read_user read_api read_repository"
     }
@@ -113,7 +117,7 @@ def exchange_code(uid, code):
             "client_secret": app["client_secret"],
             "code": code,
             "grant_type": "authorization_code",
-            "redirect_uri": "http://localhost:4000/gitlab/callback"
+            "redirect_uri": get_redirect_uri()
         },
         timeout=20
     )

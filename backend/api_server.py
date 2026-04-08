@@ -755,12 +755,17 @@ def init_db():
             PRIMARY KEY (uid, connector)
         )
     ''')
-    
-    # Safe migration for connector_configs missing config_json
+
     cur.execute("PRAGMA table_info(connector_configs)")
     columns = [col[1] for col in cur.fetchall()]
-    if "config_json" not in columns:
-        cur.execute("ALTER TABLE connector_configs ADD COLUMN config_json TEXT")
+    required_columns = {
+        "client_id": "TEXT",
+        "client_secret": "TEXT",
+        "config_json": "TEXT",
+    }
+    for col, col_type in required_columns.items():
+        if col not in columns:
+            cur.execute(f"ALTER TABLE connector_configs ADD COLUMN {col} {col_type}")
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS api_usage_logs (
@@ -3418,12 +3423,17 @@ def init_db():
         created_at TEXT
     )
     """)
-    
-    # Safe migration for connector_configs missing config_json
+
     cur.execute("PRAGMA table_info(connector_configs)")
     columns = [col[1] for col in cur.fetchall()]
-    if "config_json" not in columns:
-        cur.execute("ALTER TABLE connector_configs ADD COLUMN config_json TEXT")
+    required_columns = {
+        "client_id": "TEXT",
+        "client_secret": "TEXT",
+        "config_json": "TEXT",
+    }
+    for col, col_type in required_columns.items():
+        if col not in columns:
+            cur.execute(f"ALTER TABLE connector_configs ADD COLUMN {col} {col_type}")
 
     # ---------------- Meta ----------------
 

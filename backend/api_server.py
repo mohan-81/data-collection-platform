@@ -28,6 +28,7 @@ import requests
 import datetime
 import sqlite3
 from urllib.parse import urlencode
+from werkzeug.middleware.proxy_fix import ProxyFix
 from backend.destinations.destination_router import push_to_destination
 # Google OAuth
 from dotenv import load_dotenv
@@ -480,6 +481,12 @@ load_dotenv()
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 
 app = Flask(__name__)
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_PATH="/",
+)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 CORS(
     app,
     supports_credentials=True,

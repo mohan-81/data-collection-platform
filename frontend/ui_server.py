@@ -8,6 +8,7 @@ sys.path.append(BASE_DIR)
 import requests
 import sqlite3
 from functools import wraps
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from flask import (
     Flask,
@@ -24,9 +25,46 @@ app = Flask(
     template_folder="templates",
     static_folder="static"
 )
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_PATH="/",
+)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.getenv("DB_PATH", "/tmp/identity.db")
+
+SESSION_COOKIE_NAME = "segmento_session"
+SESSION_COOKIE_OPTIONS = {
+    "httponly": True,
+    "secure": True,
+    "samesite": "None",
+    "path": "/",
+}
+
+
+def copy_auth_cookies(source_response, target_response):
+    for cookie in source_response.cookies:
+        if cookie.name == SESSION_COOKIE_NAME:
+            target_response.set_cookie(
+                SESSION_COOKIE_NAME,
+                cookie.value,
+                expires=cookie.expires,
+                **SESSION_COOKIE_OPTIONS,
+            )
+            continue
+
+        target_response.set_cookie(
+            cookie.name,
+            cookie.value,
+            expires=cookie.expires,
+            path="/",
+            domain=cookie.domain,
+            secure=True,
+            httponly=bool(cookie._rest.get("HttpOnly")),
+            samesite="None",
+        )
 
 # ================= AUTH UTILITIES =================# ================= AUTH UTILITIES =================
 
@@ -121,17 +159,7 @@ def ui_login():
 
     # Explicitly copy authentication cookies from the backend response
     # to ensure they are available in the browser context.
-    for cookie in r.cookies:
-        resp.set_cookie(
-            cookie.name,
-            cookie.value,
-            expires=cookie.expires,
-            path=cookie.path,
-            domain=cookie.domain,
-            secure=cookie.secure,
-            httponly=True,  # Ensure HttpOnly is preserved for session security
-            samesite='Lax'
-        )
+    copy_auth_cookies(r, resp)
 
     return resp
 
@@ -168,17 +196,7 @@ def unified_oauth_callback_proxy():
             resp.headers["Content-Type"] = r.headers["Content-Type"]
 
     # Explicitly copy any Set-Cookie headers from the backend
-    for cookie in r.cookies:
-        resp.set_cookie(
-            cookie.name,
-            cookie.value,
-            expires=cookie.expires,
-            path=cookie.path,
-            domain=cookie.domain,
-            secure=cookie.secure,
-            httponly=True,
-            samesite='Lax'
-        )
+    copy_auth_cookies(r, resp)
 
     return resp
 
@@ -203,7 +221,12 @@ def ui_logout():
 
     resp = redirect("/")
 
-    resp.delete_cookie("segmento_session", path="/")
+    resp.delete_cookie(
+        SESSION_COOKIE_NAME,
+        path="/",
+        secure=True,
+        samesite="None",
+    )
 
     return resp
 

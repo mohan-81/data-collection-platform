@@ -18,6 +18,22 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def get_base_url():
     return os.getenv("BASE_URL", request.host_url.rstrip("/"))
 
+
+SESSION_COOKIE_NAME = "segmento_session"
+SESSION_COOKIE_OPTIONS = {
+    "httponly": True,
+    "secure": True,
+    "samesite": "None",
+    "path": "/",
+}
+
+UID_COOKIE_OPTIONS = {
+    "httponly": False,
+    "secure": True,
+    "samesite": "None",
+    "path": "/",
+}
+
 # DB CONNECTION
 def get_db():
     return sqlite3.connect(DB)
@@ -160,19 +176,15 @@ def signup():
 
 
     resp.set_cookie(
-        "segmento_session",
+        SESSION_COOKIE_NAME,
         session_id,
-        httponly=True,
-        samesite="Lax",
-        path="/"
+        **SESSION_COOKIE_OPTIONS,
     )
 
     resp.set_cookie(
         "uid",
         user_id,
-        httponly=False,
-        samesite="Lax",
-        path="/"
+        **UID_COOKIE_OPTIONS,
     )
 
     return resp
@@ -254,19 +266,15 @@ def login():
 
 
     resp.set_cookie(
-        "segmento_session",
+        SESSION_COOKIE_NAME,
         session_id,
-        httponly=True,
-        samesite="Lax",
-        path="/"
+        **SESSION_COOKIE_OPTIONS,
     )
 
     resp.set_cookie(
         "uid",
         user_id,
-        httponly=False,
-        samesite="Lax",
-        path="/"
+        **UID_COOKIE_OPTIONS,
     )
 
     return resp
@@ -291,6 +299,11 @@ def logout():
 
     resp = make_response(jsonify({"status": "logged_out"}))
 
-    resp.delete_cookie("segmento_session", path="/")
+    resp.delete_cookie(
+        SESSION_COOKIE_NAME,
+        path="/",
+        secure=True,
+        samesite="None",
+    )
 
     return resp

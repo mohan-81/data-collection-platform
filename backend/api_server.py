@@ -732,9 +732,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS user_sessions (
             session_id TEXT PRIMARY KEY,
             user_id TEXT,
-            created_at TEXT
+            created_at TEXT,
+            expires_at TEXT
         )
     ''')
+    cur.execute("PRAGMA table_info(user_sessions)")
+    columns = [col[1] for col in cur.fetchall()]
+    if "expires_at" not in columns:
+        cur.execute("ALTER TABLE user_sessions ADD COLUMN expires_at TEXT")
+
     cur.execute('''
         CREATE TABLE IF NOT EXISTS google_connections (
             uid TEXT,
@@ -1433,6 +1439,11 @@ def init_db():
         expires_at TEXT
     )
     """)
+
+    cur.execute("PRAGMA table_info(user_sessions)")
+    columns = [col[1] for col in cur.fetchall()]
+    if "expires_at" not in columns:
+        cur.execute("ALTER TABLE user_sessions ADD COLUMN expires_at TEXT")
 
     # Google Accounts
     cur.execute("""

@@ -723,65 +723,6 @@ def get_db():
 
     return con
 
-def init_db():
-    con = get_db()
-    cur = con.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS user_sessions (
-            session_id TEXT PRIMARY KEY,
-            user_id TEXT,
-            created_at TEXT,
-            expires_at TEXT
-        )
-    ''')
-    cur.execute("PRAGMA table_info(user_sessions)")
-    columns = [col[1] for col in cur.fetchall()]
-    if "expires_at" not in columns:
-        cur.execute("ALTER TABLE user_sessions ADD COLUMN expires_at TEXT")
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS google_connections (
-            uid TEXT,
-            source TEXT,
-            enabled INTEGER,
-            PRIMARY KEY (uid, source)
-        )
-    ''')
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS connector_configs (
-            uid TEXT,
-            connector TEXT,
-            config_json TEXT,
-            PRIMARY KEY (uid, connector)
-        )
-    ''')
-
-    cur.execute("PRAGMA table_info(connector_configs)")
-    columns = [col[1] for col in cur.fetchall()]
-    required_columns = {
-        "client_id": "TEXT",
-        "client_secret": "TEXT",
-        "config_json": "TEXT",
-    }
-    for col, col_type in required_columns.items():
-        if col not in columns:
-            cur.execute(f"ALTER TABLE connector_configs ADD COLUMN {col} {col_type}")
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS api_usage_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT,
-            endpoint TEXT,
-            method TEXT,
-            created_at TEXT
-        )
-    ''')
-    con.commit()
-    con.close()
-
-# Safe initialization
-init_db()
-
 from flask import request, g
 
 

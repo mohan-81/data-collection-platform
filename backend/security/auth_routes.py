@@ -3,7 +3,7 @@ import sqlite3
 import uuid
 import datetime
 import os
-from urllib.parse import quote_plus
+from urllib.parse import urlencode
 
 from werkzeug.security import generate_password_hash
 from backend.security.secure_db import encrypt_payload
@@ -47,18 +47,16 @@ def sanitize_next_path(next_path):
     return next_path
 
 
-def build_login_redirect(error_code, next_path="", auth_required=""):
-    params = [f"error={error_code}"]
+def build_login_redirect(error, next_url=None, auth_required=None, **kwargs):
+    params = {"error": error}
 
-    safe_next = sanitize_next_path(next_path)
-    if safe_next != "/":
-        params.append(f"next={quote_plus(safe_next)}")
+    if next_url:
+        params["next"] = sanitize_next_path(next_url)
 
-    if auth_required == "1":
-        params.append("auth_required=1")
+    if auth_required:
+        params["auth_required"] = auth_required
 
-    base_url = get_base_url()
-    return f"{base_url}/login?" + '&'.join(params)
+    return f"/login?{urlencode(params)}"
 
 
 # ================= Signup =================
@@ -234,10 +232,13 @@ def login():
     encrypted_hash = row[1]
 
     # DECRYPT STORED PASSWORD
-    stored_hash = decrypt_value(encrypted_hash)
+    try:
+        stored_hash = decrypt_value(encrypted_hash)
+    except Exception:
+        stored_hash = None
 
     # VERIFY PASSWORD
-    if not check_password_hash(stored_hash, password):
+    if not stored_hash or not check_password_hash(stored_hash, password):
         con.close()
         return redirect(build_login_redirect(
             "invalid",

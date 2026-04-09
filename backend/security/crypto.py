@@ -1,4 +1,5 @@
 import os
+import logging
 from cryptography.fernet import Fernet, InvalidToken
 
 # MASTER KEY
@@ -20,6 +21,7 @@ def load_key():
         raise ValueError(f"Invalid or corrupted key file: {str(e)}. Regenerate or restore.")
 
 fernet = Fernet(load_key())
+logger = logging.getLogger(__name__)
 
 # ENCRYPT
 def encrypt_value(value):
@@ -36,14 +38,9 @@ def decrypt_value(value):
         return value
 
     try:
-        print("TRY DECRYPT:", value[:20], flush=True)
-
         decrypted = fernet.decrypt(value.encode()).decode()
-
-        print("DECRYPTED OK", flush=True)
-
         return decrypted
 
-    except Exception as e:
-        print("DECRYPT FAILED:", e, flush=True)
-        return value
+    except Exception:
+        logger.warning("Decryption failed - possible key mismatch")
+        return None

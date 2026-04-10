@@ -90,27 +90,26 @@ def _update_status(uid: str, status: str):
 
 def _set_connection_enabled(uid: str, enabled: bool):
     try:
+        con = get_db()
+        cur = con.cursor()
+
+        cur.execute("""
+            UPDATE google_connections
+            SET enabled = ?
+            WHERE uid = ? AND source = ?
+        """, (1 if enabled else 0, uid, SOURCE))
+
+        # if row does not exist yet, insert it
+        if cur.rowcount == 0:
+            cur.execute("""
+                INSERT INTO google_connections (uid, source, enabled)
+                VALUES (?, ?, ?)
+            """, (uid, SOURCE, 1 if enabled else 0))
+
+        con.commit()
+        con.close()
     except Exception as e:
         pass
-
-    con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        UPDATE google_connections
-        SET enabled = ?
-        WHERE uid = ? AND source = ?
-    """, (1 if enabled else 0, uid, SOURCE))
-
-    # if row does not exist yet, insert it
-    if cur.rowcount == 0:
-        cur.execute("""
-            INSERT INTO google_connections (uid, source, enabled)
-            VALUES (?, ?, ?)
-        """, (uid, SOURCE, 1 if enabled else 0))
-
-    con.commit()
-    con.close()
 
 def save_config(uid: str, engine: str, host: str, port: int,
                 database: str, username: str, password: str):

@@ -21,73 +21,68 @@ scheduler = None
 # -------------------------------
 
 def get_due_jobs():
-
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT
-            cj.uid,
-            cj.source,
-            cj.sync_type,
-            cj.schedule_time
-        FROM connector_jobs cj
-        JOIN google_connections gc
-          ON cj.uid = gc.uid
-         AND cj.source = gc.source
-        WHERE
-            cj.enabled = 1
-        AND
-            gc.enabled = 1
-    """)
-
-    rows = cur.fetchall()
-    conn.close()
-
-    return rows
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                cj.uid,
+                cj.source,
+                cj.sync_type,
+                cj.schedule_time
+            FROM connector_jobs cj
+            JOIN google_connections gc
+              ON cj.uid = gc.uid
+             AND cj.source = gc.source
+            WHERE
+                cj.enabled = 1
+            AND
+                gc.enabled = 1
+        """)
+        return cur.fetchall()
+    finally:
+        conn.close()
 
 # Check if job already ran today
 
 def already_ran_today(uid, source):
-
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT last_run_at
+            FROM connector_jobs
+            WHERE uid=? AND source=?
+        """, (uid, source))
+        row = cur.fetchone()
+        
+        if not row or not row[0]:
+            return False
 
-    cur.execute("""
-        SELECT last_run_at
-        FROM connector_jobs
-        WHERE uid=? AND source=?
-    """, (uid, source))
+        last_run = datetime.datetime.fromisoformat(row[0])
+        now = datetime.datetime.now()
 
-    row = cur.fetchone()
-    conn.close()
-
-    if not row or not row[0]:
-        return False
-
-    last_run = datetime.datetime.fromisoformat(row[0])
-    now = datetime.datetime.now()
-
-    return last_run.date() == now.date()
+        return last_run.date() == now.date()
+    finally:
+        conn.close()
 
 # Mark job as executed
 def mark_job_run(uid, source):
-
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("""
-        UPDATE connector_jobs
-        SET last_run_at=?
-        WHERE uid=? AND source=?
-    """, (
-        datetime.datetime.now().isoformat(),
-        uid,
-        source
-    ))
-
-    conn.commit()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE connector_jobs
+            SET last_run_at=?
+            WHERE uid=? AND source=?
+        """, (
+            datetime.datetime.now().isoformat(),
+            uid,
+            source
+        ))
+        conn.commit()
+    finally:
+        conn.close()
 
 # -------------------------------
 # Run One Job (UNIVERSAL)
@@ -161,11 +156,10 @@ def scheduler_tick():
             run_job(job)
 
 # -------------------------------
-# Time Matching (1 min window)
+# Time Matching (5 min window)
 # -------------------------------
 
 def is_time_match(now, target):
-
     try:
         fmt = "%H:%M"
 
@@ -174,8 +168,7 @@ def is_time_match(now, target):
 
         diff = abs((now_t - target_t).total_seconds())
 
-        return diff <= 60
-
+        return diff <= 300
     except Exception:
         return False
 
@@ -198,7 +191,7 @@ def start_scheduler():
     scheduler.add_job(
         scheduler_tick,
         "interval",
-        seconds=60,
+        seconds=300,
         max_instances=1,
         coalesce=True
     )
@@ -214,7 +207,7 @@ def start_scheduler():
     scheduler.add_job(
         run_cleanup_job,
         "interval",
-        seconds=60,
+        seconds=300,
         max_instances=1,
         coalesce=True
     )
@@ -222,7 +215,7 @@ def start_scheduler():
     scheduler.start()
 
     print("[SCHEDULER] Cleanup job registered", flush=True)
-    print("[SCHEDULER] Universal Scheduler Started (1-min interval)", flush=True)
+    print("[SCHEDULER] Universal Scheduler Started (5-min interval)", flush=True)
 
 # -------------------------------
 # Optional standalone run

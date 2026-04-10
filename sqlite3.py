@@ -508,6 +508,12 @@ class Connection:
             self.close()
         return False
 
+    def __del__(self):
+        try:
+            self.close()
+        except:
+            pass
+
 
 def connect(
     database=None,

@@ -531,8 +531,7 @@ CORS(
     origins="*"
 )
 
-# Start scheduler once when API server starts
-start_scheduler()
+# Start scheduler moved below init_db
 
 from flask import g
 
@@ -21535,6 +21534,7 @@ def recover_connector_data(source):
 
 init_db()
 seed_test_user()
+start_scheduler()
 
 if __name__=="__main__":
     app.run(port=4000,debug=True,host="0.0.0.0",use_reloader=False)

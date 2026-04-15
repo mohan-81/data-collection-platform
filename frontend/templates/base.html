@@ -223,67 +223,118 @@
         }
     </script>
 </head>
+<script>
+    const toggleBtn = document.getElementById("menu-toggle");
+    const mobileMenu = document.getElementById("mobile-menu");
 
+    toggleBtn.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+    });
+</script>
 <body class="antialiased">
     <div id="app-container">
         <div id="main-content">
 
             <nav class="glass-nav fixed top-0 left-0 right-0 z-50">
-                <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex justify-between items-center">
+    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex justify-between items-center">
 
-                    <a href="https://segmento.com" class="flex items-center gap-4 group">
-                        <img src="{{ IMAGE_BASE_URL }}/segmento/logo.png" alt="Segmento Logo"
-                            class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] brightness-110 group-hover:scale-110 transition-all duration-500">
-                        <div class="flex flex-col">
-                            <span class="text-xl font-black tracking-tight leading-none text-slate-900 dark:text-white">Segmento</span>
-                            <span
-                                class="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest mt-1">Collector</span>
-                        </div>
-                    </a>
+        <!-- Logo -->
+        <a href="https://segmento.com" class="flex items-center gap-4 group">
+            <img src="{{ IMAGE_BASE_URL }}/segmento/logo.png" alt="Segmento Logo"
+                class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] brightness-110 group-hover:scale-110 transition-all duration-500">
+            <div class="flex flex-col">
+                <span class="text-xl font-black tracking-tight leading-none text-slate-900 dark:text-white">Segmento</span>
+                <span class="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest mt-1">
+                    Collector
+                </span>
+            </div>
+        </a>
 
-                    <div class="hidden md:flex items-center space-x-10">
-                        <a href="https://www.segmento.in/" class="nav-link">Back to Segmento</a>
-                        <a href="/" class="nav-link">Home</a>
-                        <a href="/tracking" class="nav-link">Web Tracking</a>
-                        <a href="/connectors" class="nav-link">Connectors</a>
-                    </div>
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-10">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/tracking" class="nav-link">Web Tracking</a>
+            <a href="/connectors" class="nav-link">Connectors</a>
+        </div>
 
-                    <div class="flex items-center gap-6">
-                        <!-- Theme Toggle Button -->
-                        <button id="theme-toggle" type="button" class="text-slate-500 dark:text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-100 dark:bg-slate-800">
-                            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 4.22a1 1 0 011.415 0l.708.708a1 1 0 01-1.414 1.414l-.708-.708a1 1 0 010-1.414zM16 10a1 1 0 011 1h1a1 1 0 110-2h-1a1 1 0 01-1 1zm-4.22 4.22a1 1 0 010 1.415l-.708.708a1 1 0 01-1.414-1.414l.708-.708a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-4.22a1 1 0 010-1.415l-.708-.708a1 1 0 011.414-1.414l.708.708a1 1 0 01-1.414 1.414zM4 10a1 1 0 01-1-1H2a1 1 0 110 2h1a1 1 0 011-1zm4.22-4.22a1 1 0 011.415 0l.708-.708a1 1 0 01-1.414-1.414l-.708.708a1 1 0 010 1.414zM10 5a5 5 0 100 10 5 5 0 000-10z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-                        </button>
-                        <!-- AI Companion Toggle Button -->
-                        <button id="ai-toggle-btn"
-                            class="text-xs font-bold text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 dark:border-cyan-400/30 hover:bg-cyan-500/10 dark:hover:bg-cyan-400/10 px-3 py-1.5 rounded-lg transition-all flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                            AI Companion
-                        </button>
-                        {% if is_logged_in %}
-                        <a href="/usage"
-                            class="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors">Usage</a>
-                        <a href="/account"
-                            class="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors">Account &
-                            Billing</a>
-                        <a href="/logout"
-                            class="btn-premium px-5 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700">
-                            Logout
-                        </a>
-                        {% else %}
-                        <a href="/login"
-                            class="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors">Login</a>
-                        <a href="/signup"
-                            class="btn-premium px-6 py-2.5 bg-cyan-500 hover:bg-cyan-600 dark:hover:bg-cyan-400 text-white dark:text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-cyan-500/10">
-                            Get Started
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </nav>
+        <!-- Right Side -->
+        <div class="flex items-center gap-4">
+
+            <!-- Mobile Menu Button -->
+            <button id="menu-toggle" class="md:hidden text-slate-600 dark:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" type="button"
+                class="text-slate-500 dark:text-slate-400 hover:text-cyan-500 p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+                <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                </svg>
+                <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 4.22a1 1 0 011.415 0l.708.708a1 1 0 01-1.414 1.414l-.708-.708a1 1 0 010-1.414z">
+                    </path>
+                </svg>
+            </button>
+
+            <!-- Back to Segmento Button (NEW) -->
+            <a href="https://www.segmento.in/"
+                class="hidden md:inline btn-premium px-6 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700">
+                Back to Segmento
+            </a>
+
+            <!-- Auth Buttons -->
+            {% if is_logged_in %}
+            <a href="/usage" class="hidden md:inline text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white">Usage</a>
+            <a href="/account" class="hidden md:inline text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white">Account</a>
+            <a href="/logout"
+                class="btn-premium px-5 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold rounded-xl border">
+                Logout
+            </a>
+            {% else %}
+            <a href="/login" class="hidden md:inline text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white">Login</a>
+
+            <!-- Get Started -->
+            <a href="/signup"
+                class="btn-premium px-6 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-bold rounded-xl shadow-lg">
+                Get Started
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mobile Dropdown -->
+    <div id="mobile-menu"
+        class="hidden md:hidden px-6 pb-6 space-y-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+
+        <a href="/" class="block nav-link">Home</a>
+        <a href="/tracking" class="block nav-link">Web Tracking</a>
+        <a href="/connectors" class="block nav-link">Connectors</a>
+
+        <a href="https://www.segmento.in/"
+            class="block btn-premium px-5 py-2 bg-slate-200 dark:bg-slate-800 text-xs font-bold rounded-xl text-center">
+            Back to Segmento
+        </a>
+
+        {% if is_logged_in %}
+        <a href="/usage" class="block nav-link">Usage</a>
+        <a href="/account" class="block nav-link">Account</a>
+        <a href="/logout" class="block btn-premium px-5 py-2 bg-slate-200 text-xs rounded-xl text-center">Logout</a>
+        {% else %}
+        <a href="/login" class="block nav-link">Login</a>
+        <a href="/signup"
+            class="block btn-premium px-5 py-2 bg-cyan-500 text-white text-xs rounded-xl text-center">
+            Get Started
+        </a>
+        {% endif %}
+    </div>
+</nav>
             <!-- Smart Input Companion -->
             <div id="smart-companion"
                 class="fixed pointer-events-none transition-all duration-500 ease-out opacity-0 z-50 flex items-center justify-center transform scale-50">

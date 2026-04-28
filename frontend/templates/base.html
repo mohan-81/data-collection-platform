@@ -208,10 +208,19 @@
             background: #22d3ee;
         }
 
-        #app-container.is-resizing #main-content,
-        #app-container.is-resizing #ai-panel,
-        #app-container.is-resizing .glass-nav {
-            transition: none !important;
+        /* Mobile Menu Styles */
+        #mobile-menu.mobile-menu-closed {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transform: translateY(-10px);
+        }
+
+        #mobile-menu.mobile-menu-open {
+            opacity: 1;
+            max-height: 500px;
+            overflow: visible;
+            transform: translateY(0);
         }
     </style>
     <script>
@@ -230,7 +239,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (toggleBtn) {
         toggleBtn.addEventListener("click", () => {
-            mobileMenu.classList.toggle("hidden");
+            if (mobileMenu.classList.contains("mobile-menu-closed")) {
+                mobileMenu.classList.remove("mobile-menu-closed");
+                mobileMenu.classList.add("mobile-menu-open");
+            } else {
+                mobileMenu.classList.remove("mobile-menu-open");
+                mobileMenu.classList.add("mobile-menu-closed");
+            }
         });
     }
 });
@@ -263,8 +278,8 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="flex items-center gap-3">
 
             <!-- Mobile Menu Button -->
-            <button id="menu-toggle" class="md:hidden text-slate-600 dark:text-white">
-                ☰
+            <button id="menu-toggle" class="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95">
+                <span class="text-xl font-bold">☰</span>
             </button>
 
             <!-- Theme Toggle -->
@@ -300,26 +315,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
     <!-- Mobile Menu -->
     <div id="mobile-menu"
-        class="hidden md:hidden px-6 pb-6 space-y-3 bg-white dark:bg-slate-900 border-t">
+        class="mobile-menu-closed md:hidden px-6 pb-6 pt-4 space-y-4 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg backdrop-blur-sm transition-all duration-300 ease-out">
 
-        <a href="/" class="block nav-link">Home</a>
-        <a href="/tracking" class="block nav-link">Web Tracking</a>
-        <a href="/connectors" class="block nav-link">Connectors</a>
+        <!-- Menu Items Container -->
+        <div class="space-y-2">
+            <a href="/" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Home</a>
+            <a href="/tracking" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Web Tracking</a>
+            <a href="/connectors" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Connectors</a>
+        </div>
+
+        <!-- Separator -->
+        <div class="border-t border-slate-200 dark:border-slate-700 my-4"></div>
 
         {% if is_logged_in %}
-        <a href="/usage" class="block nav-link">Usage</a>
-        <a href="/account" class="block nav-link">Account</a>
-        <a href="/logout" class="block btn-premium px-4 py-2 bg-slate-200 text-center rounded-xl">Logout</a>
+        <!-- User Actions -->
+        <div class="space-y-2">
+            <a href="/usage" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Usage</a>
+            <a href="/account" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Account</a>
+            <a href="/logout" class="block btn-premium px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-center rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200">Logout</a>
+        </div>
         {% else %}
-        <a href="/login" class="block nav-link">Login</a>
+        <!-- Auth Actions -->
+        <div class="space-y-3">
+            <a href="/login" class="block nav-link py-3 px-4 rounded-xl hover:bg-cyan-50 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-200 dark:hover:border-slate-600">Login</a>
 
-       
+            <!-- Get Started Button -->
+            <a href="/signup"
+                class="block btn-premium px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-center rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+                Get Started
+            </a>
 
-        <!-- ✅ Back to Segmento last -->
-        <a href="https://www.segmento.in/"
-            class="block btn-premium px-4 py-2 bg-slate-200 dark:bg-slate-800 text-center rounded-xl">
-            Back to Segmento
-        </a>
+            <!-- Back to Segmento -->
+            <a href="https://www.segmento.in/"
+                class="block btn-premium px-6 py-3 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 hover:from-slate-300 hover:to-slate-400 dark:hover:from-slate-600 dark:hover:to-slate-500 text-center rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 border border-slate-300 dark:border-slate-600">
+                Back to Segmento
+            </a>
+        </div>
         {% endif %}
     </div>
 </nav>
